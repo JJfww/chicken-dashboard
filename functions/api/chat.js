@@ -35,7 +35,7 @@ Answer questions helpfully and conversationally. When referencing data, be speci
                 'X-Title': 'Chicken Dashboard'
             },
             body: JSON.stringify({
-                model: 'openai/gpt-4o-mini',
+                model: 'google/gemini-2.0-flash-exp:free',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: question }
