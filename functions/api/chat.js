@@ -37,7 +37,7 @@ Answer questions helpfully and conversationally. When referencing data, be speci
 
         // Call OpenRouter API
         const requestBody = {
-            model: 'google/gemini-2.0-flash-lite:free',
+            model: 'google/gemini-2.5-flash-lite',
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: question }
