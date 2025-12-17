@@ -3,66 +3,42 @@ export async function onRequestGet(context) {
         // Lawrence, KS coordinates (66044)
         const latitude = 38.97;
         const longitude = -95.24;
+        const userAgent = 'chicken-dashboard (contact: jennier.burnes@gmail.com)';
 
-        // Fetch weather from Open-Meteo API (free, no API key needed)
-        const url = new URL('https://api.open-meteo.com/v1/forecast');
-        url.searchParams.set('latitude', latitude);
-        url.searchParams.set('longitude', longitude);
-        url.searchParams.set('current_weather', 'true');
-        url.searchParams.set('hourly', 'relativehumidity_2m');
-        url.searchParams.set('temperature_unit', 'fahrenheit');
-        url.searchParams.set('timezone', 'America/Chicago');
-        url.searchParams.set('forecast_days', '1');
+        // Fetch weather from the US National Weather Service (no API key needed)
+        const pointsUrl = `https://api.weather.gov/points/${latitude},${longitude}`;
+        const pointsData = await fetchJson(pointsUrl, userAgent);
+        const stationsUrl = pointsData?.properties?.observationStations;
 
-        const response = await fetch(url.toString());
-        if (!response.ok) {
-            const errorBody = await response.text();
-            throw new Error(`Open-Meteo API error: ${response.status} ${errorBody}`);
+        if (!stationsUrl) {
+            throw new Error('NWS points response missing observation stations URL');
         }
 
-        const data = await response.json();
+        const stationsData = await fetchJson(stationsUrl, userAgent);
+        const stationId = stationsData?.features?.[0]?.properties?.stationIdentifier;
 
-        // Map weather codes to descriptions
-        const weatherDescriptions = {
-            0: 'Clear sky',
-            1: 'Mainly clear',
-            2: 'Partly cloudy',
-            3: 'Overcast',
-            45: 'Foggy',
-            48: 'Foggy',
-            51: 'Light drizzle',
-            53: 'Drizzle',
-            55: 'Heavy drizzle',
-            61: 'Light rain',
-            63: 'Rain',
-            65: 'Heavy rain',
-            71: 'Light snow',
-            73: 'Snow',
-            75: 'Heavy snow',
-            77: 'Snow grains',
-            80: 'Light showers',
-            81: 'Showers',
-            82: 'Heavy showers',
-            85: 'Light snow showers',
-            86: 'Snow showers',
-            95: 'Thunderstorm',
-            96: 'Thunderstorm with hail',
-            99: 'Thunderstorm with hail'
-        };
-
-        if (!data.current_weather || !data.hourly) {
-            throw new Error('Open-Meteo response missing current weather data');
+        if (!stationId) {
+            throw new Error('NWS stations response missing station identifier');
         }
 
-        const weatherCode = data.current_weather.weathercode;
-        const description = weatherDescriptions[weatherCode] || 'Unknown';
-        const humidity = getHumidityForCurrentTime(data);
+        const observationUrl = `https://api.weather.gov/stations/${stationId}/observations/latest`;
+        const observationData = await fetchJson(observationUrl, userAgent);
+        const observation = observationData?.properties;
+
+        if (!observation) {
+            throw new Error('NWS observation response missing properties');
+        }
+
+        const temperatureF = celsiusToFahrenheit(observation.temperature?.value);
+        if (temperatureF === null) {
+            throw new Error('NWS observation missing temperature');
+        }
 
         const weather = {
-            temperature: Math.round(data.current_weather.temperature),
-            humidity: typeof humidity === 'number' ? Math.round(humidity) : null,
-            description: description,
-            weatherCode: weatherCode
+            temperature: Math.round(temperatureF),
+            humidity: normalizePercent(observation.relativeHumidity?.value),
+            description: observation.textDescription || 'Unknown',
+            weatherCode: null
         };
 
         return new Response(JSON.stringify(weather), {
@@ -81,19 +57,33 @@ export async function onRequestGet(context) {
     }
 }
 
-function getHumidityForCurrentTime(data) {
-    const times = data.hourly.time || [];
-    const humidities = data.hourly.relativehumidity_2m || [];
-    const currentTime = data.current_weather.time;
+async function fetchJson(url, userAgent) {
+    const response = await fetch(url, {
+        headers: {
+            'User-Agent': userAgent,
+            'Accept': 'application/geo+json'
+        }
+    });
 
-    const index = times.indexOf(currentTime);
-    if (index >= 0 && typeof humidities[index] === 'number') {
-        return humidities[index];
+    if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`NWS API error: ${response.status} ${errorBody}`);
     }
 
-    const fallbackHumidity = humidities.find(value => typeof value === 'number');
-    if (typeof fallbackHumidity === 'number') {
-        return fallbackHumidity;
+    return response.json();
+}
+
+function celsiusToFahrenheit(value) {
+    if (typeof value !== 'number') {
+        return null;
+    }
+
+    return (value * 9) / 5 + 32;
+}
+
+function normalizePercent(value) {
+    if (typeof value === 'number') {
+        return Math.round(value);
     }
 
     return null;
