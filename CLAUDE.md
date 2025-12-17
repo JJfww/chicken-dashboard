@@ -42,6 +42,7 @@ The D1 database contains these tables:
 - `free_range`: Free range time tracking
 - `health_observations`: Health notes per chicken or general observations
 - `photos`: Photo metadata (actual files stored in R2)
+- `weather_logs`: Daily weather data (temp high/low, humidity, wind, precipitation, pressure, conditions, daylight hours)
 
 ### API Architecture Pattern
 All API endpoints follow Cloudflare Pages Functions conventions:
@@ -79,6 +80,17 @@ The `/api/chat` endpoint gathers recent context before calling OpenRouter:
 3. Stores file in R2 at `photos/timestamp.extension`
 4. Saves metadata (date, filename, r2_key, caption) to D1
 5. `/api/photos/[id]` retrieves photo from R2 by looking up r2_key in D1
+
+### Weather Logging System
+The app automatically logs daily weather data using a Cloudflare Cron Trigger:
+1. **Scheduled Task**: `functions/scheduled.js` runs daily at 11:55pm CST (5:55am UTC)
+2. **Activity Check**: Queries all activity tables (eggs, feeding, free_range, health_observations, photos) for today's date
+3. **Weather Logging**: If any activity occurred today, fetches weather data from Open-Meteo API and stores in `weather_logs` table
+4. **Data Captured**: Temperature high/low (°F), humidity (%), wind max (mph), precipitation (inches), barometric pressure (mb), conditions description, daylight hours
+5. **Utility**: `functions/api/_weather-data.js` provides `fetchDailyWeather(date)` function for fetching weather data
+6. **One Record Per Day**: The `date` field is UNIQUE, ensuring only one weather record per day
+
+The cron trigger configuration is in `wrangler.toml` under `[triggers]`.
 
 ## Important Notes
 

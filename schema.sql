@@ -58,8 +58,24 @@ CREATE TABLE IF NOT EXISTS photos (
     created_at TEXT DEFAULT (datetime('now'))
 );
 
--- Insert the three chickens
+-- Weather logs table: tracks daily weather data
+CREATE TABLE IF NOT EXISTS weather_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL UNIQUE,
+    temp_high_f REAL NOT NULL,
+    temp_low_f REAL NOT NULL,
+    humidity INTEGER NOT NULL,
+    wind_max_mph REAL NOT NULL,
+    precipitation_inches REAL NOT NULL,
+    pressure_mb REAL NOT NULL,
+    conditions TEXT NOT NULL,
+    daylight_hours REAL NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Insert the chickens
 INSERT INTO chickens (name, egg_color) VALUES
     ('Mamma Mia', 'brown-olive'),
     ('Brown Betty', 'green'),
-    ('Madame Pompadour', 'eggshell');
+    ('Madame Pompadour', 'eggshell'),
+    ('Rudy', 'N/A');
