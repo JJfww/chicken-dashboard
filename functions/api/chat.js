@@ -35,7 +35,7 @@ Answer questions helpfully and conversationally. When referencing data, be speci
                 'X-Title': 'Chicken Dashboard'
             },
             body: JSON.stringify({
-                model: 'google/gemini-2.0-flash-exp:free',
+                model: 'google/gemini-2.0-flash-lite:free',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: question }
