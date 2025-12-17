@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chicken Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <h1>🐔 Chicken Dashboard</h1>
+            <div id="weather" class="weather-widget">
+                <span class="loading">Loading weather...</span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab active" data-tab="log">Log</button>
+            <button class="tab" data-tab="photos">Photos</button>
+            <button class="tab" data-tab="chat">AI Chat</button>
+            <button class="tab" data-tab="history">History</button>
+        </nav>
+
+        <!-- Tab Content -->
+        <main class="content">
+            <!-- Log Tab -->
+            <div id="log-tab" class="tab-content active">
+                <!-- Egg Logging -->
+                <section class="card">
+                    <h2>Log Eggs</h2>
+                    <form id="egg-form">
+                        <div class="form-group">
+                            <label>Which chicken laid an egg?</label>
+                            <div class="chicken-buttons">
+                                <button type="button" class="chicken-btn" data-chicken="1" data-color="brown-olive">
+                                    Mamma Mia<br><small>Brown-olive</small>
+                                </button>
+                                <button type="button" class="chicken-btn" data-chicken="2" data-color="green">
+                                    Brown Betty<br><small>Green</small>
+                                </button>
+                                <button type="button" class="chicken-btn" data-chicken="3" data-color="eggshell">
+                                    Madame Pompadour<br><small>Eggshell</small>
+                                </button>
+                            </div>
+                            <input type="hidden" id="egg-chicken-id" name="chicken_id" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="egg-notes">Notes (optional)</label>
+                            <input type="text" id="egg-notes" name="notes" placeholder="e.g., double yolk, soft shell">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Log Egg</button>
+                    </form>
+                </section>
+
+                <!-- Feeding -->
+                <section class="card">
+                    <h2>Log Feeding</h2>
+                    <form id="feeding-form">
+                        <div class="form-group">
+                            <label>Type</label>
+                            <div class="radio-group">
+                                <label>
+                                    <input type="radio" name="feed_type" value="treat" required>
+                                    Treat
+                                </label>
+                                <label>
+                                    <input type="radio" name="feed_type" value="scrap" required>
+                                    Kitchen Scraps
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="feed-description">What did they get?</label>
+                            <input type="text" id="feed-description" name="description" placeholder="e.g., mealworms, lettuce, tomatoes" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="feed-notes">Notes (optional)</label>
+                            <input type="text" id="feed-notes" name="notes" placeholder="Any observations">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Log Feeding</button>
+                    </form>
+                </section>
+
+                <!-- Free Range -->
+                <section class="card">
+                    <h2>Log Free Range</h2>
+                    <form id="free-range-form">
+                        <div class="form-group">
+                            <label for="free-range-duration">Duration (minutes)</label>
+                            <input type="number" id="free-range-duration" name="duration_minutes" min="1" placeholder="e.g., 60" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="free-range-notes">Notes (optional)</label>
+                            <input type="text" id="free-range-notes" name="notes" placeholder="Any observations">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Log Free Range</button>
+                    </form>
+                </section>
+
+                <!-- Health Observations -->
+                <section class="card">
+                    <h2>Log Health Observation</h2>
+                    <form id="health-form">
+                        <div class="form-group">
+                            <label>Which chicken? (optional - leave blank for general)</label>
+                            <select id="health-chicken-id" name="chicken_id">
+                                <option value="">General/All chickens</option>
+                                <option value="1">Mamma Mia</option>
+                                <option value="2">Brown Betty</option>
+                                <option value="3">Madame Pompadour</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="observation-type">Type</label>
+                            <select id="observation-type" name="observation_type" required>
+                                <option value="">Select type</option>
+                                <option value="molting">Molting</option>
+                                <option value="sneezing">Sneezing</option>
+                                <option value="behavior">Behavior Change</option>
+                                <option value="injury">Injury</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="observation-description">Description</label>
+                            <textarea id="observation-description" name="description" rows="3" placeholder="Describe what you observed" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Log Observation</button>
+                    </form>
+                </section>
+            </div>
+
+            <!-- Photos Tab -->
+            <div id="photos-tab" class="tab-content">
+                <section class="card">
+                    <h2>Upload Photo</h2>
+                    <form id="photo-form">
+                        <div class="form-group">
+                            <label for="photo-file">Choose Photo</label>
+                            <input type="file" id="photo-file" name="photo" accept="image/*" capture="environment" required>
+                            <div id="photo-preview" class="photo-preview"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="photo-caption">Caption (optional)</label>
+                            <textarea id="photo-caption" name="caption" rows="2" placeholder="What's happening in this photo?"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload Photo</button>
+                    </form>
+                </section>
+
+                <section class="card">
+                    <h2>Recent Photos</h2>
+                    <div id="photos-gallery" class="photos-gallery">
+                        <p class="loading">Loading photos...</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- AI Chat Tab -->
+            <div id="chat-tab" class="tab-content">
+                <section class="card chat-container">
+                    <h2>Ask About Your Flock</h2>
+                    <div id="chat-messages" class="chat-messages">
+                        <div class="chat-message assistant">
+                            <p>Hi! I'm your chicken assistant. Ask me anything about your flock, like:</p>
+                            <ul>
+                                <li>"How many eggs did we get this week?"</li>
+                                <li>"How's Mamma Mia been doing?"</li>
+                                <li>"What treats have we given lately?"</li>
+                                <li>"Does weather affect egg production?"</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <form id="chat-form" class="chat-form">
+                        <input type="text" id="chat-input" placeholder="Ask a question..." required>
+                        <button type="submit" class="btn btn-primary">Send</button>
+                    </form>
+                </section>
+            </div>
+
+            <!-- History Tab -->
+            <div id="history-tab" class="tab-content">
+                <section class="card">
+                    <h2>Recent Activity</h2>
+                    <div id="activity-feed" class="activity-feed">
+                        <p class="loading">Loading activity...</p>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# Wrangler
+.wrangler/
+wrangler.toml.backup
+
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+.dev.vars
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+
+# Build output
+dist/
+.output/

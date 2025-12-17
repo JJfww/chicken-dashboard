@@ -1,0 +1,14 @@
+name = "chicken-dashboard"
+compatibility_date = "2024-12-16"
+pages_build_output_dir = "public"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "chicken-dashboard-db"
+database_id = "ba2e4a2a-abf0-4a45-a71a-2da18e069e86"
+
+# R2 bucket binding
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "chicken-photos"
