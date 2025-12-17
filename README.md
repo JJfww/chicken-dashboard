@@ -1,4 +1,4 @@
-# Chicken Dashboard
+# Hensington Palace
 
 A mobile-friendly app to track your backyard chickens!
 
@@ -17,6 +17,7 @@ A mobile-friendly app to track your backyard chickens!
 - **Mamma Mia** - Brown-olive eggs
 - **Brown Betty** - Green eggs
 - **Madame Pompadour** - Eggshell-colored eggs
+- **Rudy** - Rooster (doesn't lay eggs, but equally important!)
 
 ## Tech Stack
 

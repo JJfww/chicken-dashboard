@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chicken Dashboard</title>
+    <title>Hensington Palace</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app">
         <!-- Header -->
         <header class="header">
-            <h1>🐔 Chicken Dashboard</h1>
+            <h1>🐔 Hensington Palace</h1>
             <div id="weather" class="weather-widget">
                 <span class="loading">Loading weather...</span>
             </div>
@@ -33,7 +33,7 @@
                     <h2>Log Eggs</h2>
                     <form id="egg-form">
                         <div class="form-group">
-                            <label>Which chicken laid an egg?</label>
+                            <label>Which chickens laid eggs? (select one or more)</label>
                             <div class="chicken-buttons">
                                 <button type="button" class="chicken-btn" data-chicken="1" data-color="brown-olive">
                                     Mamma Mia<br><small>Brown-olive</small>
@@ -45,7 +45,6 @@
                                     Madame Pompadour<br><small>Eggshell</small>
                                 </button>
                             </div>
-                            <input type="hidden" id="egg-chicken-id" name="chicken_id" required>
                         </div>
                         <div class="form-group">
                             <label for="egg-notes">Notes (optional)</label>
@@ -111,6 +110,7 @@
                                 <option value="1">Mamma Mia</option>
                                 <option value="2">Brown Betty</option>
                                 <option value="3">Madame Pompadour</option>
+                                <option value="4">Rudy</option>
                             </select>
                         </div>
                         <div class="form-group">

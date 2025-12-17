@@ -25,10 +25,11 @@ export async function onRequestPost(context) {
         // Build the system prompt with context
         const systemPrompt = `You are a helpful assistant for a backyard chicken keeper. You have access to their chicken tracking data and can answer questions about their flock.
 
-The user has 3 chickens:
+The user has 4 chickens:
 - Mamma Mia (lays brown-olive eggs)
 - Brown Betty (lays green eggs)
 - Madame Pompadour (lays eggshell-colored eggs)
+- Rudy (rooster, doesn't lay eggs)
 
 Recent data:
 ${contextData}

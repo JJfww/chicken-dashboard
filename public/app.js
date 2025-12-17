@@ -22,17 +22,11 @@ document.querySelectorAll('.tab').forEach(tab => {
     });
 });
 
-// Chicken button selection for egg logging
+// Chicken button selection for egg logging (allows multiple selections)
 document.querySelectorAll('.chicken-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        // Remove selection from all buttons
-        document.querySelectorAll('.chicken-btn').forEach(b => b.classList.remove('selected'));
-
-        // Add selection to clicked button
-        btn.classList.add('selected');
-
-        // Set hidden input value
-        document.getElementById('egg-chicken-id').value = btn.dataset.chicken;
+        // Toggle selection on clicked button
+        btn.classList.toggle('selected');
     });
 });
 
@@ -56,31 +50,40 @@ document.getElementById('photo-file').addEventListener('change', function(e) {
 document.getElementById('egg-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const chickenId = document.getElementById('egg-chicken-id').value;
     const notes = document.getElementById('egg-notes').value;
 
-    if (!chickenId) {
-        showMessage('error', 'Please select which chicken laid the egg!');
+    // Get all selected chickens
+    const selectedChickens = Array.from(document.querySelectorAll('.chicken-btn.selected'))
+        .map(btn => parseInt(btn.dataset.chicken));
+
+    if (selectedChickens.length === 0) {
+        showMessage('error', 'Please select at least one chicken!');
         return;
     }
 
     try {
-        const response = await fetch('/api/eggs', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chicken_id: parseInt(chickenId),
-                date: new Date().toISOString().split('T')[0],
-                notes: notes || null
+        // Submit one egg record per selected chicken
+        const promises = selectedChickens.map(chickenId =>
+            fetch('/api/eggs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chicken_id: chickenId,
+                    date: new Date().toISOString().split('T')[0],
+                    notes: notes || null
+                })
             })
-        });
+        );
 
-        if (response.ok) {
-            showMessage('success', 'Egg logged successfully!');
+        const responses = await Promise.all(promises);
+
+        if (responses.every(r => r.ok)) {
+            const count = selectedChickens.length;
+            showMessage('success', `${count} egg${count > 1 ? 's' : ''} logged successfully!`);
             e.target.reset();
             document.querySelectorAll('.chicken-btn').forEach(b => b.classList.remove('selected'));
         } else {
-            showMessage('error', 'Failed to log egg. Please try again.');
+            showMessage('error', 'Failed to log some eggs. Please try again.');
         }
     } catch (error) {
         showMessage('error', 'Network error. Please check your connection.');
