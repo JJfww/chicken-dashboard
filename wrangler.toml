@@ -12,8 +12,3 @@ database_id = "ba2e4a2a-abf0-4a45-a71a-2da18e069e86"
 [[r2_buckets]]
 binding = "PHOTOS"
 bucket_name = "chicken-photos"
-
-# Cron trigger for daily weather logging
-# Runs at 11:55pm CST (5:55am UTC next day)
-[triggers]
-crons = ["55 5 * * *"]

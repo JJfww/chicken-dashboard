@@ -350,10 +350,13 @@ async function loadWeather() {
         const response = await fetch('/api/weather');
         if (response.ok) {
             const weather = await response.json();
+            const humidityText = typeof weather.humidity === 'number'
+                ? `${weather.humidity}%`
+                : '—';
             weatherDiv.innerHTML = `
                 🌡️ ${weather.temperature}°F |
                 ${weather.description} |
-                💧 ${weather.humidity}%
+                💧 ${humidityText}
             `;
         } else {
             weatherDiv.innerHTML = '<span class="loading">Weather unavailable</span>';

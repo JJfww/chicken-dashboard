@@ -3,49 +3,42 @@ export async function onRequestGet(context) {
         // Lawrence, KS coordinates (66044)
         const latitude = 38.97;
         const longitude = -95.24;
+        const userAgent = 'chicken-dashboard (contact: jennier.burnes@gmail.com)';
 
-        // Fetch weather from Open-Meteo API (free, no API key needed)
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code&temperature_unit=fahrenheit&timezone=America/Chicago`;
+        // Fetch weather from the US National Weather Service (no API key needed)
+        const pointsUrl = `https://api.weather.gov/points/${latitude},${longitude}`;
+        const pointsData = await fetchJson(pointsUrl, userAgent);
+        const stationsUrl = pointsData?.properties?.observationStations;
 
-        const response = await fetch(url);
-        const data = await response.json();
+        if (!stationsUrl) {
+            throw new Error('NWS points response missing observation stations URL');
+        }
 
-        // Map weather codes to descriptions
-        const weatherDescriptions = {
-            0: 'Clear sky',
-            1: 'Mainly clear',
-            2: 'Partly cloudy',
-            3: 'Overcast',
-            45: 'Foggy',
-            48: 'Foggy',
-            51: 'Light drizzle',
-            53: 'Drizzle',
-            55: 'Heavy drizzle',
-            61: 'Light rain',
-            63: 'Rain',
-            65: 'Heavy rain',
-            71: 'Light snow',
-            73: 'Snow',
-            75: 'Heavy snow',
-            77: 'Snow grains',
-            80: 'Light showers',
-            81: 'Showers',
-            82: 'Heavy showers',
-            85: 'Light snow showers',
-            86: 'Snow showers',
-            95: 'Thunderstorm',
-            96: 'Thunderstorm with hail',
-            99: 'Thunderstorm with hail'
-        };
+        const stationsData = await fetchJson(stationsUrl, userAgent);
+        const stationId = stationsData?.features?.[0]?.properties?.stationIdentifier;
 
-        const weatherCode = data.current.weather_code;
-        const description = weatherDescriptions[weatherCode] || 'Unknown';
+        if (!stationId) {
+            throw new Error('NWS stations response missing station identifier');
+        }
+
+        const observationUrl = `https://api.weather.gov/stations/${stationId}/observations/latest`;
+        const observationData = await fetchJson(observationUrl, userAgent);
+        const observation = observationData?.properties;
+
+        if (!observation) {
+            throw new Error('NWS observation response missing properties');
+        }
+
+        const temperatureF = celsiusToFahrenheit(observation.temperature?.value);
+        if (temperatureF === null) {
+            throw new Error('NWS observation missing temperature');
+        }
 
         const weather = {
-            temperature: Math.round(data.current.temperature_2m),
-            humidity: data.current.relative_humidity_2m,
-            description: description,
-            weatherCode: weatherCode
+            temperature: Math.round(temperatureF),
+            humidity: normalizePercent(observation.relativeHumidity?.value),
+            description: observation.textDescription || 'Unknown',
+            weatherCode: null
         };
 
         return new Response(JSON.stringify(weather), {
@@ -56,9 +49,42 @@ export async function onRequestGet(context) {
             }
         });
     } catch (error) {
+        console.error('Error fetching current weather:', error);
         return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
         });
     }
+}
+
+async function fetchJson(url, userAgent) {
+    const response = await fetch(url, {
+        headers: {
+            'User-Agent': userAgent,
+            'Accept': 'application/geo+json'
+        }
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`NWS API error: ${response.status} ${errorBody}`);
+    }
+
+    return response.json();
+}
+
+function celsiusToFahrenheit(value) {
+    if (typeof value !== 'number') {
+        return null;
+    }
+
+    return (value * 9) / 5 + 32;
+}
+
+function normalizePercent(value) {
+    if (typeof value === 'number') {
+        return Math.round(value);
+    }
+
+    return null;
 }
