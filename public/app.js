@@ -305,6 +305,15 @@ async function loadPhotos() {
     }
 }
 
+function getActivityDataType(activityType) {
+    if (activityType.includes('Egg')) return 'egg';
+    if (activityType.includes('Treats') || activityType.includes('Scraps')) return 'feeding';
+    if (activityType.includes('Free Range')) return 'free_range';
+    if (activityType.includes('Health')) return 'health';
+    if (activityType.includes('Photo')) return 'photo';
+    return 'other';
+}
+
 async function loadActivity() {
     const feed = document.getElementById('activity-feed');
     feed.innerHTML = '<p class="loading">Loading activity...</p>';
@@ -320,7 +329,7 @@ async function loadActivity() {
             }
 
             feed.innerHTML = activities.map(activity => `
-                <div class="activity-item">
+                <div class="activity-item" data-type="${getActivityDataType(activity.type)}">
                     <div class="activity-type">${activity.type}</div>
                     <div class="activity-details">${activity.details}</div>
                     <div class="activity-date">${formatDate(activity.date)}</div>
