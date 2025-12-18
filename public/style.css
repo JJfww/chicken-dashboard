@@ -66,25 +66,23 @@ body {
 }
 
 /* Functional color mapping for tabs */
-.tab:nth-child(1).active { /* Eggs - Yellow */
-    color: #E6B84C;
-    border-bottom-color: #E6B84C;
-}
-
-.tab:nth-child(2).active, /* Feeding - Green */
-.tab:nth-child(3).active { /* Free Range - Green */
+.tab:nth-child(1).active { /* Log - Green */
     color: #6F8F72;
     border-bottom-color: #6F8F72;
 }
 
-.tab:nth-child(4).active { /* Health - Muted Red */
-    color: #A94A4A;
-    border-bottom-color: #A94A4A;
+.tab:nth-child(2).active { /* Photos - Gray */
+    color: #8A8A87;
+    border-bottom-color: #8A8A87;
 }
 
-.tab:nth-child(5).active, /* Photos - Gray */
-.tab:nth-child(6).active, /* Chat - Gray */
-.tab:nth-child(7).active { /* History - Gray */
+.tab:nth-child(3).active { /* Expenses - Yellow */
+    color: #E6B84C;
+    border-bottom-color: #E6B84C;
+}
+
+.tab:nth-child(4).active, /* AI Chat - Gray */
+.tab:nth-child(5).active { /* History - Gray */
     color: #8A8A87;
     border-bottom-color: #8A8A87;
 }
@@ -488,4 +486,275 @@ button[form="egg-form"]:hover {
 button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+/* Floating Action Button */
+.fab {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #6F8F72;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fab:hover {
+    background: #7FA582;
+    transform: scale(1.1);
+}
+
+.fab:active {
+    transform: scale(0.95);
+}
+
+.fab .fab-icon {
+    font-size: 2rem;
+    color: #F2F0EA;
+    line-height: 1;
+    transition: transform 0.3s ease;
+}
+
+.fab.open .fab-icon {
+    transform: rotate(45deg);
+}
+
+/* FAB Menu */
+.fab-menu {
+    position: fixed;
+    bottom: 6rem;
+    right: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    z-index: 99;
+    transition: all 0.3s ease;
+}
+
+.fab-menu.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+}
+
+.fab-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    background: #2A2A27;
+    border: 1px solid #3A3A37;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    color: #F2F0EA;
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+.fab-menu-item:hover {
+    background: #3A3A37;
+    transform: translateX(-4px);
+}
+
+.fab-menu-item .icon {
+    font-size: 1.5rem;
+}
+
+.fab-menu-item .label {
+    font-weight: 500;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 1rem;
+    transition: opacity 0.3s ease;
+}
+
+.modal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-content {
+    background: #2A2A27;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    border: 1px solid #3A3A37;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #3A3A37;
+}
+
+.modal-header h2 {
+    font-size: 1.25rem;
+    margin: 0;
+    color: #F2F0EA;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #8A8A87;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: #3A3A37;
+    color: #F2F0EA;
+}
+
+.modal-content form {
+    padding: 1.5rem;
+}
+
+.modal-content .form-group input[type="date"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #3A3A37;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: #1F1F1C;
+    color: #F2F0EA;
+}
+
+.modal-content .form-group input[type="date"]:focus {
+    outline: none;
+    border-color: #6F8F72;
+}
+
+/* Expense Summary */
+.expense-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.summary-card {
+    background: #1F1F1C;
+    border: 1px solid #3A3A37;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.summary-card h3 {
+    font-size: 0.9rem;
+    color: #8A8A87;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.summary-card .total {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #6F8F72;
+}
+
+/* Expenses List */
+.expenses-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.expense-item {
+    padding: 1rem;
+    background: #1F1F1C;
+    border-left: 4px solid #6F8F72;
+    border-radius: 4px;
+    border: 1px solid #3A3A37;
+}
+
+.expense-item[data-type="feed"] {
+    border-left-color: #E6B84C;
+}
+
+.expense-item[data-type="medication"] {
+    border-left-color: #A94A4A;
+}
+
+.expense-item[data-type="supplies"] {
+    border-left-color: #6F8F72;
+}
+
+.expense-item .expense-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 0.5rem;
+}
+
+.expense-item .expense-name {
+    font-weight: 600;
+    color: #F2F0EA;
+    font-size: 1rem;
+}
+
+.expense-item .expense-cost {
+    font-weight: 700;
+    color: #6F8F72;
+    font-size: 1.1rem;
+}
+
+.expense-item .expense-details {
+    color: #C2C0BA;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.expense-item .expense-date {
+    font-size: 0.8rem;
+    color: #8A8A87;
+    margin-top: 0.5rem;
+}
+
+.expense-item .expense-type {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: #3A3A37;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #8A8A87;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-top: 0.5rem;
 }

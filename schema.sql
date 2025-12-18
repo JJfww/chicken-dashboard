@@ -73,6 +73,43 @@ CREATE TABLE IF NOT EXISTS weather_logs (
     created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Feed purchases table: tracks feed/food purchases
+CREATE TABLE IF NOT EXISTS feed_purchases (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    item TEXT NOT NULL,
+    quantity TEXT,
+    cost REAL NOT NULL,
+    supplier TEXT,
+    notes TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Medication table: tracks medication purchases and administration
+CREATE TABLE IF NOT EXISTS medication (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    medication_name TEXT NOT NULL,
+    chicken_id INTEGER,
+    quantity TEXT,
+    cost REAL NOT NULL,
+    purpose TEXT,
+    notes TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (chicken_id) REFERENCES chickens(id)
+);
+
+-- Supplies table: tracks general supplies purchases
+CREATE TABLE IF NOT EXISTS supplies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    item TEXT NOT NULL,
+    cost REAL NOT NULL,
+    category TEXT,
+    notes TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Insert the chickens
 INSERT INTO chickens (name, egg_color) VALUES
     ('Mamma Mia', 'brown-olive'),
