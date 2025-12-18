@@ -1,3 +1,14 @@
+// Utility function to get current date in CST timezone
+function getCurrentDateCST() {
+    const now = new Date();
+    // Convert to CST (America/Chicago timezone)
+    const cstDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+    const year = cstDate.getFullYear();
+    const month = String(cstDate.getMonth() + 1).padStart(2, '0');
+    const day = String(cstDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 // Tab switching
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -69,7 +80,7 @@ document.getElementById('egg-form').addEventListener('submit', async (e) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     chicken_id: chickenId,
-                    date: new Date().toISOString().split('T')[0],
+                    date: getCurrentDateCST(),
                     notes: notes || null
                 })
             })
@@ -96,7 +107,7 @@ document.getElementById('feeding-form').addEventListener('submit', async (e) => 
 
     const formData = new FormData(e.target);
     const data = {
-        date: new Date().toISOString().split('T')[0],
+        date: getCurrentDateCST(),
         feed_type: formData.get('feed_type'),
         description: formData.get('description'),
         notes: formData.get('notes') || null
@@ -126,7 +137,7 @@ document.getElementById('free-range-form').addEventListener('submit', async (e) 
 
     const formData = new FormData(e.target);
     const data = {
-        date: new Date().toISOString().split('T')[0],
+        date: getCurrentDateCST(),
         duration_minutes: parseInt(formData.get('duration_minutes')),
         notes: formData.get('notes') || null
     };
@@ -156,7 +167,7 @@ document.getElementById('health-form').addEventListener('submit', async (e) => {
     const formData = new FormData(e.target);
     const chickenId = formData.get('chicken_id');
     const data = {
-        date: new Date().toISOString().split('T')[0],
+        date: getCurrentDateCST(),
         chicken_id: chickenId ? parseInt(chickenId) : null,
         observation_type: formData.get('observation_type'),
         description: formData.get('description'),
@@ -196,7 +207,7 @@ document.getElementById('photo-form').addEventListener('submit', async (e) => {
     const formData = new FormData();
     formData.append('photo', fileInput.files[0]);
     formData.append('caption', caption || '');
-    formData.append('date', new Date().toISOString().split('T')[0]);
+    formData.append('date', getCurrentDateCST());
 
     try {
         const response = await fetch('/api/photos', {
@@ -405,7 +416,7 @@ document.querySelectorAll('.fab-menu-item').forEach(item => {
         openModal(`${expenseType}-modal`);
 
         // Set today's date in the form
-        const today = new Date().toISOString().split('T')[0];
+        const today = getCurrentDateCST();
         const modalId = `${expenseType}-modal`;
         const dateInput = document.querySelector(`#${modalId} input[type="date"]`);
         if (dateInput) {
