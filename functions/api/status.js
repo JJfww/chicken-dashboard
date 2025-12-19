@@ -35,7 +35,27 @@ export async function onRequestGet(context) {
                     { emoji: '💪', text: 'Flexing for the Ladies' },
                     { emoji: '🕺', text: 'Strutting His Stuff' },
                     { emoji: '👑', text: 'King of the Coop' },
-                    { emoji: '🎩', text: 'Looking Dapper' }
+                    { emoji: '🎩', text: 'Looking Dapper' },
+                    { emoji: '🕶️', text: 'On Coop Patrol' },
+                    { emoji: '📣', text: 'Making Announcements' },
+                    { emoji: '🥾', text: 'Guarding the Door' },
+                    { emoji: '🐓', text: 'Supervising Everyone' },
+                    { emoji: '🪶', text: 'Feather Check Complete' },
+                    { emoji: '🌅', text: 'Greeting the Sunrise' },
+                    { emoji: '🍽️', text: 'First at the Feeder' },
+                    { emoji: '🚨', text: 'Sounding the Alarm' },
+                    { emoji: '🧭', text: 'Leading the Flock' },
+                    { emoji: '🧠', text: 'Planning Something' },
+                    { emoji: '👀', text: 'Watching Closely' },
+                    { emoji: '🪜', text: 'Perched and Proud' },
+                    { emoji: '🧹', text: 'Tidying the Yard' },
+                    { emoji: '🐾', text: 'Claiming Territory' },
+                    { emoji: '🕰️', text: 'Keeping Time' },
+                    { emoji: '📸', text: 'Ready for His Close-Up' },
+                    { emoji: '🛑', text: 'Breaking Up Drama' },
+                    { emoji: '🪙', text: 'Paying His Dues' },
+                    { emoji: '🧑‍✈️', text: 'Captain of the Coop' },
+                    { emoji: '😏', text: 'Knows He\'s Handsome' }
                 ];
 
                 // Use a pseudo-random selection based on the date
