@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hensington Palace - Blog</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .public-header {
+            background: var(--bg-card);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .public-header h1 {
+            margin: 0 0 0.5rem 0;
+        }
+        .public-header p {
+            margin: 0;
+            opacity: 0.8;
+        }
+        .dashboard-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .dashboard-link:hover {
+            opacity: 0.9;
+        }
+        .tabs {
+            margin-bottom: 1rem;
+        }
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <div class="public-header">
+            <h1>🐔 Hensington Palace</h1>
+            <p>Follow the daily adventures of our backyard flock</p>
+            <a href="/" class="dashboard-link">Dashboard Login</a>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab active" data-tab="blog">Blog</button>
+            <button class="tab" data-tab="history">History</button>
+        </nav>
+
+        <!-- Tab Content -->
+        <main class="content">
+            <!-- Blog Tab -->
+            <div id="blog-tab" class="tab-content active">
+                <section class="card">
+                    <h2>Blog Posts</h2>
+                    <div id="blog-feed" class="activity-feed">
+                        <p class="loading">Loading blog posts...</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- History Tab -->
+            <div id="history-tab" class="tab-content">
+                <section class="card">
+                    <h2>Recent Activity</h2>
+                    <div id="activity-feed" class="activity-feed">
+                        <p class="loading">Loading activity...</p>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="blog.js"></script>
+</body>
+</html>
