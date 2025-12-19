@@ -9,8 +9,13 @@ export async function onRequestGet(context) {
             ORDER BY id
         `).all();
 
-        // Get today's date in ISO format
-        const today = new Date().toISOString().split('T')[0];
+        // Get today's date in CST timezone
+        const now = new Date();
+        const cstDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+        const year = cstDate.getFullYear();
+        const month = String(cstDate.getMonth() + 1).padStart(2, '0');
+        const day = String(cstDate.getDate()).padStart(2, '0');
+        const today = `${year}-${month}-${day}`;
 
         for (const chicken of chickenList) {
             const status = {
