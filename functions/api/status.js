@@ -58,9 +58,9 @@ export async function onRequestGet(context) {
                     { emoji: '😏', text: 'Knows He\'s Handsome' }
                 ];
 
-                // Use a pseudo-random selection based on the date
-                const dateNum = new Date().getDate();
-                const randomStatus = rudyStatuses[dateNum % rudyStatuses.length];
+                // Pick a truly random status on each page refresh
+                const randomIndex = Math.floor(Math.random() * rudyStatuses.length);
+                const randomStatus = rudyStatuses[randomIndex];
 
                 status.rudy_status = randomStatus;
                 chickens.push(status);
