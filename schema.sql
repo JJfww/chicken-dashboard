@@ -110,6 +110,16 @@ CREATE TABLE IF NOT EXISTS supplies (
     created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Blog posts table: tracks daily blog entries
+CREATE TABLE IF NOT EXISTS blog_posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    title TEXT,
+    content TEXT NOT NULL,
+    is_auto_generated INTEGER DEFAULT 0, -- 0 = manual, 1 = AI-generated
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Insert the chickens
 INSERT INTO chickens (name, egg_color) VALUES
     ('Mamma Mia', 'brown-olive'),
