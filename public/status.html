@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hensington Palace - Current Status</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .status-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .status-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .status-header h1 {
+            margin: 0 0 0.5rem 0;
+        }
+
+        .status-header p {
+            opacity: 0.8;
+            margin: 0;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chicken-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .chicken-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .chicken-avatar {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            background: var(--bg);
+            border-radius: 50%;
+        }
+
+        .chicken-name {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .egg-color {
+            text-align: center;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin: 0 0 1rem 0;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            background: var(--bg);
+            border-radius: 8px;
+        }
+
+        .status-icon {
+            font-size: 1.5rem;
+            margin-right: 0.75rem;
+        }
+
+        .status-text {
+            flex: 1;
+        }
+
+        .status-label {
+            font-size: 0.85rem;
+            opacity: 0.7;
+            margin: 0;
+        }
+
+        .status-value {
+            font-size: 1rem;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .laid-today {
+            color: #22c55e;
+        }
+
+        .not-yet {
+            color: #f59e0b;
+        }
+
+        .health-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 3px solid #f59e0b;
+        }
+
+        .rudy-status {
+            text-align: center;
+            font-size: 1.2rem;
+            padding: 1rem;
+            background: var(--bg);
+            border-radius: 8px;
+            margin: 0.5rem 0;
+        }
+
+        .rudy-emoji {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-links {
+            text-align: center;
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+
+        .nav-links a {
+            margin: 0 1rem;
+            color: var(--text);
+            text-decoration: none;
+            opacity: 0.7;
+        }
+
+        .nav-links a:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-container">
+        <div class="status-header">
+            <h1>🐔 Hensington Palace</h1>
+            <p>Current Status</p>
+        </div>
+
+        <div id="status-grid" class="status-grid">
+            <p style="text-align: center; opacity: 0.7;">Loading chicken status...</p>
+        </div>
+
+        <div class="nav-links">
+            <a href="/blog.html">📝 View Blog</a>
+            <a href="/admin.html">🔒 Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        async function loadChickenStatus() {
+            const grid = document.getElementById('status-grid');
+
+            try {
+                const response = await fetch('/api/status');
+                if (!response.ok) throw new Error('Failed to load status');
+
+                const chickens = await response.json();
+
+                grid.innerHTML = chickens.map(chicken => {
+                    // Special card for Rudy
+                    if (chicken.rudy_status) {
+                        return `
+                            <div class="chicken-card">
+                                <div class="chicken-avatar">🐓</div>
+                                <h2 class="chicken-name">${chicken.name}</h2>
+                                <p class="egg-color">The Gentleman of the Coop</p>
+                                <div class="rudy-status">
+                                    <span class="rudy-emoji">${chicken.rudy_status.emoji}</span>
+                                    <strong>${chicken.rudy_status.text}</strong>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Cards for the hens
+                    const laidToday = chicken.laid_today;
+                    const lastEggDate = chicken.last_egg_date ? formatDate(chicken.last_egg_date) : 'Never';
+
+                    return `
+                        <div class="chicken-card">
+                            <div class="chicken-avatar">🐔</div>
+                            <h2 class="chicken-name">${chicken.name}</h2>
+                            <p class="egg-color">${chicken.egg_color} eggs</p>
+
+                            <div class="status-item ${laidToday ? 'laid-today' : 'not-yet'}">
+                                <div class="status-icon">${laidToday ? '✅' : '⏱️'}</div>
+                                <div class="status-text">
+                                    <p class="status-label">Today</p>
+                                    <p class="status-value">${laidToday ? 'Egg laid!' : 'Not yet'}</p>
+                                </div>
+                            </div>
+
+                            <div class="status-item">
+                                <div class="status-icon">📅</div>
+                                <div class="status-text">
+                                    <p class="status-label">Last egg</p>
+                                    <p class="status-value">${lastEggDate}</p>
+                                </div>
+                            </div>
+
+                            ${chicken.health_concern ? `
+                                <div class="status-item health-warning">
+                                    <div class="status-icon">⚠️</div>
+                                    <div class="status-text">
+                                        <p class="status-label">${chicken.health_concern.observation_type}</p>
+                                        <p class="status-value">${chicken.health_concern.description}</p>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                grid.innerHTML = '<p style="text-align: center; color: red;">Failed to load status. Please try again.</p>';
+            }
+        }
+
+        function formatDate(dateString) {
+            const [year, month, day] = dateString.split('-');
+            const date = new Date(year, month - 1, day);
+
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            const diffDays = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 0) return 'Today';
+            if (diffDays === 1) return 'Yesterday';
+            if (diffDays < 7) return `${diffDays} days ago`;
+
+            return date.toLocaleDateString();
+        }
+
+        // Load status on page load
+        loadChickenStatus();
+
+        // Refresh every 60 seconds
+        setInterval(loadChickenStatus, 60000);
+    </script>
+</body>
+</html>
