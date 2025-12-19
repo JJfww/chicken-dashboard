@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hensington Palace - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <h1>🐔 Hensington Palace</h1>
+            <div id="weather" class="weather-widget">
+                <span class="loading">Loading weather...</span>
+            </div>
+            <div style="text-align: center; margin-top: 0.5rem;">
+                <a href="/blog.html" style="color: var(--text); opacity: 0.7; font-size: 0.9rem; text-decoration: none;">View Public Blog →</a>
+                <span style="opacity: 0.5; margin: 0 0.5rem;">•</span>
+                <span style="color: var(--text); opacity: 0.5; font-size: 0.85rem;">🔒 Authenticated</span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab active" data-tab="log">Log</button>
+            <button class="tab" data-tab="photos">Photos</button>
+            <button class="tab" data-tab="expenses">Expenses</button>
+            <button class="tab" data-tab="blog">Blog</button>
+            <button class="tab" data-tab="chat">AI Chat</button>
+            <button class="tab" data-tab="history">History</button>
+        </nav>
+
+        <!-- Tab Content -->
+        <main class="content">
+            <!-- Log Tab -->
+            <div id="log-tab" class="tab-content active">
+                <!-- Egg Logging -->
+                <section class="card">
+                    <h2>Log Eggs</h2>
+                    <form id="egg-form">
+                        <div class="form-group">
+                            <label>Which chickens laid eggs? (select one or more)</label>
+                            <div class="chicken-buttons">
+                                <button type="button" class="chicken-btn" data-chicken="1" data-color="brown-olive">
+                                    Mamma Mia<br><small>Brown-olive</small>
+                                </button>
+                                <button type="button" class="chicken-btn" data-chicken="2" data-color="green">
+                                    Brown Betty<br><small>Green</small>
+                                </button>
+                                <button type="button" class="chicken-btn" data-chicken="3" data-color="eggshell">
+                                    Madame Pompadour<br><small>Eggshell</small>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="egg-notes">Notes (optional)</label>
+                            <input type="text" id="egg-notes" name="notes" placeholder="e.g., double yolk, soft shell">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Log Egg</button>
+                    </form>
+                </section>
+
+                <!-- Feeding -->
+                <section class="card">
+                    <h2>Log Feeding</h2>
+                    <form id="feeding-form">
+                        <div class="form-group">
+                            <label>Type</label>
+                            <div class="radio-group">
+                                <label>
+                                    <input type="radio" name="feed_type" value="treat" required>
+                                    Treat
+                                </label>
+                                <label>
+                                    <input type="radio" name="feed_type" value="scrap" required>
+                                    Kitchen Scraps
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="feed-description">What did they get?</label>
+                            <input type="text" id="feed-description" name="description" placeholder="e.g., mealworms, lettuce, tomatoes" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="feed-notes">Notes (optional)</label>
+                            <input type="text" id="feed-notes" name="notes" placeholder="Any observations">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Log Feeding</button>
+                    </form>
+                </section>
+
+                <!-- Free Range -->
+                <section class="card">
+                    <h2>Log Free Range</h2>
+                    <form id="free-range-form">
+                        <div class="form-group">
+                            <label for="free-range-duration">Duration (minutes)</label>
+                            <input type="number" id="free-range-duration" name="duration_minutes" min="1" placeholder="e.g., 60" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="free-range-notes">Notes (optional)</label>
+                            <input type="text" id="free-range-notes" name="notes" placeholder="Any observations">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Log Free Range</button>
+                    </form>
+                </section>
+
+                <!-- Health Observations -->
+                <section class="card">
+                    <h2>Log Health Observation</h2>
+                    <form id="health-form">
+                        <div class="form-group">
+                            <label>Which chicken? (optional - leave blank for general)</label>
+                            <select id="health-chicken-id" name="chicken_id">
+                                <option value="">General/All chickens</option>
+                                <option value="1">Mamma Mia</option>
+                                <option value="2">Brown Betty</option>
+                                <option value="3">Madame Pompadour</option>
+                                <option value="4">Rudy</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="observation-type">Type</label>
+                            <select id="observation-type" name="observation_type" required>
+                                <option value="">Select type</option>
+                                <option value="molting">Molting</option>
+                                <option value="sneezing">Sneezing</option>
+                                <option value="behavior">Behavior Change</option>
+                                <option value="injury">Injury</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="observation-description">Description</label>
+                            <textarea id="observation-description" name="description" rows="3" placeholder="Describe what you observed" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Log Observation</button>
+                    </form>
+                </section>
+            </div>
+
+            <!-- Photos Tab -->
+            <div id="photos-tab" class="tab-content">
+                <section class="card">
+                    <h2>Upload Photo</h2>
+                    <form id="photo-form">
+                        <div class="form-group">
+                            <label for="photo-file">Choose Photo</label>
+                            <input type="file" id="photo-file" name="photo" accept="image/*" required>
+                            <div id="photo-preview" class="photo-preview"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="photo-caption">Caption (optional)</label>
+                            <textarea id="photo-caption" name="caption" rows="2" placeholder="What's happening in this photo?"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload Photo</button>
+                    </form>
+                </section>
+
+                <section class="card">
+                    <h2>Recent Photos</h2>
+                    <div id="photos-gallery" class="photos-gallery">
+                        <p class="loading">Loading photos...</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Expenses Tab -->
+            <div id="expenses-tab" class="tab-content">
+                <section class="card">
+                    <h2>Expense Summary</h2>
+                    <div id="expense-summary" class="expense-summary">
+                        <div class="summary-card">
+                            <h3>Feed Purchases</h3>
+                            <p class="total" id="feed-total">$0.00</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Medication</h3>
+                            <p class="total" id="medication-total">$0.00</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Supplies</h3>
+                            <p class="total" id="supplies-total">$0.00</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <h2>Recent Expenses</h2>
+                    <div id="expenses-list" class="expenses-list">
+                        <p class="loading">Loading expenses...</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Blog Tab -->
+            <div id="blog-tab" class="tab-content">
+                <section class="card">
+                    <h2>Write a Blog Post</h2>
+                    <form id="blog-form">
+                        <div class="form-group">
+                            <label for="blog-date">Date</label>
+                            <input type="date" id="blog-date" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="blog-title">Title (optional)</label>
+                            <input type="text" id="blog-title" name="title" placeholder="A catchy title for your post">
+                        </div>
+                        <div class="form-group">
+                            <label for="blog-content">Content</label>
+                            <textarea id="blog-content" name="content" rows="8" placeholder="Write your blog post here..." required></textarea>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">Post Blog</button>
+                            <button type="button" id="auto-generate-btn" class="btn btn-primary" style="flex: 1;">Auto-Generate</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="card">
+                    <h2>Blog Posts</h2>
+                    <div id="blog-feed" class="activity-feed">
+                        <p class="loading">Loading blog posts...</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- AI Chat Tab -->
+            <div id="chat-tab" class="tab-content">
+                <section class="card chat-container">
+                    <h2>Ask About Your Flock</h2>
+                    <div id="chat-messages" class="chat-messages">
+                        <div class="chat-message assistant">
+                            <p>Hi! I'm your chicken assistant. Ask me anything about your flock, like:</p>
+                            <ul>
+                                <li>"How many eggs did we get this week?"</li>
+                                <li>"How's Mamma Mia been doing?"</li>
+                                <li>"What treats have we given lately?"</li>
+                                <li>"Does weather affect egg production?"</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <form id="chat-form" class="chat-form">
+                        <input type="text" id="chat-input" placeholder="Ask a question..." required>
+                        <button type="submit" class="btn btn-primary">Send</button>
+                    </form>
+                </section>
+            </div>
+
+            <!-- History Tab -->
+            <div id="history-tab" class="tab-content">
+                <section class="card">
+                    <h2>Recent Activity</h2>
+                    <div id="activity-feed" class="activity-feed">
+                        <p class="loading">Loading activity...</p>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Floating Action Button -->
+        <button id="fab" class="fab" aria-label="Add expense">
+            <span class="fab-icon">+</span>
+        </button>
+
+        <!-- FAB Menu Overlay -->
+        <div id="fab-menu" class="fab-menu hidden">
+            <button class="fab-menu-item" data-expense-type="feed">
+                <span class="icon">🌾</span>
+                <span class="label">Feed</span>
+            </button>
+            <button class="fab-menu-item" data-expense-type="medication">
+                <span class="icon">💊</span>
+                <span class="label">Medication</span>
+            </button>
+            <button class="fab-menu-item" data-expense-type="supplies">
+                <span class="icon">🛠️</span>
+                <span class="label">Supplies</span>
+            </button>
+        </div>
+
+        <!-- Modal for Feed Purchase -->
+        <div id="feed-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Log Feed Purchase</h2>
+                    <button class="modal-close" data-modal="feed-modal">&times;</button>
+                </div>
+                <form id="feed-purchase-form">
+                    <div class="form-group">
+                        <label for="feed-date">Date</label>
+                        <input type="date" id="feed-date" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="feed-item">Item</label>
+                        <input type="text" id="feed-item" name="item" placeholder="e.g., Layer pellets, Scratch grains" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="feed-quantity">Quantity</label>
+                        <input type="text" id="feed-quantity" name="quantity" placeholder="e.g., 50 lbs, 1 bag">
+                    </div>
+                    <div class="form-group">
+                        <label for="feed-cost">Cost ($)</label>
+                        <input type="number" id="feed-cost" name="cost" step="0.01" min="0" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="feed-supplier">Supplier</label>
+                        <input type="text" id="feed-supplier" name="supplier" placeholder="e.g., Tractor Supply">
+                    </div>
+                    <div class="form-group">
+                        <label for="feed-notes">Notes (optional)</label>
+                        <textarea id="feed-notes" name="notes" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal for Medication -->
+        <div id="medication-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Log Medication</h2>
+                    <button class="modal-close" data-modal="medication-modal">&times;</button>
+                </div>
+                <form id="medication-form">
+                    <div class="form-group">
+                        <label for="med-date">Date</label>
+                        <input type="date" id="med-date" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="med-name">Medication Name</label>
+                        <input type="text" id="med-name" name="medication_name" placeholder="e.g., Corid, Wazine" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="med-chicken">For Which Chicken?</label>
+                        <select id="med-chicken" name="chicken_id">
+                            <option value="">General/All chickens</option>
+                            <option value="1">Mamma Mia</option>
+                            <option value="2">Brown Betty</option>
+                            <option value="3">Madame Pompadour</option>
+                            <option value="4">Rudy</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="med-quantity">Quantity</label>
+                        <input type="text" id="med-quantity" name="quantity" placeholder="e.g., 16 oz, 1 bottle">
+                    </div>
+                    <div class="form-group">
+                        <label for="med-cost">Cost ($)</label>
+                        <input type="number" id="med-cost" name="cost" step="0.01" min="0" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="med-purpose">Purpose</label>
+                        <input type="text" id="med-purpose" name="purpose" placeholder="e.g., Coccidiosis, Worms">
+                    </div>
+                    <div class="form-group">
+                        <label for="med-notes">Notes (optional)</label>
+                        <textarea id="med-notes" name="notes" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal for Supplies -->
+        <div id="supplies-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Log Supplies Purchase</h2>
+                    <button class="modal-close" data-modal="supplies-modal">&times;</button>
+                </div>
+                <form id="supplies-form">
+                    <div class="form-group">
+                        <label for="supplies-date">Date</label>
+                        <input type="date" id="supplies-date" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="supplies-item">Item</label>
+                        <input type="text" id="supplies-item" name="item" placeholder="e.g., Pine shavings, Waterer" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="supplies-cost">Cost ($)</label>
+                        <input type="number" id="supplies-cost" name="cost" step="0.01" min="0" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="supplies-category">Category</label>
+                        <select id="supplies-category" name="category">
+                            <option value="">Select category</option>
+                            <option value="bedding">Bedding</option>
+                            <option value="equipment">Equipment</option>
+                            <option value="coop-maintenance">Coop Maintenance</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="supplies-notes">Notes (optional)</label>
+                        <textarea id="supplies-notes" name="notes" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/lib/marked.umd.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
