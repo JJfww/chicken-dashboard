@@ -281,7 +281,14 @@ function addChatMessage(role, content) {
     const messagesDiv = document.getElementById('chat-messages');
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message ${role}`;
-    messageDiv.innerHTML = `<p>${content}</p>`;
+
+    // Parse markdown for assistant messages, plain text for user messages
+    if (role === 'assistant' && typeof marked !== 'undefined') {
+        messageDiv.innerHTML = marked.parse(content);
+    } else {
+        messageDiv.innerHTML = `<p>${content}</p>`;
+    }
+
     messagesDiv.appendChild(messageDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
     return messageDiv;
