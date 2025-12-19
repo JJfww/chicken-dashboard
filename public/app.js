@@ -651,6 +651,113 @@ async function loadExpenses() {
     }
 }
 
+// Blog Form Submission
+document.getElementById('blog-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = {
+        date: formData.get('date'),
+        title: formData.get('title') || null,
+        content: formData.get('content'),
+        is_auto_generated: false
+    };
+
+    try {
+        const response = await fetch('/api/blog', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            showMessage('success', 'Blog post published successfully!');
+            e.target.reset();
+            loadBlogPosts();
+        } else {
+            showMessage('error', 'Failed to publish blog post. Please try again.');
+        }
+    } catch (error) {
+        showMessage('error', 'Network error. Please check your connection.');
+    }
+});
+
+// Auto-Generate Blog Button
+document.getElementById('auto-generate-btn').addEventListener('click', async () => {
+    const dateInput = document.getElementById('blog-date');
+    const titleInput = document.getElementById('blog-title');
+    const contentInput = document.getElementById('blog-content');
+
+    if (!dateInput.value) {
+        showMessage('error', 'Please select a date first!');
+        return;
+    }
+
+    const btn = document.getElementById('auto-generate-btn');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+
+    try {
+        const response = await fetch('/api/blog/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date: dateInput.value })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            titleInput.value = data.title;
+            contentInput.value = data.content;
+            showMessage('success', 'Blog post generated! Feel free to edit before posting.');
+        } else {
+            const error = await response.json();
+            showMessage('error', error.error || 'Failed to generate blog post.');
+        }
+    } catch (error) {
+        showMessage('error', 'Network error. Please check your connection.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+});
+
+// Load Blog Posts
+async function loadBlogPosts() {
+    const feed = document.getElementById('blog-feed');
+    feed.innerHTML = '<p class="loading">Loading blog posts...</p>';
+
+    try {
+        const response = await fetch('/api/blog');
+        if (response.ok) {
+            const posts = await response.json();
+
+            if (posts.length === 0) {
+                feed.innerHTML = '<p class="loading">No blog posts yet. Write your first one!</p>';
+                return;
+            }
+
+            feed.innerHTML = posts.map(post => {
+                const isAuto = post.is_auto_generated === 1;
+                return `
+                    <div class="activity-item blog-post">
+                        <div class="activity-type">
+                            ${post.title || 'Untitled Post'}
+                            ${isAuto ? '<span style="font-size: 0.8rem; opacity: 0.7;"> (AI-Generated)</span>' : ''}
+                        </div>
+                        <div class="activity-details" style="white-space: pre-wrap;">${post.content}</div>
+                        <div class="activity-date">${formatDate(post.date)}</div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            feed.innerHTML = '<p class="loading">Failed to load blog posts.</p>';
+        }
+    } catch (error) {
+        feed.innerHTML = '<p class="loading">Network error loading blog posts.</p>';
+    }
+}
+
 // Update tab switching to load expenses
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -658,6 +765,10 @@ document.querySelectorAll('.tab').forEach(tab => {
 
         if (tabName === 'expenses') {
             loadExpenses();
+        } else if (tabName === 'blog') {
+            loadBlogPosts();
+            // Set default date to today
+            document.getElementById('blog-date').value = getCurrentDateCST();
         }
     });
 });
