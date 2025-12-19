@@ -385,9 +385,15 @@ async function loadWeather() {
 }
 
 function formatDate(dateString) {
-    const date = new Date(dateString);
+    // Parse the date string as a local date, not UTC
+    const [year, month, day] = dateString.split('-');
+    const date = new Date(year, month - 1, day); // month is 0-indexed
+
+    // Get today at midnight local time for accurate comparison
     const now = new Date();
-    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const diffDays = Math.floor((today - date) / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
