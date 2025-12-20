@@ -998,8 +998,7 @@ button:disabled {
     align-items: center;
     justify-content: center;
     background: var(--bg-primary);
-    border-radius: 50%;
-    overflow: hidden;
+    border-radius: 12px;
 }
 
 .rudy-card .chicken-avatar {
