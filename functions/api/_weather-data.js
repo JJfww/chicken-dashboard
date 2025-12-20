@@ -93,9 +93,16 @@ function summarizeObservations(observations, date) {
             humidities.push(properties.relativeHumidity.value);
         }
 
-        const windMps = maxNumber(properties.windSpeed?.value, properties.windGust?.value);
-        if (typeof windMps === 'number') {
-            windSpeedsMph.push(metersPerSecondToMph(windMps));
+        const windSpeed = properties.windSpeed?.value;
+        const windGust = properties.windGust?.value;
+        const windUnit = properties.windSpeed?.unitCode || properties.windGust?.unitCode;
+        const maxWind = maxNumber(windSpeed, windGust);
+
+        if (typeof maxWind === 'number') {
+            const windMph = convertWindToMph(maxWind, windUnit);
+            if (windMph !== null) {
+                windSpeedsMph.push(windMph);
+            }
         }
 
         const pressurePa = typeof properties.seaLevelPressure?.value === 'number'
@@ -239,6 +246,39 @@ function metersPerSecondToMph(value) {
     }
 
     return value * 2.2369362921;
+}
+
+function convertWindToMph(value, unitCode) {
+    if (typeof value !== 'number') {
+        return null;
+    }
+
+    // Parse the NWS unit code
+    // Common formats: "wmoUnit:km_h-1", "wmoUnit:m_s-1", "unit:m_s-1", "unit:km_h-1"
+    if (!unitCode) {
+        // Default to km/h as that's what NWS currently uses
+        return value * 0.621371;
+    }
+
+    const unitStr = unitCode.toLowerCase();
+
+    if (unitStr.includes('km') || unitStr.includes('kmh')) {
+        // km/h to mph
+        return value * 0.621371;
+    } else if (unitStr.includes('m_s') || unitStr.includes('ms-1')) {
+        // m/s to mph
+        return value * 2.2369362921;
+    } else if (unitStr.includes('mph') || unitStr.includes('mi_h')) {
+        // Already in mph
+        return value;
+    } else if (unitStr.includes('kt') || unitStr.includes('knot')) {
+        // Knots to mph
+        return value * 1.15078;
+    } else {
+        // Unknown unit, default to km/h (most common from NWS)
+        console.warn(`Unknown wind unit: ${unitCode}, defaulting to km/h conversion`);
+        return value * 0.621371;
+    }
 }
 
 function maxNumber(...values) {
