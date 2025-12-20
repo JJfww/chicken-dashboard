@@ -5,7 +5,11 @@ export async function onRequestPost(context) {
         if (!date) {
             return new Response(JSON.stringify({ error: 'Date is required' }), {
                 status: 400,
-                headers: { 'Content-Type': 'application/json' }
+                headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+                'Access-Control-Allow-Credentials': 'true'
+            }
             });
         }
 
@@ -18,7 +22,11 @@ export async function onRequestPost(context) {
                 suggestion: 'Try selecting a different date with logged activities.'
             }), {
                 status: 404,
-                headers: { 'Content-Type': 'application/json' }
+                headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+                'Access-Control-Allow-Credentials': 'true'
+            }
             });
         }
 
@@ -77,13 +85,21 @@ Write a delightful blog post about this day!`;
             is_auto_generated: true
         }), {
             status: 200,
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+                'Access-Control-Allow-Credentials': 'true'
+            }
         });
     } catch (error) {
         console.error('Blog generation error:', error);
         return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+                'Access-Control-Allow-Credentials': 'true'
+            }
         });
     }
 }

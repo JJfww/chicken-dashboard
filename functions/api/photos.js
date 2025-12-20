@@ -8,7 +8,11 @@ export async function onRequestPost(context) {
         if (!photo) {
             return new Response(JSON.stringify({ error: 'No photo provided' }), {
                 status: 400,
-                headers: { 'Content-Type': 'application/json' }
+                headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+                'Access-Control-Allow-Credentials': 'true'
+            }
             });
         }
 
@@ -32,12 +36,20 @@ export async function onRequestPost(context) {
 
         return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
             status: 200,
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+                'Access-Control-Allow-Credentials': 'true'
+            }
         });
     } catch (error) {
         return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+                'Access-Control-Allow-Credentials': 'true'
+            }
         });
     }
 }
@@ -54,12 +66,20 @@ export async function onRequestGet(context) {
 
         return new Response(JSON.stringify(results), {
             status: 200,
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+                'Access-Control-Allow-Credentials': 'true'
+            }
         });
     } catch (error) {
         return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+                'Access-Control-Allow-Credentials': 'true'
+            }
         });
     }
 }
