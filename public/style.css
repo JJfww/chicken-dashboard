@@ -399,8 +399,11 @@ button[form="egg-form"]:hover {
 .chat-messages {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 1rem 0;
     margin-bottom: 1rem;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 
 .chat-message {
