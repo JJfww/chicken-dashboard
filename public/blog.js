@@ -284,18 +284,79 @@ async function loadActivity() {
                 return;
             }
 
-            feed.innerHTML = activities.map(activity => `
-                <div class="activity-item" data-type="${getActivityDataType(activity.type)}">
-                    <div class="activity-type">${activity.type}</div>
-                    <div class="activity-details">${activity.details}</div>
-                    <div class="activity-date">${formatDate(activity.date)}</div>
-                </div>
-            `).join('');
+            // Filter to last 7 days
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            sevenDaysAgo.setHours(0, 0, 0, 0);
+
+            const recentActivities = activities.filter(activity => {
+                const activityDate = new Date(activity.date + 'T00:00:00');
+                return activityDate >= sevenDaysAgo;
+            });
+
+            if (recentActivities.length === 0) {
+                feed.innerHTML = '<p class="loading">No activity in the last 7 days.</p>';
+                return;
+            }
+
+            // Group by date
+            const groupedByDate = {};
+            recentActivities.forEach(activity => {
+                if (!groupedByDate[activity.date]) {
+                    groupedByDate[activity.date] = [];
+                }
+                groupedByDate[activity.date].push(activity);
+            });
+
+            // Sort dates descending
+            const sortedDates = Object.keys(groupedByDate).sort((a, b) => new Date(b) - new Date(a));
+
+            // Build collapsible sections
+            feed.innerHTML = sortedDates.map((date, index) => {
+                const dateLabel = formatDate(date);
+                const isFirstDay = index === 0; // First day open by default
+                const activities = groupedByDate[date];
+
+                return `
+                    <div class="day-section">
+                        <button class="day-header ${isFirstDay ? 'open' : ''}" onclick="toggleDay(this)">
+                            <span class="day-label">${dateLabel}</span>
+                            <span class="day-count">${activities.length} ${activities.length === 1 ? 'activity' : 'activities'}</span>
+                            <span class="toggle-icon">${isFirstDay ? '▼' : '▶'}</span>
+                        </button>
+                        <div class="day-activities" style="${isFirstDay ? '' : 'display: none;'}">
+                            ${activities.map(activity => `
+                                <div class="activity-item" data-type="${getActivityDataType(activity.type)}">
+                                    <div class="activity-type">${activity.type}</div>
+                                    <div class="activity-details">${activity.details}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
         } else {
             feed.innerHTML = '<p class="loading">Failed to load activity.</p>';
         }
     } catch (error) {
         feed.innerHTML = '<p class="loading">Network error loading activity.</p>';
+    }
+}
+
+// Toggle day section open/closed
+function toggleDay(button) {
+    const isOpen = button.classList.contains('open');
+    const dayActivities = button.nextElementSibling;
+    const toggleIcon = button.querySelector('.toggle-icon');
+
+    if (isOpen) {
+        button.classList.remove('open');
+        dayActivities.style.display = 'none';
+        toggleIcon.textContent = '▶';
+    } else {
+        button.classList.add('open');
+        dayActivities.style.display = 'block';
+        toggleIcon.textContent = '▼';
     }
 }
 
