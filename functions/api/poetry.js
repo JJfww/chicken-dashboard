@@ -97,7 +97,7 @@ export async function onRequestGet(context) {
         "X-Title": "Hensington Palace - Poetry"
       },
       body: JSON.stringify({
-        model: "google/gemini-flash-1.5",
+        model: "google/gemini-3-flash-preview",
         messages: [
           {
             role: "system",
