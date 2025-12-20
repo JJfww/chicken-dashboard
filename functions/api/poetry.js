@@ -72,6 +72,20 @@ export async function onRequestGet(context) {
   // Replace {subject} in instructions
   const prompt = form.instructions.replace(/{subject}/g, subject);
 
+  // Check if API key is configured
+  if (!env.OPENROUTER_API_KEY) {
+    return new Response(JSON.stringify({
+      error: "Configuration error",
+      details: "OPENROUTER_API_KEY environment variable is not set. Please configure it in the Cloudflare Pages dashboard."
+    }), {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      }
+    });
+  }
+
   // Call OpenRouter API
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -99,7 +113,9 @@ export async function onRequestGet(context) {
     });
 
     if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.status}`);
+      const errorData = await response.text();
+      console.error("OpenRouter API error:", response.status, errorData);
+      throw new Error(`OpenRouter API error: ${response.status} - ${errorData}`);
     }
 
     const data = await response.json();
