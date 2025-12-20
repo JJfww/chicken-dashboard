@@ -72,7 +72,7 @@ export async function onRequestGet(context) {
 
         // Get recent photos
         const photos = await context.env.DB.prepare(`
-            SELECT date, caption
+            SELECT id, date, caption
             FROM photos
             ORDER BY date DESC, created_at DESC
             LIMIT 10
@@ -82,7 +82,8 @@ export async function onRequestGet(context) {
             activities.push({
                 type: '📸 Photo',
                 details: photo.caption || 'New photo uploaded',
-                date: photo.date
+                date: photo.date,
+                photo_id: photo.id
             });
         });
 

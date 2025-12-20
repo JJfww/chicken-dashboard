@@ -578,6 +578,23 @@ button[form="egg-form"]:hover {
     font-size: 0.95rem;
 }
 
+.activity-photo-thumb {
+    display: block;
+    max-width: 200px;
+    width: 100%;
+    height: auto;
+    margin-top: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.activity-photo-thumb:hover {
+    transform: scale(1.02);
+    box-shadow: var(--shadow-md);
+}
+
 .activity-item .activity-date {
     font-size: 0.8rem;
     color: var(--text-tertiary);

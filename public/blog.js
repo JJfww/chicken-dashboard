@@ -329,6 +329,12 @@ async function loadActivity() {
                                 <div class="activity-item" data-type="${getActivityDataType(activity.type)}">
                                     <div class="activity-type">${activity.type}</div>
                                     <div class="activity-details">${activity.details}</div>
+                                    ${activity.photo_id ? `
+                                        <img src="/api/photos/${activity.photo_id}"
+                                             alt="${activity.details}"
+                                             class="activity-photo-thumb"
+                                             loading="lazy">
+                                    ` : ''}
                                 </div>
                             `).join('')}
                         </div>
