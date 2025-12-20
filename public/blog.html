@@ -43,7 +43,7 @@
     </style>
 </head>
 <body>
-    <div class="app">
+    <div class="app blog-page">
         <!-- Header -->
         <div class="public-header">
             <h1>🐔 Hensington Palace</h1>
@@ -53,16 +53,24 @@
 
         <!-- Navigation Tabs -->
         <nav class="tabs">
-            <a href="/status.html" class="tab" style="text-decoration: none;">Status</a>
-            <button class="tab active" data-tab="blog">Blog</button>
+            <button class="tab active" data-tab="status">Status</button>
+            <button class="tab" data-tab="blog">Blog</button>
             <button class="tab" data-tab="history">History</button>
-            <a href="/poetry.html" class="tab" style="text-decoration: none;">Poetry</a>
+            <button class="tab" data-tab="poetry">Poetry</button>
         </nav>
 
         <!-- Tab Content -->
         <main class="content">
+            <!-- Status Tab -->
+            <div id="status-tab" class="tab-content active">
+                <div id="rudy-container" class="rudy-container"></div>
+                <div id="hens-grid" class="hens-grid">
+                    <p style="text-align: center; opacity: 0.7; grid-column: 1 / -1;">Loading chicken status...</p>
+                </div>
+            </div>
+
             <!-- Blog Tab -->
-            <div id="blog-tab" class="tab-content active">
+            <div id="blog-tab" class="tab-content">
                 <section class="card">
                     <h2>Blog Posts</h2>
                     <div id="blog-feed" class="activity-feed">
@@ -77,6 +85,16 @@
                     <h2>Recent Activity</h2>
                     <div id="activity-feed" class="activity-feed">
                         <p class="loading">Loading activity...</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Poetry Tab -->
+            <div id="poetry-tab" class="tab-content">
+                <section class="card">
+                    <h2>Poetry Corner 🐿️</h2>
+                    <div id="poem-display" class="poem-container">
+                        <p class="loading">Composing a poem...</p>
                     </div>
                 </section>
             </div>

@@ -5,7 +5,7 @@ export async function onRequestPost(context) {
         const requestBody = await context.request.json();
         console.log('[EGGS POST] Request body:', JSON.stringify(requestBody));
 
-        const { chicken_id, date, notes } = requestBody;
+        const { chicken_id, date, notes, time } = requestBody;
 
         // Validate required fields
         if (!chicken_id || !date) {
@@ -16,12 +16,12 @@ export async function onRequestPost(context) {
             });
         }
 
-        console.log('[EGGS POST] Inserting into database - chicken_id:', chicken_id, 'date:', date);
+        console.log('[EGGS POST] Inserting into database - chicken_id:', chicken_id, 'date:', date, 'time:', time);
 
         // Insert egg record
         const result = await context.env.DB.prepare(
-            'INSERT INTO eggs (chicken_id, date, notes) VALUES (?, ?, ?)'
-        ).bind(chicken_id, date, notes).run();
+            'INSERT INTO eggs (chicken_id, date, notes, time) VALUES (?, ?, ?, ?)'
+        ).bind(chicken_id, date, notes, time || null).run();
 
         console.log('[EGGS POST] Insert successful - row_id:', result.meta.last_row_id);
 
@@ -46,13 +46,14 @@ export async function onRequestGet(context) {
             SELECT
                 e.id,
                 e.date,
+                e.time,
                 e.count,
                 e.notes,
                 c.name as chicken_name,
                 c.egg_color
             FROM eggs e
             JOIN chickens c ON e.chicken_id = c.id
-            ORDER BY e.date DESC, e.created_at DESC
+            ORDER BY e.date DESC, e.time DESC, e.created_at DESC
             LIMIT 50
         `).all();
 

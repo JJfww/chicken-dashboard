@@ -1,26 +1,229 @@
-// Tab switching
-document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        const tabName = tab.dataset.tab;
+// Chicken avatar mapping
+const chickenAvatars = {
+    'Rudy': '/images/rudy.png',
+    'Mamma Mia': '/images/mamma-mia.png',
+    'Brown Betty': '/images/brown-betty.png',
+    'Madame Pompadour': '/images/madame-pompadour.png'
+};
 
-        // Update tab buttons
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
+// Hash routing system
+const RouterManager = {
+    currentTab: 'status',
+    statusRefreshInterval: null,
 
-        // Update tab content
+    init() {
+        // Handle initial hash on page load
+        const initialHash = window.location.hash.slice(1) || 'status';
+        this.setTab(initialHash);
+
+        // Listen for hash changes (back/forward buttons)
+        window.addEventListener('hashchange', () => {
+            const hash = window.location.hash.slice(1) || 'status';
+            this.setTab(hash);
+        });
+    },
+
+    setTab(tabName) {
+        // Validate tab exists
+        if (!['status', 'blog', 'history', 'poetry'].includes(tabName)) {
+            tabName = 'status';
+        }
+
+        // Update current tab
+        this.currentTab = tabName;
+
+        // Update hash (without triggering hashchange event if already set)
+        if (window.location.hash.slice(1) !== tabName) {
+            window.history.replaceState(null, '', `#${tabName}`);
+        }
+
+        // Update tab UI
+        this.updateTabUI(tabName);
+
+        // Load/start content for specific tabs
+        this.handleTabContent(tabName);
+    },
+
+    updateTabUI(tabName) {
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Add active class to clicked tab
+        const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+        if (activeTab) activeTab.classList.add('active');
+
+        // Hide all content
         document.querySelectorAll('.tab-content').forEach(content => {
             content.classList.remove('active');
         });
-        document.getElementById(`${tabName}-tab`).classList.add('active');
 
-        // Load data when switching to specific tabs
-        if (tabName === 'history') {
-            loadActivity();
-        } else if (tabName === 'blog') {
-            loadBlogPosts();
+        // Show selected content
+        const contentEl = document.getElementById(`${tabName}-tab`);
+        if (contentEl) contentEl.classList.add('active');
+    },
+
+    handleTabContent(tabName) {
+        switch(tabName) {
+            case 'status':
+                this.startStatusRefresh();
+                loadChickenStatus(); // Initial load
+                break;
+            case 'blog':
+                this.stopStatusRefresh();
+                loadBlogPosts();
+                break;
+            case 'history':
+                this.stopStatusRefresh();
+                loadActivity();
+                break;
+            case 'poetry':
+                this.stopStatusRefresh();
+                loadPoem();
+                break;
         }
-    });
-});
+    },
+
+    startStatusRefresh() {
+        // Only start if not already running
+        if (!this.statusRefreshInterval) {
+            this.statusRefreshInterval = setInterval(loadChickenStatus, 60000);
+        }
+    },
+
+    stopStatusRefresh() {
+        if (this.statusRefreshInterval) {
+            clearInterval(this.statusRefreshInterval);
+            this.statusRefreshInterval = null;
+        }
+    }
+};
+
+// Load Chicken Status
+async function loadChickenStatus() {
+    const rudyContainer = document.getElementById('rudy-container');
+    const hensGrid = document.getElementById('hens-grid');
+
+    try {
+        const response = await fetch('/api/status');
+        if (!response.ok) throw new Error('Failed to load status');
+
+        const chickens = await response.json();
+
+        // Separate Rudy from the hens
+        const rudy = chickens.find(c => c.rudy_status);
+        const hens = chickens.filter(c => !c.rudy_status);
+
+        // Render Rudy's card
+        if (rudy) {
+            const avatarImage = chickenAvatars[rudy.name] || '/images/default.png';
+            rudyContainer.innerHTML = `
+                <div class="chicken-card rudy-card">
+                    <div class="chicken-avatar">
+                        <img src="${avatarImage}" alt="${rudy.name}">
+                    </div>
+                    <h2 class="chicken-name">${rudy.name}</h2>
+                    <p class="egg-color">The Gentleman of the Coop</p>
+                    <div class="rudy-status">
+                        <span class="rudy-emoji">${rudy.rudy_status.emoji}</span>
+                        <strong>${rudy.rudy_status.text}</strong>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render hens' cards
+        hensGrid.innerHTML = hens.map(chicken => {
+            const avatarImage = chickenAvatars[chicken.name] || '/images/default.png';
+            const laidToday = chicken.laid_today;
+            const lastEggDate = chicken.last_egg_date ? formatDate(chicken.last_egg_date) : 'Never';
+
+            return `
+                <div class="chicken-card">
+                    <div class="chicken-avatar">
+                        <img src="${avatarImage}" alt="${chicken.name}">
+                    </div>
+                    <h2 class="chicken-name">${chicken.name}</h2>
+                    <p class="egg-color">${chicken.egg_color} eggs</p>
+
+                    <div class="status-item ${laidToday ? 'laid-today' : 'not-yet'}">
+                        <div class="status-icon">${laidToday ? '✅' : '⏱️'}</div>
+                        <div class="status-text">
+                            <p class="status-label">Today</p>
+                            <p class="status-value">${laidToday ? 'Egg laid!' : 'Not yet'}</p>
+                        </div>
+                    </div>
+
+                    <div class="status-item">
+                        <div class="status-icon">📅</div>
+                        <div class="status-text">
+                            <p class="status-label">Last egg</p>
+                            <p class="status-value">${lastEggDate}</p>
+                        </div>
+                    </div>
+
+                    ${chicken.health_concern ? `
+                        <div class="status-item health-warning">
+                            <div class="status-icon">⚠️</div>
+                            <div class="status-text">
+                                <p class="status-label">${chicken.health_concern.observation_type}</p>
+                                <p class="status-value">${chicken.health_concern.description}</p>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        hensGrid.innerHTML = '<p style="text-align: center; color: red; grid-column: 1 / -1;">Failed to load status. Please try again.</p>';
+    }
+}
+
+// Load Poem
+async function loadPoem() {
+    const display = document.getElementById('poem-display');
+    display.innerHTML = '<p class="loading">Composing a poem...</p>';
+
+    try {
+        const response = await fetch('/api/poetry');
+        if (response.ok) {
+            const data = await response.json();
+
+            // Check if there's an error in the response
+            if (data.error) {
+                display.innerHTML = `
+                    <p class="loading">⚠️ ${data.error}</p>
+                    <p style="font-size: 0.9rem; color: var(--text-tertiary); margin-top: 1rem;">${data.details || ''}</p>
+                `;
+                return;
+            }
+
+            // Apply squirrel class if it's a squirrel poem
+            const containerClass = data.isChicken ? 'poem-container' : 'poem-container squirrel';
+
+            display.className = containerClass;
+            display.innerHTML = `
+                <div class="poem-subject">${data.isChicken ? '🐔' : '🐿️'} ${data.subject}</div>
+                <div class="poem-text">${data.poem}</div>
+                <div class="poem-form">${data.form}</div>
+                <div class="poem-description">${data.description}</div>
+                <button class="refresh-btn" onclick="loadPoem()">✨ Another Poem</button>
+            `;
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            display.innerHTML = `
+                <p class="loading">⚠️ Failed to load poem</p>
+                <p style="font-size: 0.9rem; color: var(--text-tertiary); margin-top: 1rem;">${errorData.details || 'Please try again.'}</p>
+            `;
+        }
+    } catch (error) {
+        display.innerHTML = `
+            <p class="loading">⚠️ Network error loading poem</p>
+            <p style="font-size: 0.9rem; color: var(--text-tertiary); margin-top: 1rem;">Please check your connection and try again.</p>
+        `;
+    }
+}
 
 // Load Blog Posts
 async function loadBlogPosts() {
@@ -114,5 +317,14 @@ function formatDate(dateString) {
     return date.toLocaleDateString();
 }
 
-// Load blog posts on page load
-loadBlogPosts();
+// Initialize router and set up tab click listeners on page load
+document.addEventListener('DOMContentLoaded', () => {
+    RouterManager.init();
+
+    // Set up tab click listeners
+    document.querySelectorAll('.tab[data-tab]').forEach(tab => {
+        tab.addEventListener('click', () => {
+            RouterManager.setTab(tab.dataset.tab);
+        });
+    });
+});

@@ -55,7 +55,27 @@ export async function onRequestGet(context) {
                     { emoji: '🛑', text: 'Breaking Up Drama' },
                     { emoji: '🪙', text: 'Paying His Dues' },
                     { emoji: '🧑‍✈️', text: 'Captain of the Coop' },
-                    { emoji: '😏', text: 'Knows He\'s Handsome' }
+                    { emoji: '😏', text: 'Knows He\'s Handsome' },
+                    { emoji: '🌞', text: 'On Sunrise Duty' },
+                    { emoji: '🐔', text: 'Holding Court' },
+                    { emoji: '🧑‍⚖️', text: 'Laying Down the Law' },
+                    { emoji: '📢', text: 'Broadcasting Opinions' },
+                    { emoji: '🥇', text: 'Acting Like a Winner' },
+                    { emoji: '🪶', text: 'Preening with Purpose' },
+                    { emoji: '🚶‍♂️', text: 'Pacing the Yard' },
+                    { emoji: '🧿', text: 'Keeping an Eye Out' },
+                    { emoji: '🏰', text: 'Defending the Realm' },
+                    { emoji: '🪜', text: 'Taking the High Ground' },
+                    { emoji: '🗣️', text: 'Saying His Piece' },
+                    { emoji: '🧠', text: 'Deep in Thought' },
+                    { emoji: '🎯', text: 'Focused on the Mission' },
+                    { emoji: '🛡️', text: 'Standing Guard' },
+                    { emoji: '👞', text: 'Stepping Lightly' },
+                    { emoji: '🐾', text: 'Leaving His Mark' },
+                    { emoji: '🧭', text: 'Setting the Direction' },
+                    { emoji: '🕶️', text: 'Too Cool for Feed' },
+                    { emoji: '😌', text: 'Unbothered' },
+                    { emoji: '👑', text: 'Ruling Casually' }
                 ];
 
                 // Pick a truly random status on each page refresh

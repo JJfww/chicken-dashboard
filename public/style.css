@@ -148,6 +148,27 @@ body {
     border-bottom-color: var(--color-gray);
 }
 
+/* Blog Page Tab Colors (Override for public blog page) */
+.blog-page .tab:nth-child(1).active { /* Status - Green */
+    color: var(--color-green);
+    border-bottom-color: var(--color-green);
+}
+
+.blog-page .tab:nth-child(2).active { /* Blog - Green */
+    color: var(--color-green);
+    border-bottom-color: var(--color-green);
+}
+
+.blog-page .tab:nth-child(3).active { /* History - Gray */
+    color: var(--color-gray);
+    border-bottom-color: var(--color-gray);
+}
+
+.blog-page .tab:nth-child(4).active { /* Poetry - Yellow */
+    color: var(--color-yellow);
+    border-bottom-color: var(--color-yellow);
+}
+
 /* Tab Content */
 .content {
     padding: 1rem;
@@ -843,4 +864,213 @@ button:disabled {
     text-transform: uppercase;
     font-weight: 600;
     margin-top: 0.5rem;
+}
+
+/* Status Page Styles */
+.rudy-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.hens-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+    .hens-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chicken-card {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.chicken-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.chicken-card.rudy-card {
+    max-width: 320px;
+    padding: 1.25rem;
+}
+
+.chicken-avatar {
+    width: 90px;
+    height: 90px;
+    margin: 0 auto 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.rudy-card .chicken-avatar {
+    width: 110px;
+    height: 110px;
+}
+
+.chicken-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chicken-name {
+    text-align: center;
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin: 0 0 0.4rem 0;
+}
+
+.egg-color {
+    text-align: center;
+    font-size: 0.85rem;
+    opacity: 0.7;
+    margin: 0 0 0.75rem 0;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem;
+    margin: 0.4rem 0;
+    background: var(--bg-primary);
+    border-radius: 8px;
+}
+
+.status-icon {
+    font-size: 1.3rem;
+    margin-right: 0.6rem;
+}
+
+.status-text {
+    flex: 1;
+}
+
+.status-label {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    margin: 0;
+}
+
+.status-value {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.laid-today {
+    color: #22c55e;
+}
+
+.not-yet {
+    color: #f59e0b;
+}
+
+.health-warning {
+    background: #fef3c7;
+    color: #92400e;
+    border-left: 3px solid #f59e0b;
+}
+
+.rudy-status {
+    text-align: center;
+    font-size: 1.1rem;
+    padding: 0.75rem;
+    background: var(--bg-primary);
+    border-radius: 8px;
+    margin: 0.4rem 0;
+}
+
+.rudy-emoji {
+    font-size: 1.8rem;
+    display: block;
+    margin-bottom: 0.4rem;
+}
+
+/* Poetry Page Styles */
+.poem-container {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow-md);
+    border: 2px solid var(--border-color);
+    text-align: center;
+}
+
+.poem-subject {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.poem-form {
+    font-size: 1.3rem;
+    color: var(--color-green);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.poem-container.squirrel .poem-form {
+    color: var(--color-yellow);
+}
+
+.poem-description {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    font-style: italic;
+}
+
+.poem-text {
+    font-size: 1.2rem;
+    line-height: 1.8;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    font-family: Georgia, 'Times New Roman', serif;
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--bg-primary);
+    border-radius: 8px;
+    border-left: 4px solid var(--color-green);
+}
+
+.poem-container.squirrel .poem-text {
+    border-left-color: var(--color-yellow);
+}
+
+.refresh-btn {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--color-green);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+    background: var(--color-green-hover);
+    transform: scale(1.02);
+}
+
+.refresh-btn:active {
+    transform: scale(0.98);
 }

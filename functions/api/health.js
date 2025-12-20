@@ -1,6 +1,6 @@
 export async function onRequestPost(context) {
     try {
-        const { date, chicken_id, observation_type, description, notes } = await context.request.json();
+        const { date, chicken_id, observation_type, description, notes, time } = await context.request.json();
 
         // Validate required fields
         if (!date || !observation_type || !description) {
@@ -12,8 +12,8 @@ export async function onRequestPost(context) {
 
         // Insert health observation record
         const result = await context.env.DB.prepare(
-            'INSERT INTO health_observations (date, chicken_id, observation_type, description, notes) VALUES (?, ?, ?, ?, ?)'
-        ).bind(date, chicken_id, observation_type, description, notes).run();
+            'INSERT INTO health_observations (date, chicken_id, observation_type, description, notes, time) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(date, chicken_id, observation_type, description, notes, time || null).run();
 
         return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
             status: 200,
@@ -34,6 +34,7 @@ export async function onRequestGet(context) {
             SELECT
                 h.id,
                 h.date,
+                h.time,
                 h.observation_type,
                 h.description,
                 h.notes,
@@ -41,7 +42,7 @@ export async function onRequestGet(context) {
                 c.name as chicken_name
             FROM health_observations h
             LEFT JOIN chickens c ON h.chicken_id = c.id
-            ORDER BY h.date DESC, h.created_at DESC
+            ORDER BY h.date DESC, h.time DESC, h.created_at DESC
             LIMIT 50
         `).all();
 

@@ -8,7 +8,11 @@ export async function onRequestPost(context) {
             console.log('ERROR: No question provided');
             return new Response(JSON.stringify({ error: 'No question provided' }), {
                 status: 400,
-                headers: { 'Content-Type': 'application/json' }
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+                    'Access-Control-Allow-Credentials': 'true'
+                }
             });
         }
 
@@ -93,7 +97,11 @@ Answer questions helpfully and conversationally. When referencing data, be speci
 
         return new Response(JSON.stringify({ answer }), {
             status: 200,
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+                'Access-Control-Allow-Credentials': 'true'
+            }
         });
     } catch (error) {
         console.error('=== Chat error ===');
@@ -102,7 +110,11 @@ Answer questions helpfully and conversationally. When referencing data, be speci
         console.error('Error stack:', error.stack);
         return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+                'Access-Control-Allow-Credentials': 'true'
+            }
         });
     }
 }

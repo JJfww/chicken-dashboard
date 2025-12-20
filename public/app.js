@@ -62,6 +62,7 @@ document.getElementById('egg-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const notes = document.getElementById('egg-notes').value;
+    const time = document.getElementById('egg-time').value;
 
     // Get all selected chickens
     const selectedChickens = Array.from(document.querySelectorAll('.chicken-btn.selected'))
@@ -82,7 +83,8 @@ document.getElementById('egg-form').addEventListener('submit', async (e) => {
                 body: JSON.stringify({
                     chicken_id: chickenId,
                     date: getCurrentDateCST(),
-                    notes: notes || null
+                    notes: notes || null,
+                    time: time || null
                 })
             })
         );
@@ -111,7 +113,8 @@ document.getElementById('feeding-form').addEventListener('submit', async (e) => 
         date: getCurrentDateCST(),
         feed_type: formData.get('feed_type'),
         description: formData.get('description'),
-        notes: formData.get('notes') || null
+        notes: formData.get('notes') || null,
+        time: formData.get('time') || null
     };
 
     try {
@@ -141,7 +144,8 @@ document.getElementById('free-range-form').addEventListener('submit', async (e) 
     const data = {
         date: getCurrentDateCST(),
         duration_minutes: parseInt(formData.get('duration_minutes')),
-        notes: formData.get('notes') || null
+        notes: formData.get('notes') || null,
+        time: formData.get('time') || null
     };
 
     try {
@@ -174,7 +178,8 @@ document.getElementById('health-form').addEventListener('submit', async (e) => {
         chicken_id: chickenId ? parseInt(chickenId) : null,
         observation_type: formData.get('observation_type'),
         description: formData.get('description'),
-        notes: null
+        notes: null,
+        time: formData.get('time') || null
     };
 
     try {
