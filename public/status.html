@@ -26,17 +26,23 @@
             margin: 0;
         }
 
-        .status-grid {
+        .rudy-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .hens-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
             margin-bottom: 2rem;
         }
 
         .chicken-card {
             background: var(--bg-card);
-            border-radius: 12px;
-            padding: 1.5rem;
+            border-radius: 10px;
+            padding: 1rem;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3),
                         0 0 0 1px rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -49,16 +55,26 @@
                         0 0 0 1px rgba(255, 255, 255, 0.1);
         }
 
+        .chicken-card.rudy-card {
+            max-width: 320px;
+            padding: 1.25rem;
+        }
+
         .chicken-avatar {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 1rem;
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 0.75rem;
             display: flex;
             align-items: center;
             justify-content: center;
             background: var(--bg);
             border-radius: 50%;
             overflow: hidden;
+        }
+
+        .rudy-card .chicken-avatar {
+            width: 110px;
+            height: 110px;
         }
 
         .chicken-avatar img {
@@ -69,30 +85,30 @@
 
         .chicken-name {
             text-align: center;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            margin: 0 0 0.5rem 0;
+            margin: 0 0 0.4rem 0;
         }
 
         .egg-color {
             text-align: center;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             opacity: 0.7;
-            margin: 0 0 1rem 0;
+            margin: 0 0 0.75rem 0;
         }
 
         .status-item {
             display: flex;
             align-items: center;
-            padding: 0.75rem;
-            margin: 0.5rem 0;
+            padding: 0.6rem;
+            margin: 0.4rem 0;
             background: var(--bg);
             border-radius: 8px;
         }
 
         .status-icon {
-            font-size: 1.5rem;
-            margin-right: 0.75rem;
+            font-size: 1.3rem;
+            margin-right: 0.6rem;
         }
 
         .status-text {
@@ -100,13 +116,13 @@
         }
 
         .status-label {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             opacity: 0.7;
             margin: 0;
         }
 
         .status-value {
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 500;
             margin: 0;
         }
@@ -127,17 +143,17 @@
 
         .rudy-status {
             text-align: center;
-            font-size: 1.2rem;
-            padding: 1rem;
+            font-size: 1.1rem;
+            padding: 0.75rem;
             background: var(--bg);
             border-radius: 8px;
-            margin: 0.5rem 0;
+            margin: 0.4rem 0;
         }
 
         .rudy-emoji {
-            font-size: 2rem;
+            font-size: 1.8rem;
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
         }
 
         .nav-links {
@@ -165,8 +181,9 @@
             <p>Current Status</p>
         </div>
 
-        <div id="status-grid" class="status-grid">
-            <p style="text-align: center; opacity: 0.7;">Loading chicken status...</p>
+        <div id="rudy-container" class="rudy-container"></div>
+        <div id="hens-grid" class="hens-grid">
+            <p style="text-align: center; opacity: 0.7; grid-column: 1 / -1;">Loading chicken status...</p>
         </div>
 
         <div class="nav-links">
@@ -186,7 +203,8 @@
         };
 
         async function loadChickenStatus() {
-            const grid = document.getElementById('status-grid');
+            const rudyContainer = document.getElementById('rudy-container');
+            const hensGrid = document.getElementById('hens-grid');
 
             try {
                 const response = await fetch('/api/status');
@@ -194,27 +212,31 @@
 
                 const chickens = await response.json();
 
-                grid.innerHTML = chickens.map(chicken => {
-                    const avatarImage = chickenAvatars[chicken.name] || '/images/default.png';
+                // Separate Rudy from the hens
+                const rudy = chickens.find(c => c.rudy_status);
+                const hens = chickens.filter(c => !c.rudy_status);
 
-                    // Special card for Rudy
-                    if (chicken.rudy_status) {
-                        return `
-                            <div class="chicken-card">
-                                <div class="chicken-avatar">
-                                    <img src="${avatarImage}" alt="${chicken.name}">
-                                </div>
-                                <h2 class="chicken-name">${chicken.name}</h2>
-                                <p class="egg-color">The Gentleman of the Coop</p>
-                                <div class="rudy-status">
-                                    <span class="rudy-emoji">${chicken.rudy_status.emoji}</span>
-                                    <strong>${chicken.rudy_status.text}</strong>
-                                </div>
+                // Render Rudy's card
+                if (rudy) {
+                    const avatarImage = chickenAvatars[rudy.name] || '/images/default.png';
+                    rudyContainer.innerHTML = `
+                        <div class="chicken-card rudy-card">
+                            <div class="chicken-avatar">
+                                <img src="${avatarImage}" alt="${rudy.name}">
                             </div>
-                        `;
-                    }
+                            <h2 class="chicken-name">${rudy.name}</h2>
+                            <p class="egg-color">The Gentleman of the Coop</p>
+                            <div class="rudy-status">
+                                <span class="rudy-emoji">${rudy.rudy_status.emoji}</span>
+                                <strong>${rudy.rudy_status.text}</strong>
+                            </div>
+                        </div>
+                    `;
+                }
 
-                    // Cards for the hens
+                // Render hens' cards
+                hensGrid.innerHTML = hens.map(chicken => {
+                    const avatarImage = chickenAvatars[chicken.name] || '/images/default.png';
                     const laidToday = chicken.laid_today;
                     const lastEggDate = chicken.last_egg_date ? formatDate(chicken.last_egg_date) : 'Never';
 
@@ -255,7 +277,7 @@
                     `;
                 }).join('');
             } catch (error) {
-                grid.innerHTML = '<p style="text-align: center; color: red;">Failed to load status. Please try again.</p>';
+                hensGrid.innerHTML = '<p style="text-align: center; color: red; grid-column: 1 / -1;">Failed to load status. Please try again.</p>';
             }
         }
 
