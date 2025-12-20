@@ -1,3 +1,16 @@
+export async function onRequestOptions() {
+    return new Response(null, {
+        status: 204,
+        headers: {
+            'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Max-Age': '86400'
+        }
+    });
+}
+
 export async function onRequestPost(context) {
     try {
         const { date, medication_name, chicken_id, quantity, cost, purpose, notes } = await context.request.json();
