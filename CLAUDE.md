@@ -178,7 +178,7 @@ The app automatically logs daily weather data using a Cloudflare Cron Trigger:
 1. **Scheduled Task**: `functions/scheduled.js` runs daily at 11:55pm CST (5:55am UTC)
 2. **Activity Check**: Queries all activity tables (eggs, feeding, free_range, health_observations, photos) for today's date
 3. **Weather Logging**: If any activity occurred today, fetches weather data from NWS API and stores in `weather_logs` table
-4. **Data Captured**: Temperature high/low (°F), humidity (%), wind max (mph), precipitation (inches), barometric pressure (mb), conditions description, daylight hours
+4. **Data Captured**: Temperature high/low (°F), humidity (%), wind max (mph), precipitation (inches), barometric pressure (inHg), conditions description, daylight hours
 5. **Utility**: `functions/api/_weather-data.js` provides `fetchDailyWeather(date)` function for fetching NWS weather data
 6. **One Record Per Day**: The `date` field is UNIQUE, ensuring only one weather record per day
 7. **API Source**: US National Weather Service (api.weather.gov) - no API key required

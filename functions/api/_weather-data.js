@@ -59,7 +59,7 @@ function summarizeObservations(observations, date) {
     const temperaturesF = [];
     const humidities = [];
     const windSpeedsMph = [];
-    const pressuresMb = [];
+    const pressuresInHg = [];
     let precipitationHourTotal = 0;
     let precipitation3HourTotal = 0;
     let precipitation6HourTotal = 0;
@@ -110,7 +110,7 @@ function summarizeObservations(observations, date) {
             : properties.barometricPressure?.value;
 
         if (typeof pressurePa === 'number') {
-            pressuresMb.push(pressurePa / 100);
+            pressuresInHg.push(pressurePa * 0.00029529983071445);
         }
 
         if (typeof properties.precipitationLastHour?.value === 'number') {
@@ -133,7 +133,7 @@ function summarizeObservations(observations, date) {
         throw new Error('NWS observations missing humidity data');
     }
 
-    if (!pressuresMb.length) {
+    if (!pressuresInHg.length) {
         throw new Error('NWS observations missing pressure data');
     }
 
@@ -144,7 +144,7 @@ function summarizeObservations(observations, date) {
     const precipitationMm = hasHourPrecip
         ? precipitationHourTotal
         : (has3HourPrecip ? precipitation3HourTotal : (has6HourPrecip ? precipitation6HourTotal : 0));
-    const pressureAvgMb = average(pressuresMb);
+    const pressureAvgInHg = average(pressuresInHg);
     const daylightHours = calculateDaylightHours(date, LATITUDE);
 
     return {
@@ -153,7 +153,7 @@ function summarizeObservations(observations, date) {
         humidity: Math.round(humidityAvg),
         wind_max_mph: roundToDecimal(windMaxMph, 1),
         precipitation_inches: roundToDecimal(precipitationMm / 25.4, 2),
-        pressure_mb: roundToDecimal(pressureAvgMb, 1),
+        pressure_inhg: roundToDecimal(pressureAvgInHg, 2),
         conditions: latestObservation?.description || 'Unknown',
         daylight_hours: roundToDecimal(daylightHours, 2)
     };

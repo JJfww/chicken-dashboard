@@ -120,7 +120,7 @@ export async function onRequestPost(context) {
                 humidity,
                 wind_max_mph,
                 precipitation_inches,
-                pressure_mb,
+                pressure_inhg,
                 conditions,
                 daylight_hours
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -131,7 +131,7 @@ export async function onRequestPost(context) {
             weatherData.humidity,
             weatherData.wind_max_mph,
             weatherData.precipitation_inches,
-            weatherData.pressure_mb,
+            weatherData.pressure_inhg,
             weatherData.conditions,
             weatherData.daylight_hours
         ).run();

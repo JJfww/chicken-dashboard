@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS weather_logs (
     humidity INTEGER NOT NULL,
     wind_max_mph REAL NOT NULL,
     precipitation_inches REAL NOT NULL,
-    pressure_mb REAL NOT NULL,
+    pressure_inhg REAL NOT NULL,
     conditions TEXT NOT NULL,
     daylight_hours REAL NOT NULL,
     created_at TEXT DEFAULT (datetime('now'))
