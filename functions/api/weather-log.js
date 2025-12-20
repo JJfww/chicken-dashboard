@@ -1,12 +1,15 @@
 import { fetchDailyWeather } from './_weather-data.js';
 
 function getTodayCST() {
-    return new Date().toLocaleDateString('en-US', {
+    const date = new Date().toLocaleDateString('en-US', {
         timeZone: 'America/Chicago',
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'
-    }).split('/').reverse().join('-').replace(/(\d{4})-(\d{2})-(\d{2})/, '$1-$2-$3');
+    });
+    // toLocaleDateString returns MM/DD/YYYY, convert to YYYY-MM-DD
+    const [month, day, year] = date.split('/');
+    return `${year}-${month}-${day}`;
 }
 
 function getBearerToken(request) {
