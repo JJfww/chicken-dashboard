@@ -78,6 +78,7 @@ document.getElementById('egg-form').addEventListener('submit', async (e) => {
             fetch('/api/eggs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     chicken_id: chickenId,
                     date: getCurrentDateCST(),
@@ -117,6 +118,7 @@ document.getElementById('feeding-form').addEventListener('submit', async (e) => 
         const response = await fetch('/api/feeding', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify(data)
         });
 
@@ -146,6 +148,7 @@ document.getElementById('free-range-form').addEventListener('submit', async (e) 
         const response = await fetch('/api/free-range', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify(data)
         });
 
@@ -178,6 +181,7 @@ document.getElementById('health-form').addEventListener('submit', async (e) => {
         const response = await fetch('/api/health', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify(data)
         });
 
@@ -212,6 +216,7 @@ document.getElementById('photo-form').addEventListener('submit', async (e) => {
     try {
         const response = await fetch('/api/photos', {
             method: 'POST',
+            credentials: 'include',
             body: formData
         });
 
@@ -248,6 +253,7 @@ document.getElementById('chat-form').addEventListener('submit', async (e) => {
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ question })
         });
 
@@ -299,7 +305,7 @@ async function loadPhotos() {
     gallery.innerHTML = '<p class="loading">Loading photos...</p>';
 
     try {
-        const response = await fetch('/api/photos');
+        const response = await fetch('/api/photos', { credentials: 'include' });
         if (response.ok) {
             const photos = await response.json();
 
@@ -337,7 +343,7 @@ async function loadActivity() {
     feed.innerHTML = '<p class="loading">Loading activity...</p>';
 
     try {
-        const response = await fetch('/api/activity');
+        const response = await fetch('/api/activity', { credentials: 'include' });
         if (response.ok) {
             const activities = await response.json();
 
@@ -365,7 +371,7 @@ async function loadWeather() {
     const weatherDiv = document.getElementById('weather');
 
     try {
-        const response = await fetch('/api/weather');
+        const response = await fetch('/api/weather', { credentials: 'include' });
         if (response.ok) {
             const weather = await response.json();
             const humidityText = typeof weather.humidity === 'number'
@@ -493,6 +499,7 @@ document.getElementById('feed-purchase-form').addEventListener('submit', async (
         const response = await fetch('/api/feed-purchases', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify(data)
         });
 
@@ -531,6 +538,7 @@ document.getElementById('medication-form').addEventListener('submit', async (e) 
         const response = await fetch('/api/medication', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify(data)
         });
 
@@ -566,6 +574,7 @@ document.getElementById('supplies-form').addEventListener('submit', async (e) =>
         const response = await fetch('/api/supplies', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify(data)
         });
 
@@ -592,9 +601,9 @@ async function loadExpenses() {
     try {
         // Fetch all three expense types in parallel
         const [feedRes, medRes, suppliesRes] = await Promise.all([
-            fetch('/api/feed-purchases'),
-            fetch('/api/medication'),
-            fetch('/api/supplies')
+            fetch('/api/feed-purchases', { credentials: 'include' }),
+            fetch('/api/medication', { credentials: 'include' }),
+            fetch('/api/supplies', { credentials: 'include' })
         ]);
 
         if (feedRes.ok && medRes.ok && suppliesRes.ok) {
@@ -680,6 +689,7 @@ document.getElementById('blog-form').addEventListener('submit', async (e) => {
         const response = await fetch('/api/blog', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify(data)
         });
 
@@ -715,6 +725,7 @@ document.getElementById('auto-generate-btn').addEventListener('click', async () 
         const response = await fetch('/api/blog/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ date: dateInput.value })
         });
 
@@ -741,7 +752,7 @@ async function loadBlogPosts() {
     feed.innerHTML = '<p class="loading">Loading blog posts...</p>';
 
     try {
-        const response = await fetch('/api/blog');
+        const response = await fetch('/api/blog', { credentials: 'include' });
         if (response.ok) {
             const posts = await response.json();
 
