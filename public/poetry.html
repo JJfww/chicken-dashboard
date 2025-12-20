@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hensington Palace - Chicken Poetry</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .public-header {
+            background: var(--bg-card);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .public-header h1 {
+            margin: 0 0 0.5rem 0;
+        }
+        .public-header p {
+            margin: 0;
+            opacity: 0.8;
+        }
+        .dashboard-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .dashboard-link:hover {
+            opacity: 0.9;
+        }
+        .tabs {
+            margin-bottom: 1rem;
+        }
+        .content {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .poem-container {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-md);
+            border: 2px solid var(--border-color);
+            text-align: center;
+        }
+        .poem-subject {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+        .poem-form {
+            font-size: 0.9rem;
+            color: var(--text-tertiary);
+            margin-bottom: 0.25rem;
+            font-style: italic;
+        }
+        .poem-description {
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+            margin-bottom: 2rem;
+        }
+        .poem-text {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            font-family: Georgia, 'Times New Roman', serif;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            border-left: 4px solid var(--color-green);
+        }
+        .poem-container.squirrel .poem-text {
+            border-left-color: var(--color-yellow);
+        }
+        .refresh-btn {
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--color-green);
+            color: var(--text-primary);
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .refresh-btn:hover {
+            background: var(--color-green-hover);
+            transform: scale(1.02);
+        }
+        .refresh-btn:active {
+            transform: scale(0.98);
+        }
+        .nav-links {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        .nav-links a {
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+        .nav-links a:hover {
+            background: var(--bg-tertiary);
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <div class="public-header">
+            <h1>🐔 Hensington Palace Poetry Corner 🐿️</h1>
+            <p>Verses inspired by our feathered friends (and occasional squirrel visitors)</p>
+            <a href="/admin.html" class="dashboard-link">🔒 Login to Dashboard</a>
+        </div>
+
+        <!-- Main Content -->
+        <main class="content">
+            <div id="poem-display" class="poem-container">
+                <p class="loading">Composing a poem...</p>
+            </div>
+
+            <div class="nav-links">
+                <a href="/status.html">📊 Status</a>
+                <a href="/blog.html">📝 Blog</a>
+                <a href="/">🏠 Home</a>
+            </div>
+        </main>
+    </div>
+
+    <script src="poetry.js"></script>
+</body>
+</html>
