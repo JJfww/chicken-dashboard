@@ -20,19 +20,20 @@ npx wrangler d1 execute chicken-dashboard-db --command "SELECT * FROM chickens"
 
 ## Architecture Overview
 
-This is a Cloudflare Pages application with a vanilla JavaScript frontend and Cloudflare Workers-based API backend. It tracks backyard chicken activities including egg production, feeding, health observations, and photos.
+This is a Cloudflare Pages application with a vanilla JavaScript frontend and Cloudflare Workers-based API backend. It tracks backyard chicken activities including egg production, feeding, health observations, photos, expenses (feed, medication, supplies), and blog posts.
 
 ### Tech Stack
-- **Frontend**: Vanilla JavaScript (no framework), HTML, CSS
+- **Frontend**: Vanilla JavaScript (no framework), HTML, CSS, Marked.js (markdown parsing)
 - **Backend**: Cloudflare Pages Functions (Workers)
 - **Database**: Cloudflare D1 (SQLite)
 - **Storage**: Cloudflare R2 (for photos)
-- **External APIs**: Open-Meteo (weather), OpenRouter (AI chat via Google Gemini 2.5 Flash Lite)
+- **External APIs**: US National Weather Service (weather data), OpenRouter (AI chat and blog generation via Google Gemini models)
 
 ### Key Bindings (wrangler.toml)
 - `DB`: D1 database binding for chicken-dashboard-db
 - `PHOTOS`: R2 bucket binding for chicken-photos
-- `OPENROUTER_API_KEY`: Environment variable for AI chat (set via Cloudflare dashboard)
+- `OPENROUTER_API_KEY`: Environment variable for AI chat and blog generation (set via Cloudflare dashboard)
+- `WEATHER_LOG_TOKEN`: Bearer token for protected weather logging endpoint
 
 ### Database Schema
 The D1 database contains these tables:
@@ -40,39 +41,130 @@ The D1 database contains these tables:
 - `eggs`: Egg production logs linked to chickens
 - `feeding`: Feeding activity (treats, scraps)
 - `free_range`: Free range time tracking
-- `health_observations`: Health notes per chicken or general observations
+- `health_observations`: Health notes per chicken or general observations (types: molting, sneezing, behavior, other)
 - `photos`: Photo metadata (actual files stored in R2)
 - `weather_logs`: Daily weather data (temp high/low, humidity, wind, precipitation, pressure, conditions, daylight hours)
+- `feed_purchases`: Feed/food purchase records (date, item, quantity, cost, supplier, notes)
+- `medication`: Medication purchases and administration (linked to chickens table via chicken_id)
+- `supplies`: General supplies purchases (categories: bedding, equipment, coop-maintenance, other)
+- `blog_posts`: Blog entries with `is_auto_generated` flag to distinguish manual vs AI-generated posts
 
 ### API Architecture Pattern
 All API endpoints follow Cloudflare Pages Functions conventions:
 - Located in `functions/api/`
 - Export `onRequestGet()` and/or `onRequestPost()` functions
-- Access bindings via `context.env.DB`, `context.env.PHOTOS`, `context.env.OPENROUTER_API_KEY`
+- Access bindings via `context.env.DB`, `context.env.PHOTOS`, `context.env.OPENROUTER_API_KEY`, `context.env.WEATHER_LOG_TOKEN`
 - Return `Response` objects with JSON bodies
 
-Example endpoints:
+### API Endpoints
+
+#### Core Activity Tracking
 - `/api/eggs` - POST to log eggs, GET to retrieve recent eggs
-- `/api/photos` - POST to upload (stores in R2 + DB), GET to list
+- `/api/feeding` - POST to log feeding, GET to retrieve recent feeding records
+- `/api/free-range` - POST to log free range time, GET to retrieve recent records
+- `/api/health` - POST to log health observations, GET to retrieve recent observations
+- `/api/photos` - POST to upload (stores in R2 + DB), GET to list photos
 - `/api/photos/[id]` - Dynamic route to retrieve individual photos from R2
-- `/api/chat` - POST to interact with AI assistant (uses gatherContext() to provide recent data)
+
+#### Expenses Tracking
+- `/api/feed-purchases` - POST to log feed purchases, GET to retrieve recent 50 records
+- `/api/medication` - POST to log medication purchases/administration, GET to retrieve records (joined with chicken names)
+- `/api/supplies` - POST to log supplies purchases, GET to retrieve recent 50 records
+
+#### Blog System
+- `/api/blog` - POST to create blog posts, GET to retrieve all posts sorted by date descending
+- `/api/blog/generate` - POST to auto-generate blog posts using AI
+  - Gathers daily activity from eggs, feeding, free_range, health_observations, photos, and weather
+  - Uses OpenRouter API with Google Gemini 3 Flash Preview model
+  - Returns error if no activity found for specified date
+  - Sets `is_auto_generated` flag to 1
+
+#### Status & Aggregation
+- `/api/status` - GET current chicken status
+  - Whether each hen laid an egg today
+  - Last egg date for each chicken
+  - Recent health concerns (last 7 days)
+  - Rudy's random personality status (28 different emoji + text combinations)
 - `/api/activity` - GET aggregates all activity types sorted by date
-- `/api/weather` - GET fetches current weather for Lawrence, KS (66044)
+
+#### Weather
+- `/api/weather` - GET fetches current weather for Lawrence, KS using NWS API
+- `/api/weather-log` - POST endpoint for logging daily weather (requires Bearer token authentication via `WEATHER_LOG_TOKEN`)
+  - Accepts optional `?date=YYYY-MM-DD` query parameter
+  - Checks if weather already logged for date
+  - Checks if any activity occurred that day before logging
+  - Uses `fetchDailyWeather()` from `_weather-data.js`
+
+#### AI Chat
+- `/api/chat` - POST to interact with AI assistant
+  - Uses `gatherContext()` to provide recent activity data
+  - Includes chicken names, egg colors, and recent records from multiple tables
 
 ### Frontend Architecture
-Single-page app in `public/`:
-- `index.html`: Tab-based interface (Eggs, Feeding, Free Range, Health, Photos, Chat, History)
-- `app.js`: Event handlers, form submissions, API calls, tab switching
+
+#### Admin Interface
+Single-page app with two versions:
+- `index.html`: Main admin dashboard
+- `admin.html`: Identical to index.html, marked as "🔒 Authenticated" in header
+
+Tab-based interface:
+- **Log**: Consolidated interface for Eggs, Feeding, Free Range, and Health Observations
+- **Photos**: Photo upload and gallery
+- **Expenses**: Expense tracking summary with floating action button (FAB) for quick logging
+  - Displays three expense cards: Feed Purchases, Medication, Supplies
+  - FAB menu with options: Feed (🌾), Medication (💊), Supplies (🛠️)
+  - Modal forms for each expense type
+- **Blog**: Blog post creation and viewing
+  - Manual entry form (date, title optional, content)
+  - "Auto-Generate" button for AI-generated posts
+  - Activity feed display of blog posts
+- **AI Chat**: Chat interface with AI assistant
+- **History**: Aggregated activity feed from all tracking categories
+
+Main JavaScript files:
+- `app.js`: Event handlers, form submissions, API calls, tab switching (916 lines)
+- `blog.js`: Separate module for public blog pages
 - `style.css`: Mobile-first responsive styles
 
-Frontend uses tab switching without page reloads. The History tab shows aggregated activity feed from all tracking categories.
+Frontend uses tab switching without page reloads and Marked.js (v11.1.1) for markdown parsing in blog posts.
+
+#### Public Pages
+- **`/` (index.html in root)**: Landing page with links to status, blog, and admin dashboard
+- **`/status.html`**: Public chicken status page
+  - Displays chicken cards with avatars from `/images/[chicken-name].png`
+  - Shows if each hen laid an egg today
+  - Shows last egg date with relative time (Today, Yesterday, X days ago)
+  - Shows recent health concerns with warning styling
+  - Shows Rudy's random personality status
+  - Auto-refreshes every 60 seconds
+- **`/blog.html`**: Public blog viewing page
+  - Displays blog posts and activity history
+  - Navigation to status page and admin dashboard
+
+### Chicken Avatars
+Each chicken has an associated avatar image:
+- Rudy → `/images/rudy.png`
+- Mamma Mia → `/images/mamma-mia.png`
+- Brown Betty → `/images/brown-betty.png`
+- Madame Pompadour → `/images/madame-pompadour.png`
 
 ### AI Chat Context System
 The `/api/chat` endpoint gathers recent context before calling OpenRouter:
 1. `gatherContext()` queries the last 10-20 records from eggs, feeding, free_range, and health_observations
 2. Formats data into a text summary for the system prompt
 3. Provides AI with chicken names, egg colors, and recent activity
-4. Uses Google Gemini 2.5 Flash Lite model via OpenRouter API
+4. Uses Google Gemini model via OpenRouter API
+
+### Blog Generation System
+The `/api/blog/generate` endpoint creates AI-generated blog posts:
+1. Accepts a date parameter (defaults to today)
+2. Gathers all activity for that date: eggs, feeding, free_range, health_observations, photos
+3. Fetches weather data for the date from weather_logs table
+4. Compiles activity into a detailed context summary
+5. Sends to OpenRouter API with Google Gemini 3 Flash Preview model (temperature 0.9 for creativity)
+6. AI generates a blog title and markdown-formatted content
+7. Stores in `blog_posts` table with `is_auto_generated=1` flag
+8. Returns error if no activity found for the date
 
 ### Photo Storage Flow
 1. Frontend uploads photo as FormData to `/api/photos`
@@ -85,17 +177,31 @@ The `/api/chat` endpoint gathers recent context before calling OpenRouter:
 The app automatically logs daily weather data using a Cloudflare Cron Trigger:
 1. **Scheduled Task**: `functions/scheduled.js` runs daily at 11:55pm CST (5:55am UTC)
 2. **Activity Check**: Queries all activity tables (eggs, feeding, free_range, health_observations, photos) for today's date
-3. **Weather Logging**: If any activity occurred today, fetches weather data from Open-Meteo API and stores in `weather_logs` table
+3. **Weather Logging**: If any activity occurred today, fetches weather data from NWS API and stores in `weather_logs` table
 4. **Data Captured**: Temperature high/low (°F), humidity (%), wind max (mph), precipitation (inches), barometric pressure (mb), conditions description, daylight hours
-5. **Utility**: `functions/api/_weather-data.js` provides `fetchDailyWeather(date)` function for fetching weather data
+5. **Utility**: `functions/api/_weather-data.js` provides `fetchDailyWeather(date)` function for fetching NWS weather data
 6. **One Record Per Day**: The `date` field is UNIQUE, ensuring only one weather record per day
+7. **API Source**: US National Weather Service (api.weather.gov) - no API key required
 
 The cron trigger configuration is in `wrangler.toml` under `[triggers]`.
+
+### Expenses Tracking System
+Three expense categories are tracked:
+1. **Feed Purchases**: Feed/food items with quantity, cost, and supplier
+2. **Medication**: Medication name, optional chicken association, quantity, cost, and purpose
+3. **Supplies**: General supplies with optional category (bedding, equipment, coop-maintenance, other)
+
+The Expenses tab aggregates totals from all three categories and displays a unified expense list. A floating action button (FAB) provides quick access to log any expense type via modal forms.
 
 ## Important Notes
 
 - The app is specific to four chickens: three hens with hardcoded names and egg colors, plus Rudy the rooster
+- Rudy has 28 different random personality statuses that appear on the status page and cycle randomly on each page refresh
 - Weather is hardcoded to Lawrence, KS coordinates (38.9717°N, 95.2353°W)
 - All dates use ISO format (YYYY-MM-DD)
 - Frontend is intentionally vanilla JS with no build step
 - R2 keys use `photos/` prefix for organization
+- Chicken avatars are stored at `/images/[chicken-name].png` (e.g., `/images/rudy.png`)
+- Blog posts support markdown rendering via Marked.js library
+- The `/api/weather-log` endpoint requires Bearer token authentication for security
+- Weather data comes from the US National Weather Service API (requires User-Agent header with contact email)
