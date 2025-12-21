@@ -6,66 +6,201 @@
     <title>Hensington Palace - Login</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .login-container {
-            max-width: 400px;
-            margin: 2rem auto;
-            padding: 0 1rem;
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-tertiary) 100%);
         }
+
+        .app {
+            min-height: auto;
+            background: transparent;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 380px;
+            padding: 1.5rem;
+        }
+
         .login-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .login-card h2 {
-            margin-bottom: 1.5rem;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 2.5rem 2rem 2rem;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
             text-align: center;
+            position: relative;
         }
+
+        .login-mascot {
+            width: 100px;
+            height: 100px;
+            margin: -70px auto 1rem;
+            background: var(--bg-secondary);
+            border-radius: 50%;
+            padding: 8px;
+            box-shadow: var(--shadow-md);
+            border: 3px solid var(--border-color);
+        }
+
+        .login-mascot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .login-subtitle {
+            font-size: 0.95rem;
+            color: var(--text-tertiary);
+            margin-bottom: 1.75rem;
+        }
+
         .login-error {
-            background: #fde8e8;
-            color: #c53030;
+            background: rgba(169, 74, 74, 0.1);
+            color: var(--color-red);
             padding: 0.75rem 1rem;
-            border-radius: 6px;
+            border-radius: 10px;
             margin-bottom: 1rem;
             display: none;
+            font-size: 0.9rem;
+            border: 1px solid var(--color-red);
         }
+
         .login-error.show {
             display: block;
+            animation: shake 0.4s ease-in-out;
         }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        .login-form .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .login-form .form-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .login-form input[type="password"] {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .login-form input[type="password"]:focus {
+            outline: none;
+            border-color: var(--color-green);
+            box-shadow: 0 0 0 3px rgba(111, 143, 114, 0.15);
+        }
+
+        .login-form .btn {
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .login-form .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .login-form .btn:active {
+            transform: translateY(0);
+        }
+
+        .login-footer {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
         .back-link {
-            display: block;
-            text-align: center;
-            margin-top: 1rem;
-            color: var(--text);
-            opacity: 0.7;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-tertiary);
             text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
         }
+
         .back-link:hover {
-            opacity: 1;
+            color: var(--text-primary);
+        }
+
+        .back-link svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Fun decorative elements */
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: var(--color-green);
+            border-radius: 2px;
         }
     </style>
 </head>
 <body>
     <div class="app">
-        <header class="header">
-            <h1>Hensington Palace</h1>
-            <p style="opacity: 0.7; margin-top: 0.5rem;">Admin Login</p>
-        </header>
-
-        <div class="login-container">
+        <div class="login-wrapper">
             <div class="login-card">
-                <h2>Login</h2>
-                <div id="login-error" class="login-error">
-                    Invalid password. Please try again.
+                <div class="login-mascot">
+                    <img src="/images/rudy.png" alt="Rudy the Rooster">
                 </div>
-                <form id="login-form">
+                <h1 class="login-title">Welcome Back!</h1>
+                <p class="login-subtitle">Enter your password to access the coop</p>
+
+                <div id="login-error" class="login-error">
+                    Hmm, that's not right. Try again!
+                </div>
+
+                <form id="login-form" class="login-form">
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" name="password" required autofocus>
+                        <input type="password" id="password" name="password" placeholder="Enter password" required autofocus>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                    <button type="submit" class="btn btn-primary">Enter the Coop</button>
                 </form>
-                <a href="/" class="back-link">Back to Home</a>
+
+                <div class="login-footer">
+                    <a href="/" class="back-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Back to Home
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -73,6 +208,7 @@
     <script>
         const loginForm = document.getElementById('login-form');
         const loginError = document.getElementById('login-error');
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
 
         // Check if already authenticated
         async function checkAuth() {
@@ -97,6 +233,10 @@
 
             const password = document.getElementById('password').value;
 
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Checking...';
+
             try {
                 const response = await fetch('/api/login', {
                     method: 'POST',
@@ -108,16 +248,21 @@
                 });
 
                 if (response.ok) {
+                    submitBtn.textContent = 'Welcome!';
                     window.location.href = '/admin.html';
                 } else {
                     loginError.classList.add('show');
                     document.getElementById('password').value = '';
                     document.getElementById('password').focus();
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Enter the Coop';
                 }
             } catch (error) {
                 console.error('Login failed:', error);
-                loginError.textContent = 'Login failed. Please try again.';
+                loginError.textContent = 'Something went wrong. Please try again.';
                 loginError.classList.add('show');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Enter the Coop';
             }
         });
     </script>
