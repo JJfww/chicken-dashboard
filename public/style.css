@@ -394,10 +394,12 @@ button[form="egg-form"]:hover {
     flex-direction: column;
     height: calc(100vh - 300px);
     max-height: 600px;
+    overflow: hidden;
 }
 
 .chat-messages {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 1rem 0;
