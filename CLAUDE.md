@@ -204,8 +204,9 @@ The `/api/blog/generate` endpoint creates AI-generated blog posts:
 4. Compiles activity into a detailed context summary
 5. Sends to OpenRouter API with Google Gemini 3 Flash Preview model (temperature 0.9 for creativity)
 6. AI generates a blog title and markdown-formatted content
-7. Stores in `blog_posts` table with `is_auto_generated=1` flag
-8. Returns error if no activity found for the date
+7. If photos exist for the date, randomly selects one and prepends it as a markdown image
+8. Stores in `blog_posts` table with `is_auto_generated=1` flag
+9. Returns error if no activity found for the date
 
 The AI blogger persona "Clucky" follows these guidelines:
 - Writes in first person narrating the flock's day

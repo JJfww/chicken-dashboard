@@ -100,9 +100,15 @@ Write a delightful blog post about this day!`;
         // Auto-generate a title from the first sentence or use a default
         const title = generateTitle(blogContent, date);
 
+        // Include photo in content if one was taken that day
+        let finalContent = blogContent;
+        if (activityData.photoId) {
+            finalContent = `![Photo from the day](/api/photos/${activityData.photoId})\n\n${blogContent}`;
+        }
+
         return new Response(JSON.stringify({
             title,
-            content: blogContent,
+            content: finalContent,
             date,
             is_auto_generated: true
         }), {
@@ -197,7 +203,7 @@ async function gatherDailyActivity(db, date) {
 
     // Get photos for this date
     const photos = await db.prepare(`
-        SELECT caption
+        SELECT id, caption
         FROM photos
         WHERE date = ?
     `).bind(date).all();
@@ -210,6 +216,9 @@ async function gatherDailyActivity(db, date) {
                 activity.summary.push(`- ${photo.caption}`);
             }
         });
+        // Pick a random photo to include in the blog post
+        const randomIndex = Math.floor(Math.random() * photos.results.length);
+        activity.photoId = photos.results[randomIndex].id;
     }
 
     // Get weather for this date
@@ -226,7 +235,8 @@ async function gatherDailyActivity(db, date) {
 
     return {
         hasActivity: activity.hasActivity,
-        summary: activity.summary.join('\n')
+        summary: activity.summary.join('\n'),
+        photoId: activity.photoId || null
     };
 }
 
