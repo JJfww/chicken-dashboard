@@ -1,3 +1,5 @@
+import { requireSession } from './_auth.js';
+
 export async function onRequestOptions() {
     return new Response(null, {
         status: 204,
@@ -12,6 +14,10 @@ export async function onRequestOptions() {
 }
 
 export async function onRequestPost(context) {
+    // Require authentication
+    const authError = await requireSession(context.request, context.env);
+    if (authError) return authError;
+
     try {
         const { date, medication_name, chicken_id, quantity, cost, purpose, notes } = await context.request.json();
 

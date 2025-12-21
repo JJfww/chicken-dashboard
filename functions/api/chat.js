@@ -1,3 +1,5 @@
+import { requireSession } from './_auth.js';
+
 export async function onRequestOptions() {
     return new Response(null, {
         status: 204,
@@ -13,6 +15,11 @@ export async function onRequestOptions() {
 
 export async function onRequestPost(context) {
     console.log('=== Chat function called ===');
+
+    // Require authentication
+    const authError = await requireSession(context.request, context.env);
+    if (authError) return authError;
+
     try {
         const { question } = await context.request.json();
         console.log('Question received:', question);

@@ -5,19 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hensington Palace - Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .auth-loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 1.2rem;
+            color: var(--text);
+        }
+        .app.hidden { display: none; }
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--text);
+            color: var(--text);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .logout-btn:hover { opacity: 1; }
+    </style>
+    <script>
+        // Check authentication before showing the page
+        (async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth-check', { credentials: 'include' });
+                const data = await response.json();
+                if (!data.authenticated) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                // Show the app once authenticated
+                document.addEventListener('DOMContentLoaded', () => {
+                    document.querySelector('.app').classList.remove('hidden');
+                    document.querySelector('.auth-loading').style.display = 'none';
+                });
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = '/login.html';
+            }
+        })();
+
+        // Logout function
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+                window.location.href = '/login.html';
+            } catch (error) {
+                console.error('Logout failed:', error);
+                window.location.href = '/login.html';
+            }
+        }
+    </script>
 </head>
 <body>
-    <div class="app">
+    <div class="auth-loading">Loading...</div>
+    <div class="app hidden">
         <!-- Header -->
         <header class="header">
-            <h1>🐔 Hensington Palace</h1>
+            <h1>Hensington Palace</h1>
             <div id="weather" class="weather-widget">
                 <span class="loading">Loading weather...</span>
             </div>
             <div style="text-align: center; margin-top: 0.5rem;">
-                <a href="/blog.html" style="color: var(--text); opacity: 0.7; font-size: 0.9rem; text-decoration: none;">View Public Blog →</a>
-                <span style="opacity: 0.5; margin: 0 0.5rem;">•</span>
-                <span style="color: var(--text); opacity: 0.5; font-size: 0.85rem;">🔒 Authenticated</span>
+                <a href="/blog.html" style="color: var(--text); opacity: 0.7; font-size: 0.9rem; text-decoration: none;">View Public Blog</a>
+                <span style="opacity: 0.5; margin: 0 0.5rem;">|</span>
+                <button onclick="logout()" class="logout-btn">Logout</button>
             </div>
         </header>
 
