@@ -34,6 +34,7 @@ This is a Cloudflare Pages application with a vanilla JavaScript frontend and Cl
 - `PHOTOS`: R2 bucket binding for chicken-photos
 - `OPENROUTER_API_KEY`: Environment variable for AI chat and blog generation (set via Cloudflare dashboard)
 - `WEATHER_LOG_TOKEN`: Bearer token for protected weather logging endpoint
+- `ADMIN_PASSWORD`: Password for admin dashboard authentication (set via Cloudflare dashboard or `wrangler secret put ADMIN_PASSWORD`)
 
 ### Database Schema
 The D1 database contains these tables:
@@ -96,16 +97,56 @@ All API endpoints follow Cloudflare Pages Functions conventions:
   - Uses `fetchDailyWeather()` from `_weather-data.js`
 
 #### AI Chat
-- `/api/chat` - POST to interact with AI assistant
+- `/api/chat` - POST to interact with AI assistant (protected)
   - Uses `gatherContext()` to provide recent activity data
   - Includes chicken names, egg colors, and recent records from multiple tables
+
+#### Authentication
+- `/api/login` - POST with `{ password }` to authenticate, sets session cookie
+- `/api/logout` - POST to clear session cookie
+- `/api/auth-check` - GET to check if current session is valid, returns `{ authenticated: boolean }`
+
+### Authentication System
+The admin dashboard uses session-based cookie authentication:
+
+#### How It Works
+1. User visits `/admin.html` → redirected to `/login.html` if not authenticated
+2. User enters password → validated against `ADMIN_PASSWORD` environment variable
+3. Server creates signed session token (HMAC-SHA256) with 24-hour expiry
+4. Token stored in httpOnly, Secure, SameSite=Strict cookie
+5. All protected API endpoints validate session cookie before processing
+
+#### Auth Middleware
+- `functions/api/_auth.js` - Shared authentication utilities
+  - `createSession(env)` - Creates signed session token
+  - `requireSession(request, env)` - Middleware that returns 401 if not authenticated
+  - `isAuthenticated(request, env)` - Returns boolean for auth status
+
+#### Protected vs Public Endpoints
+| Endpoint | GET | POST |
+|----------|-----|------|
+| `/api/eggs`, `/api/feeding`, `/api/health`, `/api/free-range` | Public | Protected |
+| `/api/photos` | Public | Protected |
+| `/api/blog` | Public | Protected |
+| `/api/blog/generate` | - | Protected |
+| `/api/chat` | - | Protected |
+| `/api/feed-purchases`, `/api/medication`, `/api/supplies` | Public | Protected |
+| `/api/status`, `/api/activity`, `/api/weather` | Public | - |
+
+#### Protected Pages
+- `/admin.html` - Requires authentication, redirects to login if not authenticated
+- `/login.html` - Login page with password form
+
+#### Public Pages (no auth required)
+- `/` - Landing page
+- `/blog.html` - Public blog
+- `/status.html` - Public chicken status
 
 ### Frontend Architecture
 
 #### Admin Interface
-Single-page app with two versions:
-- `index.html`: Main admin dashboard
-- `admin.html`: Identical to index.html, marked as "🔒 Authenticated" in header
+- `admin.html`: Protected admin dashboard (requires login)
+- `login.html`: Login page with password authentication
 
 Tab-based interface:
 - **Log**: Consolidated interface for Eggs, Feeding, Free Range, and Health Observations
@@ -205,3 +246,6 @@ The Expenses tab aggregates totals from all three categories and displays a unif
 - Blog posts support markdown rendering via Marked.js library
 - The `/api/weather-log` endpoint requires Bearer token authentication for security
 - Weather data comes from the US National Weather Service API (requires User-Agent header with contact email)
+- Admin dashboard requires `ADMIN_PASSWORD` environment variable to be set in Cloudflare
+- Session cookies are signed using HMAC-SHA256 with the admin password as the secret
+- All POST endpoints (except login/logout) require valid session authentication

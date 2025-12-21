@@ -29,6 +29,12 @@
         .logout-btn:hover { opacity: 1; }
     </style>
     <script>
+        // Show the app (called after auth confirmed)
+        function showApp() {
+            document.querySelector('.app').classList.remove('hidden');
+            document.querySelector('.auth-loading').style.display = 'none';
+        }
+
         // Check authentication before showing the page
         (async function checkAuth() {
             try {
@@ -39,10 +45,11 @@
                     return;
                 }
                 // Show the app once authenticated
-                document.addEventListener('DOMContentLoaded', () => {
-                    document.querySelector('.app').classList.remove('hidden');
-                    document.querySelector('.auth-loading').style.display = 'none';
-                });
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', showApp);
+                } else {
+                    showApp();
+                }
             } catch (error) {
                 console.error('Auth check failed:', error);
                 window.location.href = '/login.html';
