@@ -384,9 +384,35 @@ function formatDate(dateString) {
     return date.toLocaleDateString();
 }
 
+// Load weather
+async function loadWeather() {
+    const weatherDiv = document.getElementById('weather');
+    if (!weatherDiv) return;
+
+    try {
+        const response = await fetch('/api/weather');
+        if (response.ok) {
+            const weather = await response.json();
+            const humidityText = typeof weather.humidity === 'number'
+                ? `${weather.humidity}%`
+                : '--';
+            weatherDiv.innerHTML = `
+                🌡️ ${weather.temperature}°F |
+                ${weather.description} |
+                💧 ${humidityText}
+            `;
+        } else {
+            weatherDiv.innerHTML = '<span class="loading">Weather unavailable</span>';
+        }
+    } catch (error) {
+        weatherDiv.innerHTML = '<span class="loading">Weather unavailable</span>';
+    }
+}
+
 // Initialize router and set up tab click listeners on page load
 document.addEventListener('DOMContentLoaded', () => {
     RouterManager.init();
+    loadWeather();
 
     // Set up tab click listeners
     document.querySelectorAll('.tab[data-tab]').forEach(tab => {
