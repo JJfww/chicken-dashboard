@@ -15,23 +15,38 @@ export async function onRequestGet(context) {
         }
 
         const stationsData = await fetchJson(stationsUrl, userAgent);
-        const stationId = stationsData?.features?.[0]?.properties?.stationIdentifier;
+        const stations = stationsData?.features || [];
 
-        if (!stationId) {
-            throw new Error('NWS stations response missing station identifier');
+        if (stations.length === 0) {
+            throw new Error('NWS stations response missing stations');
         }
 
-        const observationUrl = `https://api.weather.gov/stations/${stationId}/observations/latest`;
-        const observationData = await fetchJson(observationUrl, userAgent);
-        const observation = observationData?.properties;
+        // Try multiple stations until we find one with valid temperature
+        let observation = null;
+        let temperatureF = null;
 
-        if (!observation) {
-            throw new Error('NWS observation response missing properties');
+        for (const station of stations.slice(0, 5)) {
+            const stationId = station?.properties?.stationIdentifier;
+            if (!stationId) continue;
+
+            try {
+                const observationUrl = `https://api.weather.gov/stations/${stationId}/observations/latest`;
+                const observationData = await fetchJson(observationUrl, userAgent);
+                const obs = observationData?.properties;
+
+                if (obs?.temperature?.value !== null && typeof obs?.temperature?.value === 'number') {
+                    observation = obs;
+                    temperatureF = celsiusToFahrenheit(obs.temperature.value);
+                    break;
+                }
+            } catch (e) {
+                // Try next station
+                continue;
+            }
         }
 
-        const temperatureF = celsiusToFahrenheit(observation.temperature?.value);
         if (temperatureF === null) {
-            throw new Error('NWS observation missing temperature');
+            throw new Error('No station with valid temperature found');
         }
 
         const weather = {
