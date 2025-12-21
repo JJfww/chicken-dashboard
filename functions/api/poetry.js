@@ -1,6 +1,49 @@
 // Generate random chicken or squirrel poetry
 export async function onRequestGet(context) {
-  const { env } = context;
+  const { env, request } = context;
+
+  // Rate limiting: 10 requests per minute per IP
+  const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const now = Date.now();
+  const windowStart = now - 60000; // 1 minute ago
+
+  try {
+    // Clean up old rate limit records (older than 1 minute)
+    await env.DB.prepare(
+      'DELETE FROM rate_limits WHERE timestamp < ?'
+    ).bind(windowStart).run();
+
+    // Count requests in the current window
+    const countResult = await env.DB.prepare(
+      'SELECT COUNT(*) as count FROM rate_limits WHERE ip = ? AND endpoint = ? AND timestamp > ?'
+    ).bind(clientIP, 'poetry', windowStart).first();
+
+    const requestCount = countResult?.count || 0;
+
+    if (requestCount >= 10) {
+      return new Response(JSON.stringify({
+        error: "Rate limit exceeded",
+        message: "Too many requests. Please try again in a minute.",
+        retryAfter: 60
+      }), {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Retry-After": "60"
+        }
+      });
+    }
+
+    // Record this request
+    await env.DB.prepare(
+      'INSERT INTO rate_limits (ip, endpoint, timestamp) VALUES (?, ?, ?)'
+    ).bind(clientIP, 'poetry', now).run();
+
+  } catch (error) {
+    console.error('Rate limiting error:', error);
+    // Continue without rate limiting if there's a database error
+  }
 
   // Poetry forms with their specifications
   const poetryForms = [
@@ -97,7 +140,7 @@ export async function onRequestGet(context) {
         "X-Title": "Hensington Palace - Poetry"
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash-lite",
         messages: [
           {
             role: "system",
