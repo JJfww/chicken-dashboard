@@ -248,7 +248,7 @@ async function loadBlogPosts() {
                             ${post.title || 'Untitled Post'}
                             ${isAuto ? '<span style="font-size: 0.8rem; opacity: 0.7;"> (AI-Generated)</span>' : ''}
                         </div>
-                        <div class="activity-details blog-content">${marked.parse(post.content)}</div>
+                        <div class="activity-details blog-content">${marked.parse(post.content || '')}</div>
                         <div class="activity-date">${formatDate(post.date)}</div>
                     </div>
                 `;
