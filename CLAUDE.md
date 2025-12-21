@@ -217,10 +217,11 @@ The AI blogger persona "Clucky" follows these guidelines:
 
 ### Photo Storage Flow
 1. Frontend uploads photo as FormData to `/api/photos`
-2. Backend generates unique filename: `timestamp.extension`
-3. Stores file in R2 at `photos/timestamp.extension`
-4. Saves metadata (date, filename, r2_key, caption) to D1
-5. `/api/photos/[id]` retrieves photo from R2 by looking up r2_key in D1
+2. Upload button shows "Uploading..." and is disabled to prevent double-submissions
+3. Backend generates unique filename: `timestamp.extension`
+4. Stores file in R2 at `photos/timestamp.extension`
+5. Saves metadata (date, filename, r2_key, caption) to D1
+6. `/api/photos/[id]` retrieves photo from R2 by looking up r2_key in D1
 
 ### Weather Logging System
 The app automatically logs daily weather data using a Cloudflare Cron Trigger:
