@@ -405,6 +405,25 @@ button[form="egg-form"]:hover {
     -webkit-overflow-scrolling: touch;
 }
 
+/* Always show scrollbar in chat */
+.chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
+}
+
 .chat-message {
     margin-bottom: 1rem;
     padding: 1rem;
