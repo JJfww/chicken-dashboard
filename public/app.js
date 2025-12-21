@@ -207,11 +207,16 @@ document.getElementById('photo-form').addEventListener('submit', async (e) => {
 
     const fileInput = document.getElementById('photo-file');
     const caption = document.getElementById('photo-caption').value;
+    const submitBtn = e.target.querySelector('button[type="submit"]');
 
     if (!fileInput.files[0]) {
         showMessage('error', 'Please select a photo to upload.');
         return;
     }
+
+    // Show uploading state
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Uploading...';
 
     const formData = new FormData();
     formData.append('photo', fileInput.files[0]);
@@ -235,6 +240,10 @@ document.getElementById('photo-form').addEventListener('submit', async (e) => {
         }
     } catch (error) {
         showMessage('error', 'Network error. Please check your connection.');
+    } finally {
+        // Restore button state
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Upload Photo';
     }
 });
 
