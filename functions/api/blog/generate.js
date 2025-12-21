@@ -58,8 +58,11 @@ Guidelines:
 - Keep it between 150-300 words
 - Be conversational and entertaining
 - Include specific details from the activities (chicken names, what they did, etc.)
-- End with a fun sign-off like "Cluck you later!" or "Winging it till tomorrow!"
+- End with a fun sign-off like "Cluck you later!" or "Winging it till tomorrow!" - be creative and make up your own.
 - Format as plain text paragraphs (no markdown headers)
+- Convert minutes (free range time) to hours when more than 60 minutes. Eg, 120 minutes would convert to 2 hours.
+- Pay attention to what time things happened, when time is logged, to be true to what the chickens' day was like.
+- It's ok to throw in things about Rudy randomly since we don't collect as much info about him - Rudy watched his flock closely, Rudy was "randy" all day, Rudy chased squirrels because he didn't want to share. He's also chased robins, doves, and rabbits. He usually starts crowing at 5:30 am. Those are just ideas - you can take it from there to make it fun and keep with the theme.
 
 Activity data for ${date}:
 ${activityData.summary}
