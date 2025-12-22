@@ -208,13 +208,13 @@ The `/api/blog/generate` endpoint creates AI-generated blog posts:
 8. Stores in `blog_posts` table with `is_auto_generated=1` flag
 9. Returns error if no activity found for the date
 
-The AI blogger persona "Clucky" follows these guidelines:
-- Writes in first person narrating the flock's day
+The public blog is branded as "The Clucking Times" - the official publication covering Hensington Palace. The AI blogger persona "Clucky" is the royal correspondent filing dispatches:
+- Writes in first person as a reporter narrating the flock's day at Hensington Palace
 - Uses chicken puns liberally
 - Converts free range minutes to hours when > 60 minutes
 - Pays attention to timestamps to reflect the day's timeline
 - Includes random Rudy anecdotes (crowing at 5:30am, chasing squirrels/robins/doves/rabbits, being "randy")
-- Ends with creative sign-offs
+- Ends with: "Reporting live from Hensington Palace, this is Clucky for The Clucking Times."
 
 ### Photo Storage Flow
 1. Frontend uploads photo as FormData to `/api/photos`
