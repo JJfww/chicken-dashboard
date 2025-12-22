@@ -396,10 +396,14 @@ async function loadWeather() {
             const humidityText = typeof weather.humidity === 'number'
                 ? `${weather.humidity}%`
                 : '--';
+            const windText = typeof weather.wind === 'number'
+                ? `${weather.wind} mph`
+                : '--';
             weatherDiv.innerHTML = `
                 🌡️ ${weather.temperature}°F |
                 ${weather.description} |
-                💧 ${humidityText}
+                💧 ${humidityText} |
+                💨 ${windText}
             `;
         } else {
             weatherDiv.innerHTML = '<span class="loading">Weather unavailable</span>';

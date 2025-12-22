@@ -49,9 +49,14 @@ export async function onRequestGet(context) {
             throw new Error('No station with valid temperature found');
         }
 
+        // Wind speed comes in km/h, convert to mph
+        const windSpeedKmh = observation.windSpeed?.value;
+        const windSpeedMph = typeof windSpeedKmh === 'number' ? Math.round(windSpeedKmh * 0.621371) : null;
+
         const weather = {
             temperature: Math.round(temperatureF),
             humidity: normalizePercent(observation.relativeHumidity?.value),
+            wind: windSpeedMph,
             description: observation.textDescription || 'Unknown',
             weatherCode: null
         };
