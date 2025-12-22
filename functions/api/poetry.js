@@ -104,7 +104,7 @@ export async function onRequestGet(context) {
     }
   ];
 
-  // 90% chicken, 10% squirrel
+  // 90% chicken, 10% squirrel roast
   const isChicken = Math.random() < 0.9;
   const subject = isChicken ? "chickens" : "squirrels";
   const subjectSingular = isChicken ? "a chicken" : "a squirrel";
@@ -112,8 +112,14 @@ export async function onRequestGet(context) {
   // Randomly select a poetry form
   const form = poetryForms[Math.floor(Math.random() * poetryForms.length)];
 
-  // Replace {subject} in instructions
-  const prompt = form.instructions.replace(/{subject}/g, subject);
+  // Replace {subject} in instructions - squirrel poems are roasts from a chicken's POV
+  let prompt;
+  if (isChicken) {
+    prompt = form.instructions.replace(/{subject}/g, subject);
+  } else {
+    prompt = form.instructions.replace(/{subject}/g, subject) +
+      " Write it as a roast from a chicken's perspective - the chickens find squirrels annoying, thieving, and ridiculous. Be playfully insulting.";
+  }
 
   // Check if API key is configured
   if (!env.OPENROUTER_API_KEY) {
