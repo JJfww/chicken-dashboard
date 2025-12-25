@@ -205,5 +205,74 @@ async function gatherContext(db) {
         });
     }
 
+    // Feed purchases
+    const feedPurchases = await db.prepare(`
+        SELECT date, item, quantity, cost, supplier
+        FROM feed_purchases
+        ORDER BY date DESC
+        LIMIT 10
+    `).all();
+
+    if (feedPurchases.results.length > 0) {
+        context.push('\nRecent feed purchases:');
+        feedPurchases.results.forEach(p => {
+            context.push(`- ${p.date}: ${p.item}${p.quantity ? ' (' + p.quantity + ')' : ''} - $${p.cost.toFixed(2)}${p.supplier ? ' from ' + p.supplier : ''}`);
+        });
+    }
+
+    // Medication
+    const medication = await db.prepare(`
+        SELECT m.date, m.medication_name, m.quantity, m.cost, m.purpose, c.name as chicken_name
+        FROM medication m
+        LEFT JOIN chickens c ON m.chicken_id = c.id
+        ORDER BY m.date DESC
+        LIMIT 10
+    `).all();
+
+    if (medication.results.length > 0) {
+        context.push('\nRecent medication:');
+        medication.results.forEach(m => {
+            const chicken = m.chicken_name || 'All chickens';
+            context.push(`- ${m.date}: ${m.medication_name} for ${chicken}${m.cost ? ' - $' + m.cost.toFixed(2) : ''}${m.purpose ? ' (' + m.purpose + ')' : ''}`);
+        });
+    }
+
+    // Supplies
+    const supplies = await db.prepare(`
+        SELECT date, item, category, cost
+        FROM supplies
+        ORDER BY date DESC
+        LIMIT 10
+    `).all();
+
+    if (supplies.results.length > 0) {
+        context.push('\nRecent supplies:');
+        supplies.results.forEach(s => {
+            context.push(`- ${s.date}: ${s.item}${s.category ? ' [' + s.category + ']' : ''} - $${s.cost.toFixed(2)}`);
+        });
+    }
+
+    // Calculate totals for cost analysis
+    const totalEggs = await db.prepare('SELECT COUNT(*) as count FROM eggs').first();
+    const totalFeedCost = await db.prepare('SELECT SUM(cost) as total FROM feed_purchases').first();
+    const totalMedCost = await db.prepare('SELECT SUM(cost) as total FROM medication').first();
+    const totalSuppliesCost = await db.prepare('SELECT SUM(cost) as total FROM supplies').first();
+
+    const feedCost = totalFeedCost.total || 0;
+    const medCost = totalMedCost.total || 0;
+    const suppliesCost = totalSuppliesCost.total || 0;
+    const totalSpent = feedCost + medCost + suppliesCost;
+    const eggCount = totalEggs.count || 0;
+
+    context.push('\nExpense Summary:');
+    context.push(`- Total eggs collected: ${eggCount}`);
+    context.push(`- Total spent on feed: $${feedCost.toFixed(2)}`);
+    context.push(`- Total spent on medication: $${medCost.toFixed(2)}`);
+    context.push(`- Total spent on supplies: $${suppliesCost.toFixed(2)}`);
+    context.push(`- Grand total spent: $${totalSpent.toFixed(2)}`);
+    if (eggCount > 0) {
+        context.push(`- Cost per egg: $${(totalSpent / eggCount).toFixed(2)}`);
+    }
+
     return context.join('\n');
 }

@@ -49,21 +49,40 @@ export async function onRequestPost(context) {
             });
         }
 
+        // Check if it's Sunday for weekly recap
+        const dateObj = new Date(date + 'T12:00:00');
+        const isSunday = dateObj.getDay() === 0;
+
         // Build the AI prompt for blog generation
         const systemPrompt = `You are Clucky, the royal correspondent for The Clucking Times, filing dispatches from Hensington Palace. Write a fun, engaging dispatch about today's chicken activities.
 
-Guidelines:
-- Write in first person as if you're a reporter narrating the day in the life of the flock at Hensington Palace
-- Use chicken puns liberally (but tastefully)
-- Keep it between 150-300 words
-- Be conversational and entertaining
-- Include specific details from the activities (chicken names, what they did, etc.)
-- End with: "Reporting live from Hensington Palace, this is Clucky for The Clucking Times." You can add a little flair before this sign-off.
-- Format as plain text paragraphs (no markdown headers)
-- Convert minutes (free range time) to hours when more than 60 minutes. Eg, 120 minutes would convert to 2 hours.
-- Pay attention to what time things happened, when time is logged, to be true to what the chickens' day was like.
-- It's ok to throw in things about Rudy randomly since we don't collect as much info about him - Rudy watched his flock closely, Rudy was "randy" all day, Rudy chased squirrels because he didn't want to share. He's also chased robins, doves, and rabbits. He usually starts crowing at 5:30 am. Those are just ideas - you can take it from there to make it fun and keep with the theme.
+CRITICAL RULES:
+- ONLY write about activities that are explicitly listed in the data below. Do NOT invent or assume activities that aren't recorded.
+- If there's no free range time in the data, do NOT mention free range time.
+- If there's no feeding data, do NOT mention treats or snacks.
+- Match your post length to the amount of data: light data days = shorter posts (75-150 words), busy days = longer posts (150-250 words).
 
+Guidelines:
+- Write in first person as a reporter narrating the day at Hensington Palace
+- Use chicken puns sparingly - one or two is enough
+- Be conversational and entertaining while staying factual to the data
+- Include specific details from the activities (chicken names, what they did, etc.)
+- End with: "Reporting live from Hensington Palace, this is Clucky for The Clucking Times."
+- Format as plain text paragraphs (no markdown headers)
+- Convert minutes (free range time) to hours when more than 60 minutes
+
+Optional Rudy mentions (use sparingly - maybe 1 in 3 posts):
+- Rudy doesn't have logged activities, so you MAY occasionally add a brief Rudy anecdote for color
+- Ideas: watching over his flock, crowing somewhere between 5:30-7:30am (his variability is something to crow about!), being "randy", chasing squirrels/robins/doves/rabbits
+- But it's also fine to skip Rudy entirely - not every post needs him
+- NEVER make up activities for the hens - only Rudy can have occasional fictional flourishes
+
+${isSunday ? `SUNDAY SPECIAL - Weekly Recap:
+Since it's Sunday, include a brief "Week in Review" section summarizing the week's egg production totals and any notable events from the weekly data provided below.
+
+Weekly summary:
+${activityData.weeklySummary || 'No weekly data available'}
+` : ''}
 Activity data for ${date}:
 ${activityData.summary}
 
@@ -135,8 +154,15 @@ Write a delightful dispatch about this day!`;
 async function gatherDailyActivity(db, date) {
     const activity = {
         hasActivity: false,
-        summary: []
+        summary: [],
+        weeklySummary: null
     };
+
+    // Check if it's Sunday - if so, gather weekly recap
+    const dateObj = new Date(date + 'T12:00:00');
+    if (dateObj.getDay() === 0) {
+        activity.weeklySummary = await gatherWeeklySummary(db, date);
+    }
 
     // Get eggs for this date
     const eggs = await db.prepare(`
@@ -236,8 +262,81 @@ async function gatherDailyActivity(db, date) {
     return {
         hasActivity: activity.hasActivity,
         summary: activity.summary.join('\n'),
-        photoId: activity.photoId || null
+        photoId: activity.photoId || null,
+        weeklySummary: activity.weeklySummary
     };
+}
+
+async function gatherWeeklySummary(db, sundayDate) {
+    // Calculate the start of the week (Monday before this Sunday)
+    const sunday = new Date(sundayDate + 'T12:00:00');
+    const monday = new Date(sunday);
+    monday.setDate(sunday.getDate() - 6);
+
+    const startDate = monday.toISOString().split('T')[0];
+    const endDate = sundayDate;
+
+    const summary = [];
+
+    // Weekly egg totals by chicken
+    const eggs = await db.prepare(`
+        SELECT c.name, COUNT(*) as count
+        FROM eggs e
+        JOIN chickens c ON e.chicken_id = c.id
+        WHERE e.date BETWEEN ? AND ?
+        GROUP BY c.name
+        ORDER BY count DESC
+    `).bind(startDate, endDate).all();
+
+    if (eggs.results.length > 0) {
+        const totalEggs = eggs.results.reduce((sum, e) => sum + e.count, 0);
+        summary.push(`Total eggs this week: ${totalEggs}`);
+        eggs.results.forEach(e => {
+            summary.push(`- ${e.name}: ${e.count} egg${e.count !== 1 ? 's' : ''}`);
+        });
+    }
+
+    // Total free range time
+    const freeRange = await db.prepare(`
+        SELECT SUM(duration_minutes) as total_minutes
+        FROM free_range
+        WHERE date BETWEEN ? AND ?
+    `).bind(startDate, endDate).all();
+
+    if (freeRange.results[0]?.total_minutes) {
+        const mins = freeRange.results[0].total_minutes;
+        const hours = Math.round(mins / 60 * 10) / 10;
+        summary.push(`Total free range time: ${hours} hours`);
+    }
+
+    // Count of treats/feeding events
+    const feeding = await db.prepare(`
+        SELECT COUNT(*) as count
+        FROM feeding
+        WHERE date BETWEEN ? AND ?
+    `).bind(startDate, endDate).all();
+
+    if (feeding.results[0]?.count > 0) {
+        summary.push(`Treat sessions this week: ${feeding.results[0].count}`);
+    }
+
+    // Any health observations
+    const health = await db.prepare(`
+        SELECT h.observation_type, h.description, c.name, h.date
+        FROM health_observations h
+        LEFT JOIN chickens c ON h.chicken_id = c.id
+        WHERE h.date BETWEEN ? AND ?
+    `).bind(startDate, endDate).all();
+
+    if (health.results.length > 0) {
+        summary.push(`Health notes: ${health.results.length} observation(s)`);
+        health.results.forEach(h => {
+            const chicken = h.name || 'General';
+            summary.push(`- ${chicken}: ${h.observation_type}`);
+        });
+    }
+
+    return summary.length > 0 ? summary.join('\n') : null;
 }
 
 function generateTitle(content, date) {

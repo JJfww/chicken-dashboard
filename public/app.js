@@ -832,21 +832,30 @@ document.getElementById('auto-generate-btn').addEventListener('click', async () 
 });
 
 // Load Blog Posts
-async function loadBlogPosts() {
+// Blog pagination state
+let adminBlogOffset = 0;
+const ADMIN_BLOG_LIMIT = 5;
+
+async function loadBlogPosts(append = false) {
     const feed = document.getElementById('blog-feed');
-    feed.innerHTML = '<p class="loading">Loading blog posts...</p>';
+
+    if (!append) {
+        adminBlogOffset = 0;
+        feed.innerHTML = '<p class="loading">Loading blog posts...</p>';
+    }
 
     try {
-        const response = await fetch('/api/blog', { credentials: 'include' });
+        const response = await fetch(`/api/blog?limit=${ADMIN_BLOG_LIMIT}&offset=${adminBlogOffset}`, { credentials: 'include' });
         if (response.ok) {
-            const posts = await response.json();
+            const data = await response.json();
+            const posts = data.posts;
 
-            if (posts.length === 0) {
+            if (posts.length === 0 && adminBlogOffset === 0) {
                 feed.innerHTML = '<p class="loading">No blog posts yet. Write your first one!</p>';
                 return;
             }
 
-            feed.innerHTML = posts.map(post => {
+            const postsHtml = posts.map(post => {
                 const isAuto = post.is_auto_generated === 1;
                 return `
                     <div class="activity-item blog-post">
@@ -859,12 +868,34 @@ async function loadBlogPosts() {
                     </div>
                 `;
             }).join('');
+
+            if (append) {
+                const existingBtn = feed.querySelector('.load-more-btn');
+                if (existingBtn) existingBtn.remove();
+                feed.insertAdjacentHTML('beforeend', postsHtml);
+            } else {
+                feed.innerHTML = postsHtml;
+            }
+
+            if (data.hasMore) {
+                feed.insertAdjacentHTML('beforeend', `
+                    <button class="load-more-btn" onclick="loadMoreAdminBlogPosts()">
+                        Load More Posts (${data.total - adminBlogOffset - posts.length} remaining)
+                    </button>
+                `);
+            }
+
+            adminBlogOffset += posts.length;
         } else {
             feed.innerHTML = '<p class="loading">Failed to load blog posts.</p>';
         }
     } catch (error) {
         feed.innerHTML = '<p class="loading">Network error loading blog posts.</p>';
     }
+}
+
+function loadMoreAdminBlogPosts() {
+    loadBlogPosts(true);
 }
 
 // Update tab switching to load expenses

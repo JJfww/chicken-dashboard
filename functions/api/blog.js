@@ -60,7 +60,11 @@ export async function onRequestPost(context) {
 
 export async function onRequestGet(context) {
     try {
-        // Get all blog posts, most recent first
+        const url = new URL(context.request.url);
+        const limit = parseInt(url.searchParams.get('limit')) || 5;
+        const offset = parseInt(url.searchParams.get('offset')) || 0;
+
+        // Get blog posts with pagination
         const { results } = await context.env.DB.prepare(`
             SELECT
                 id,
@@ -71,10 +75,17 @@ export async function onRequestGet(context) {
                 created_at
             FROM blog_posts
             ORDER BY date DESC, created_at DESC
-            LIMIT 50
-        `).all();
+            LIMIT ? OFFSET ?
+        `).bind(limit, offset).all();
 
-        return new Response(JSON.stringify(results), {
+        // Get total count for pagination
+        const countResult = await context.env.DB.prepare(
+            'SELECT COUNT(*) as total FROM blog_posts'
+        ).first();
+        const total = countResult.total;
+        const hasMore = offset + results.length < total;
+
+        return new Response(JSON.stringify({ posts: results, total, hasMore }), {
             status: 200,
             headers: {
                 'Content-Type': 'application/json',

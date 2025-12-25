@@ -73,7 +73,9 @@ All API endpoints follow Cloudflare Pages Functions conventions:
 - `/api/supplies` - POST to log supplies purchases, GET to retrieve recent 50 records
 
 #### Blog System
-- `/api/blog` - POST to create blog posts, GET to retrieve all posts sorted by date descending
+- `/api/blog` - POST to create blog posts, GET to retrieve posts with pagination
+  - Query params: `limit` (default 5), `offset` (default 0)
+  - Returns `{ posts, total, hasMore }` for pagination support
 - `/api/blog/generate` - POST to auto-generate blog posts using AI
   - Gathers daily activity from eggs, feeding, free_range, health_observations, photos, and weather
   - Uses OpenRouter API with Google Gemini 3 Flash Preview model
@@ -191,10 +193,12 @@ Each chicken has an associated avatar image:
 
 ### AI Chat Context System
 The `/api/chat` endpoint gathers recent context before calling OpenRouter:
-1. `gatherContext()` queries the last 10-20 records from eggs, feeding, free_range, and health_observations
-2. Formats data into a text summary for the system prompt
-3. Provides AI with chicken names, egg colors, and recent activity
-4. Uses Google Gemini model via OpenRouter API
+1. `gatherContext()` queries the last 10-20 records from eggs, feeding, free_range, health_observations
+2. Also queries recent expenses: feed_purchases, medication, supplies (10 records each)
+3. Calculates expense summary: total eggs, total spent by category, grand total, and cost per egg
+4. Formats data into a text summary for the system prompt
+5. Provides AI with chicken names, egg colors, recent activity, and financial data
+6. Uses Google Gemini model via OpenRouter API
 
 ### Blog Generation System
 The `/api/blog/generate` endpoint creates AI-generated blog posts:
