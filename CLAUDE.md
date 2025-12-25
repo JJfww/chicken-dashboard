@@ -210,11 +210,13 @@ The `/api/blog/generate` endpoint creates AI-generated blog posts:
 
 The public blog is branded as "The Clucking Times" - the official publication covering Hensington Palace. The AI blogger persona "Clucky" is the royal correspondent filing dispatches:
 - Writes in first person as a reporter narrating the flock's day at Hensington Palace
-- Uses chicken puns liberally
+- Uses chicken puns sparingly (one or two per post)
 - Converts free range minutes to hours when > 60 minutes
-- Pays attention to timestamps to reflect the day's timeline
-- Includes random Rudy anecdotes (crowing at 5:30am, chasing squirrels/robins/doves/rabbits, being "randy")
+- **CRITICAL: Only writes about activities actually in the data - never invents hen activities**
+- Post length scales with data volume (75-150 words for light days, 150-250 for busy days)
+- Rudy anecdotes are optional (roughly 1 in 3 posts) - crowing between 5:30-7:30am, chasing squirrels/robins/doves/rabbits, being "randy", watching over his flock
 - Ends with: "Reporting live from Hensington Palace, this is Clucky for The Clucking Times."
+- **Sunday posts include a "Week in Review"** with egg totals by chicken, total free range hours, treat count, and any health notes
 
 ### Photo Storage Flow
 1. Frontend uploads photo as FormData to `/api/photos`
