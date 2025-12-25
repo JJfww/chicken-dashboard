@@ -70,6 +70,7 @@ Guidelines:
 - End with: "Reporting live from Hensington Palace, this is Clucky for The Clucking Times."
 - Format as plain text paragraphs (no markdown headers)
 - Convert minutes (free range time) to hours when more than 60 minutes
+- Do NOT start with "Extra! Extra!" or similar newspaper clichés - jump straight into the story
 
 Optional Rudy mentions (use sparingly - maybe 1 in 3 posts):
 - Rudy doesn't have logged activities, so you MAY occasionally add a brief Rudy anecdote for color
@@ -340,11 +341,17 @@ async function gatherWeeklySummary(db, sundayDate) {
 }
 
 function generateTitle(content, date) {
-    // Try to extract a catchy first sentence or phrase
-    const firstSentence = content.split(/[.!?]/)[0].trim();
+    // Strip common newspaper intros before extracting title
+    let cleanContent = content
+        .replace(/^Extra[!,]*\s*Extra[!,]*\s*/i, '')
+        .replace(/^Extra[!,]*\s*/i, '')
+        .trim();
 
-    // If the first sentence is short enough, use it as the title
-    if (firstSentence.length <= 60) {
+    // Try to extract a catchy first sentence or phrase
+    const firstSentence = cleanContent.split(/[.!?]/)[0].trim();
+
+    // Skip if it's too short/generic or still starts with "Extra"
+    if (firstSentence.length >= 10 && firstSentence.length <= 60 && !firstSentence.toLowerCase().startsWith('extra')) {
         return firstSentence;
     }
 
