@@ -354,9 +354,9 @@ function getActivityDataType(activityType) {
 
 // Map chicken names to their egg colors (CSS color values)
 const chickenEggColors = {
-    'Mamma Mia': '#8B7355',      // brown-olive
-    'Brown Betty': '#98FB98',     // mint green
-    'Madame Pompadour': '#FFF8DC' // cream
+    'Mamma Mia': '#6B8E23',      // olive green (more saturated)
+    'Brown Betty': '#3CB371',     // medium sea green (vivid mint)
+    'Madame Pompadour': '#F5DEB3' // wheat/cream
 };
 
 function getEggTypeDisplay(activity) {

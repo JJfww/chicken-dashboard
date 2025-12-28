@@ -598,11 +598,10 @@ button[form="egg-form"]:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    min-width: 22px;
+    height: 22px;
     border-radius: 50%;
-    font-size: 12px;
-    filter: grayscale(1);
+    font-size: 14px;
 }
 
 .activity-item .activity-details {
