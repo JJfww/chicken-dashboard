@@ -216,12 +216,15 @@
             'Madame Pompadour': '/images/madame-pompadour.png'
         };
 
-        // Map chicken names to their egg colors (CSS color values)
-        const chickenEggColors = {
-            'Mamma Mia': '#6B8E23',      // olive green (more saturated)
-            'Brown Betty': '#3CB371',     // medium sea green (vivid mint)
-            'Madame Pompadour': '#F5DEB3' // wheat/cream
-        };
+        // Get egg color for a chicken (returns CSS color)
+        function getEggColor(name) {
+            const colors = {
+                'Mamma Mia': '#6B8E23',      // olive green
+                'Brown Betty': '#3CB371',     // mint green
+                'Madame Pompadour': '#F5DEB3' // cream
+            };
+            return colors[name] || null;
+        }
 
         async function loadChickenStatus() {
             const rudyContainer = document.getElementById('rudy-container');
@@ -258,9 +261,14 @@
                 // Render hens' cards
                 hensGrid.innerHTML = hens.map(chicken => {
                     const avatarImage = chickenAvatars[chicken.name] || '/images/default.png';
-                    const eggColor = chickenEggColors[chicken.name];
+                    const eggColor = getEggColor(chicken.name);
                     const laidToday = chicken.laid_today;
                     const lastEggDate = chicken.last_egg_date ? formatDate(chicken.last_egg_date) : 'Never';
+
+                    // Build egg emoji HTML
+                    const eggEmoji = eggColor
+                        ? `<span class="egg-emoji" style="background-color: ${eggColor};">🥚</span>`
+                        : '🥚';
 
                     return `
                         <div class="chicken-card">
@@ -269,12 +277,12 @@
                             </div>
                             <h2 class="chicken-name">${chicken.name}</h2>
                             <p class="egg-color">
-                                ${eggColor ? `<span class="egg-emoji" style="background-color: ${eggColor};">🥚</span>` : '🥚'}
+                                ${eggEmoji}
                                 ${chicken.egg_color} eggs
                             </p>
 
                             <div class="status-item ${laidToday ? 'laid-today' : 'not-yet'}">
-                                <div class="status-icon">${laidToday && eggColor ? `<span class="egg-emoji" style="background-color: ${eggColor};">🥚</span>` : (laidToday ? '✅' : '⏱️')}</div>
+                                <div class="status-icon">${laidToday ? eggEmoji : '⏱️'}</div>
                                 <div class="status-text">
                                     <p class="status-label">Today</p>
                                     <p class="status-value">${laidToday ? 'Egg laid!' : 'Not yet'}</p>
