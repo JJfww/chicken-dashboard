@@ -352,16 +352,17 @@ function getActivityDataType(activityType) {
     return 'other';
 }
 
-// Map chicken names to their egg images
-const chickenEggImages = {
-    'Mamma Mia': '/images/egg_mamma_mia.png',
-    'Brown Betty': '/images/egg_brown_betty.png',
-    'Madame Pompadour': '/images/egg-madame-pompadour.png'
+// Map chicken names to their egg colors (CSS color values)
+const chickenEggColors = {
+    'Mamma Mia': '#8B7355',      // brown-olive
+    'Brown Betty': '#98FB98',     // mint green
+    'Madame Pompadour': '#FFF8DC' // cream
 };
 
 function getEggTypeDisplay(activity) {
-    if (activity.chicken_name && chickenEggImages[activity.chicken_name]) {
-        return `<img src="${chickenEggImages[activity.chicken_name]}" alt="${activity.egg_color} egg" class="activity-egg-icon"> Egg Laid`;
+    if (activity.chicken_name && chickenEggColors[activity.chicken_name]) {
+        const color = chickenEggColors[activity.chicken_name];
+        return `<span class="activity-egg-emoji" style="background-color: ${color};">🥚</span> Egg Laid`;
     }
     return '🥚 Egg Laid';
 }
