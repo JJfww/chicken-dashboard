@@ -50,7 +50,8 @@ export async function onRequestGet(context) {
         }
 
         // Wind speed comes in km/h, convert to mph
-        const windSpeedKmh = observation.windSpeed?.value;
+        // Fall back to wind gust if wind speed is unavailable
+        const windSpeedKmh = observation.windSpeed?.value ?? observation.windGust?.value;
         const windSpeedMph = typeof windSpeedKmh === 'number' ? Math.round(windSpeedKmh * 0.621371) : null;
 
         const weather = {
