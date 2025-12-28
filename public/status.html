@@ -105,10 +105,11 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: 28px;
-            height: 28px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            font-size: 16px;
+            font-size: 18px;
+            border: 3px solid;
         }
 
         .status-item {
@@ -265,9 +266,9 @@
                     const laidToday = chicken.laid_today;
                     const lastEggDate = chicken.last_egg_date ? formatDate(chicken.last_egg_date) : 'Never';
 
-                    // Build egg emoji HTML
+                    // Build egg emoji HTML with colored border
                     const eggEmoji = eggColor
-                        ? `<span class="egg-emoji" style="background-color: ${eggColor};">🥚</span>`
+                        ? `<span class="egg-emoji" style="border-color: ${eggColor};">🥚</span>`
                         : '🥚';
 
                     return `

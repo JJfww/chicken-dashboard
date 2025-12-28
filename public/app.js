@@ -362,7 +362,7 @@ const chickenEggColors = {
 function getEggTypeDisplay(activity) {
     if (activity.chicken_name && chickenEggColors[activity.chicken_name]) {
         const color = chickenEggColors[activity.chicken_name];
-        return `<span class="activity-egg-emoji" style="background-color: ${color};">🥚</span> Egg Laid`;
+        return `<span class="activity-egg-emoji" style="border-color: ${color};">🥚</span> Egg Laid`;
     }
     return '🥚 Egg Laid';
 }
