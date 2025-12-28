@@ -356,7 +356,7 @@ function getActivityDataType(activityType) {
 const chickenEggImages = {
     'Mamma Mia': '/images/egg_mamma_mia.png',
     'Brown Betty': '/images/egg_brown_betty.png',
-    'Madame Pompadour': '/images/egg-madame-pompadour.png'
+    'Madame Pompadour': '/images/egg_madame_pompadour.png'
 };
 
 function getEggTypeDisplay(activity) {

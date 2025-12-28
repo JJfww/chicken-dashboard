@@ -1,5 +1,12 @@
 import { requireSession } from '../_auth.js';
 
+// Map chicken names to their egg images
+const chickenEggImages = {
+    'Mamma Mia': '/images/egg_mamma_mia.png',
+    'Brown Betty': '/images/egg_brown_betty.png',
+    'Madame Pompadour': '/images/egg_madame_pompadour.png'
+};
+
 export async function onRequestOptions() {
     return new Response(null, {
         status: 204,
@@ -120,10 +127,24 @@ Write a delightful dispatch about this day!`;
         // Auto-generate a title from the first sentence or use a default
         const title = generateTitle(blogContent, date);
 
+        // Build egg images row if any chickens laid eggs
+        let eggImagesMarkdown = '';
+        if (activityData.eggLayers && activityData.eggLayers.length > 0) {
+            const eggImages = activityData.eggLayers
+                .filter(name => chickenEggImages[name])
+                .map(name => `![${name}'s egg](${chickenEggImages[name]})`)
+                .join(' ');
+            if (eggImages) {
+                eggImagesMarkdown = eggImages + '\n\n';
+            }
+        }
+
         // Include photo in content if one was taken that day
         let finalContent = blogContent;
         if (activityData.photoId) {
-            finalContent = `![Photo from the day](/api/photos/${activityData.photoId})\n\n${blogContent}`;
+            finalContent = `![Photo from the day](/api/photos/${activityData.photoId})\n\n${eggImagesMarkdown}${blogContent}`;
+        } else if (eggImagesMarkdown) {
+            finalContent = `${eggImagesMarkdown}${blogContent}`;
         }
 
         return new Response(JSON.stringify({
@@ -176,8 +197,12 @@ async function gatherDailyActivity(db, date) {
     if (eggs.results.length > 0) {
         activity.hasActivity = true;
         activity.summary.push('Eggs laid:');
+        activity.eggLayers = []; // Track which chickens laid eggs
         eggs.results.forEach(egg => {
             activity.summary.push(`- ${egg.name}${egg.notes ? ' (' + egg.notes + ')' : ''}`);
+            if (!activity.eggLayers.includes(egg.name)) {
+                activity.eggLayers.push(egg.name);
+            }
         });
     }
 
@@ -264,7 +289,8 @@ async function gatherDailyActivity(db, date) {
         hasActivity: activity.hasActivity,
         summary: activity.summary.join('\n'),
         photoId: activity.photoId || null,
-        weeklySummary: activity.weeklySummary
+        weeklySummary: activity.weeklySummary,
+        eggLayers: activity.eggLayers || []
     };
 }
 
