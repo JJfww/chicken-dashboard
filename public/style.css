@@ -602,6 +602,13 @@ button[form="egg-form"]:hover {
     vertical-align: middle;
 }
 
+.egg-icon {
+    width: 24px;
+    height: 28px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
 .activity-item .activity-details {
     color: var(--text-secondary);
     font-size: 0.95rem;

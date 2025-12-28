@@ -6,6 +6,17 @@ const chickenAvatars = {
     'Madame Pompadour': '/images/madame-pompadour.png'
 };
 
+// Chicken egg image mapping
+const chickenEggImages = {
+    'Mamma Mia': '/images/egg_mamma_mia.png',
+    'Brown Betty': '/images/egg_brown_betty.png',
+    'Madame Pompadour': '/images/egg_madame_pompadour.png'
+};
+
+function getEggImage(name) {
+    return chickenEggImages[name] || null;
+}
+
 // Hash routing system
 const RouterManager = {
     currentTab: 'status',
@@ -136,8 +147,14 @@ async function loadChickenStatus() {
         // Render hens' cards
         hensGrid.innerHTML = hens.map(chicken => {
             const avatarImage = chickenAvatars[chicken.name] || '/images/default.png';
+            const eggImage = getEggImage(chicken.name);
             const laidToday = chicken.laid_today;
             const lastEggDate = chicken.last_egg_date ? formatDate(chicken.last_egg_date) : 'Never';
+
+            // Build egg display HTML
+            const eggIcon = eggImage
+                ? `<img src="${eggImage}" alt="${chicken.egg_color} egg" class="egg-icon">`
+                : '🥚';
 
             return `
                 <div class="chicken-card">
@@ -145,10 +162,13 @@ async function loadChickenStatus() {
                         <img src="${avatarImage}" alt="${chicken.name}">
                     </div>
                     <h2 class="chicken-name">${chicken.name}</h2>
-                    <p class="egg-color">${chicken.egg_color} eggs</p>
+                    <p class="egg-color">
+                        ${eggIcon}
+                        ${chicken.egg_color} eggs
+                    </p>
 
                     <div class="status-item ${laidToday ? 'laid-today' : 'not-yet'}">
-                        <div class="status-icon">${laidToday ? '✅' : '⏱️'}</div>
+                        <div class="status-icon">${laidToday ? eggIcon : '⏱️'}</div>
                         <div class="status-text">
                             <p class="status-label">Today</p>
                             <p class="status-value">${laidToday ? 'Egg laid!' : 'Not yet'}</p>
@@ -303,6 +323,14 @@ function getActivityDataType(activityType) {
     return 'other';
 }
 
+function getEggTypeDisplay(activity) {
+    if (activity.chicken_name && chickenEggImages[activity.chicken_name]) {
+        const imgSrc = chickenEggImages[activity.chicken_name];
+        return `<img src="${imgSrc}" alt="${activity.egg_color} egg" class="activity-egg-icon"> Egg Laid`;
+    }
+    return '🥚 Egg Laid';
+}
+
 async function loadActivity() {
     const feed = document.getElementById('activity-feed');
     feed.innerHTML = '<p class="loading">Loading activity...</p>';
@@ -360,7 +388,7 @@ async function loadActivity() {
                         <div class="day-activities" style="${isFirstDay ? '' : 'display: none;'}">
                             ${activities.map(activity => `
                                 <div class="activity-item" data-type="${getActivityDataType(activity.type)}">
-                                    <div class="activity-type">${activity.type}</div>
+                                    <div class="activity-type">${activity.type.includes('Egg') ? getEggTypeDisplay(activity) : activity.type}</div>
                                     <div class="activity-details">${activity.details}</div>
                                     ${activity.photo_id ? `
                                         <img src="/api/photos/${activity.photo_id}"
