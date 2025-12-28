@@ -594,15 +594,12 @@ button[form="egg-form"]:hover {
     gap: 0.4rem;
 }
 
-.activity-egg-emoji {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
+.activity-egg-icon {
+    width: 20px;
     height: 24px;
-    border-radius: 50%;
-    font-size: 14px;
-    border: 2px solid;
+    object-fit: cover;
+    border-radius: 3px;
+    vertical-align: middle;
 }
 
 .activity-item .activity-details {
