@@ -352,6 +352,20 @@ function getActivityDataType(activityType) {
     return 'other';
 }
 
+// Map chicken names to their egg images
+const chickenEggImages = {
+    'Mamma Mia': '/images/egg_mamma_mia.png',
+    'Brown Betty': '/images/egg_brown_betty.png',
+    'Madame Pompadour': '/images/egg-madame-pompadour.png'
+};
+
+function getEggTypeDisplay(activity) {
+    if (activity.chicken_name && chickenEggImages[activity.chicken_name]) {
+        return `<img src="${chickenEggImages[activity.chicken_name]}" alt="${activity.egg_color} egg" class="activity-egg-icon"> Egg Laid`;
+    }
+    return '🥚 Egg Laid';
+}
+
 async function loadActivity() {
     const feed = document.getElementById('activity-feed');
     feed.innerHTML = '<p class="loading">Loading activity...</p>';
@@ -409,7 +423,7 @@ async function loadActivity() {
                         <div class="day-activities" style="${isFirstDay ? '' : 'display: none;'}">
                             ${activities.map(activity => `
                                 <div class="activity-item" data-type="${getActivityDataType(activity.type)}">
-                                    <div class="activity-type">${activity.type}</div>
+                                    <div class="activity-type">${activity.type.includes('Egg') ? getEggTypeDisplay(activity) : activity.type}</div>
                                     <div class="activity-details">${activity.details}</div>
                                     ${activity.photo_id ? `
                                         <img src="/api/photos/${activity.photo_id}"

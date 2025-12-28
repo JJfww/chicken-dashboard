@@ -589,6 +589,17 @@ button[form="egg-form"]:hover {
     font-weight: 600;
     color: var(--color-green);
     margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.activity-egg-icon {
+    width: 20px;
+    height: 24px;
+    object-fit: cover;
+    border-radius: 50%;
+    vertical-align: middle;
 }
 
 .activity-item .activity-details {

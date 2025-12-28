@@ -95,6 +95,24 @@
             font-size: 0.85rem;
             opacity: 0.7;
             margin: 0 0 0.75rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .egg-color-icon {
+            width: 20px;
+            height: 24px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .egg-status-icon {
+            width: 24px;
+            height: 28px;
+            object-fit: cover;
+            border-radius: 50%;
         }
 
         .status-item {
@@ -202,6 +220,13 @@
             'Madame Pompadour': '/images/madame-pompadour.png'
         };
 
+        // Map chicken names to their egg images
+        const chickenEggs = {
+            'Mamma Mia': '/images/egg_mamma_mia.png',
+            'Brown Betty': '/images/egg_brown_betty.png',
+            'Madame Pompadour': '/images/egg-madame-pompadour.png'
+        };
+
         async function loadChickenStatus() {
             const rudyContainer = document.getElementById('rudy-container');
             const hensGrid = document.getElementById('hens-grid');
@@ -237,6 +262,7 @@
                 // Render hens' cards
                 hensGrid.innerHTML = hens.map(chicken => {
                     const avatarImage = chickenAvatars[chicken.name] || '/images/default.png';
+                    const eggImage = chickenEggs[chicken.name];
                     const laidToday = chicken.laid_today;
                     const lastEggDate = chicken.last_egg_date ? formatDate(chicken.last_egg_date) : 'Never';
 
@@ -246,10 +272,13 @@
                                 <img src="${avatarImage}" alt="${chicken.name}">
                             </div>
                             <h2 class="chicken-name">${chicken.name}</h2>
-                            <p class="egg-color">${chicken.egg_color} eggs</p>
+                            <p class="egg-color">
+                                ${eggImage ? `<img src="${eggImage}" alt="${chicken.egg_color} egg" class="egg-color-icon">` : ''}
+                                ${chicken.egg_color} eggs
+                            </p>
 
                             <div class="status-item ${laidToday ? 'laid-today' : 'not-yet'}">
-                                <div class="status-icon">${laidToday ? '✅' : '⏱️'}</div>
+                                <div class="status-icon">${laidToday && eggImage ? `<img src="${eggImage}" alt="egg" class="egg-status-icon">` : (laidToday ? '✅' : '⏱️')}</div>
                                 <div class="status-text">
                                     <p class="status-label">Today</p>
                                     <p class="status-value">${laidToday ? 'Egg laid!' : 'Not yet'}</p>

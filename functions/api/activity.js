@@ -4,7 +4,7 @@ export async function onRequestGet(context) {
 
         // Get recent eggs
         const eggs = await context.env.DB.prepare(`
-            SELECT e.date, c.name as chicken_name, e.notes
+            SELECT e.date, c.name as chicken_name, c.egg_color, e.notes
             FROM eggs e
             JOIN chickens c ON e.chicken_id = c.id
             ORDER BY e.date DESC, e.created_at DESC
@@ -15,7 +15,9 @@ export async function onRequestGet(context) {
             activities.push({
                 type: '🥚 Egg Laid',
                 details: `${egg.chicken_name} laid an egg${egg.notes ? `: ${egg.notes}` : ''}`,
-                date: egg.date
+                date: egg.date,
+                chicken_name: egg.chicken_name,
+                egg_color: egg.egg_color
             });
         });
 
