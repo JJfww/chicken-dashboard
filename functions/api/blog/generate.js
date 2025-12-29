@@ -1,12 +1,5 @@
 import { requireSession } from '../_auth.js';
 
-// Map chicken names to their egg images
-const chickenEggImages = {
-    'Mamma Mia': '/images/egg_mamma_mia.png',
-    'Brown Betty': '/images/egg_brown_betty.png',
-    'Madame Pompadour': '/images/egg_madame_pompadour.png'
-};
-
 export async function onRequestOptions() {
     return new Response(null, {
         status: 204,
@@ -74,6 +67,7 @@ Guidelines:
 - Use chicken puns sparingly - one or two is enough
 - Be conversational and entertaining while staying factual to the data
 - Include specific details from the activities (chicken names, what they did, etc.)
+- Use the 🥚 egg emoji inline when mentioning eggs being laid (e.g., "Mamma Mia laid a beautiful 🥚 today")
 - End with: "Reporting live from Hensington Palace, this is Clucky for The Clucking Times."
 - Format as plain text paragraphs (no markdown headers)
 - Convert minutes (free range time) to hours when more than 60 minutes
@@ -127,24 +121,10 @@ Write a delightful dispatch about this day!`;
         // Auto-generate a title from the first sentence or use a default
         const title = generateTitle(blogContent, date);
 
-        // Build egg images row if any chickens laid eggs
-        let eggImagesMarkdown = '';
-        if (activityData.eggLayers && activityData.eggLayers.length > 0) {
-            const eggImages = activityData.eggLayers
-                .filter(name => chickenEggImages[name])
-                .map(name => `![${name}'s egg](${chickenEggImages[name]})`)
-                .join(' ');
-            if (eggImages) {
-                eggImagesMarkdown = eggImages + '\n\n';
-            }
-        }
-
         // Include photo in content if one was taken that day
         let finalContent = blogContent;
         if (activityData.photoId) {
-            finalContent = `![Photo from the day](/api/photos/${activityData.photoId})\n\n${eggImagesMarkdown}${blogContent}`;
-        } else if (eggImagesMarkdown) {
-            finalContent = `${eggImagesMarkdown}${blogContent}`;
+            finalContent = `![Photo from the day](/api/photos/${activityData.photoId})\n\n${blogContent}`;
         }
 
         return new Response(JSON.stringify({
