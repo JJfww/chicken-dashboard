@@ -67,7 +67,9 @@ Guidelines:
 - Use chicken puns sparingly - one or two is enough
 - Be conversational and entertaining while staying factual to the data
 - Include specific details from the activities (chicken names, what they did, etc.)
-- Use the 🥚 egg emoji inline when mentioning eggs being laid (e.g., "Mamma Mia laid a beautiful 🥚 today")
+- Use the 🥚 egg emoji inline when mentioning eggs being laid
+- ALWAYS mention each hen's egg color when describing their egg (e.g., "Mamma Mia's beautiful brown-olive 🥚" or "Brown Betty's lovely green 🥚")
+- Use the logged times provided in the data - don't make up times of day
 - End with: "Reporting live from Hensington Palace, this is Clucky for The Clucking Times."
 - Format as plain text paragraphs (no markdown headers)
 - Convert minutes (free range time) to hours when more than 60 minutes
@@ -166,9 +168,9 @@ async function gatherDailyActivity(db, date) {
         activity.weeklySummary = await gatherWeeklySummary(db, date);
     }
 
-    // Get eggs for this date
+    // Get eggs for this date (include time and egg color)
     const eggs = await db.prepare(`
-        SELECT c.name, e.notes
+        SELECT c.name, c.egg_color, e.notes, e.time
         FROM eggs e
         JOIN chickens c ON e.chicken_id = c.id
         WHERE e.date = ?
@@ -179,16 +181,17 @@ async function gatherDailyActivity(db, date) {
         activity.summary.push('Eggs laid:');
         activity.eggLayers = []; // Track which chickens laid eggs
         eggs.results.forEach(egg => {
-            activity.summary.push(`- ${egg.name}${egg.notes ? ' (' + egg.notes + ')' : ''}`);
+            const timeInfo = egg.time ? ` at ${egg.time}` : '';
+            activity.summary.push(`- ${egg.name} (${egg.egg_color} egg)${timeInfo}${egg.notes ? ' - ' + egg.notes : ''}`);
             if (!activity.eggLayers.includes(egg.name)) {
                 activity.eggLayers.push(egg.name);
             }
         });
     }
 
-    // Get feeding for this date
+    // Get feeding for this date (include time)
     const feeding = await db.prepare(`
-        SELECT feed_type, description, notes
+        SELECT feed_type, description, notes, time
         FROM feeding
         WHERE date = ?
     `).bind(date).all();
@@ -197,7 +200,8 @@ async function gatherDailyActivity(db, date) {
         activity.hasActivity = true;
         activity.summary.push('\nFeeding:');
         feeding.results.forEach(feed => {
-            activity.summary.push(`- ${feed.description} (${feed.feed_type})${feed.notes ? ' - ' + feed.notes : ''}`);
+            const timeInfo = feed.time ? ` at ${feed.time}` : '';
+            activity.summary.push(`- ${feed.description} (${feed.feed_type})${timeInfo}${feed.notes ? ' - ' + feed.notes : ''}`);
         });
     }
 
