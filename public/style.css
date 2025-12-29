@@ -1110,7 +1110,7 @@ button:disabled {
 }
 
 .hens-grid .chicken-name {
-    min-height: 4rem;
+    word-spacing: 100vw;
 }
 
 .hens-grid .egg-color {
