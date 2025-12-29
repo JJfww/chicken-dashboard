@@ -180,6 +180,7 @@ Frontend uses tab switching without page reloads and Marked.js (v11.1.1) for mar
   - Shows recent health concerns with warning styling
   - Shows Rudy's random personality status
   - Auto-refreshes every 60 seconds
+  - CSS uses `word-spacing: 100vw` on chicken names to force two-line display for alignment across cards
 - **`/blog.html`**: Public blog viewing page
   - Displays blog posts and activity history
   - Navigation to status page and admin dashboard
@@ -190,6 +191,16 @@ Each chicken has an associated avatar image:
 - Mamma Mia → `/images/mamma-mia.png`
 - Brown Betty → `/images/brown-betty.png`
 - Madame Pompadour → `/images/madame-pompadour.png`
+
+### Egg Images
+Each hen has a specific egg image matching her egg color:
+- Mamma Mia → `/images/egg_mamma_mia.png` (brown-olive)
+- Brown Betty → `/images/egg_brown_betty.png` (green)
+- Madame Pompadour → `/images/egg_madame_pompadour.png` (eggshell)
+
+These are used:
+- On the status page as small icons next to egg color text
+- Inline in blog posts when mentioning eggs (rendered text-sized via CSS `img[src*="egg_"]`)
 
 ### AI Chat Context System
 The `/api/chat` endpoint gathers recent context before calling OpenRouter:
@@ -203,9 +214,9 @@ The `/api/chat` endpoint gathers recent context before calling OpenRouter:
 ### Blog Generation System
 The `/api/blog/generate` endpoint creates AI-generated blog posts:
 1. Accepts a date parameter (defaults to today)
-2. Gathers all activity for that date: eggs, feeding, free_range, health_observations, photos
+2. Gathers all activity for that date: eggs (with time and egg color), feeding (with time), free_range, health_observations, photos
 3. Fetches weather data for the date from weather_logs table
-4. Compiles activity into a detailed context summary
+4. Compiles activity into a detailed context summary including logged times
 5. Sends to OpenRouter API with Google Gemini 3 Flash Preview model (temperature 0.9 for creativity)
 6. AI generates a blog title and markdown-formatted content
 7. If photos exist for the date, randomly selects one and prepends it as a markdown image
@@ -217,6 +228,9 @@ The public blog is branded as "The Clucking Times" - the official publication co
 - Uses chicken puns sparingly (one or two per post)
 - Converts free range minutes to hours when > 60 minutes
 - **CRITICAL: Only writes about activities actually in the data - never invents hen activities**
+- **Uses logged times** from the data - does not make up times of day
+- **Uses hen-specific egg images inline** with markdown syntax (e.g., `![egg](/images/egg_brown_betty.png)`) - these render text-sized in the blog
+- **Always mentions egg color** when describing a hen's egg (e.g., "Brown Betty's gorgeous green egg")
 - Post length scales with data volume (75-150 words for light days, 150-250 for busy days)
 - Rudy anecdotes are optional (roughly 1 in 3 posts) - crowing between 5:30-7:30am, chasing squirrels/robins/doves/rabbits, being "randy", watching over his flock
 - Ends with: "Reporting live from Hensington Palace, this is Clucky for The Clucking Times."
