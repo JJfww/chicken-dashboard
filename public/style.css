@@ -1109,6 +1109,10 @@ button:disabled {
     flex-direction: column;
 }
 
+.hens-grid .chicken-name {
+    min-height: 4rem;
+}
+
 .hens-grid .egg-color {
     margin: auto 0 0.75rem 0;
     display: flex;
