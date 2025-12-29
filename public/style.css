@@ -672,6 +672,18 @@ button[form="egg-form"]:hover {
     box-shadow: var(--shadow-sm);
 }
 
+/* Inline egg images in blog posts - text-sized */
+.blog-content img[src*="egg_"] {
+    display: inline;
+    max-width: none;
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: middle;
+    border-radius: 0;
+    margin: 0 0.1em;
+    box-shadow: none;
+}
+
 .blog-content p {
     margin-bottom: 1rem;
 }
