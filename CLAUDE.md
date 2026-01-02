@@ -41,7 +41,7 @@ The D1 database contains these tables:
 - `chickens`: Four chickens (Mamma Mia, Brown Betty, Madame Pompadour, and Rudy the rooster) with egg color info
 - `eggs`: Egg production logs linked to chickens
 - `feeding`: Feeding activity (treats, scraps)
-- `free_range`: Free range time tracking
+- `free_range`: Free range time tracking (time_start, time_end, duration_minutes calculated automatically, displayed as H:MM)
 - `health_observations`: Health notes per chicken or general observations (types: molting, sneezing, behavior, other)
 - `photos`: Photo metadata (actual files stored in R2)
 - `weather_logs`: Daily weather data (temp high/low, humidity, wind, precipitation, pressure, conditions, daylight hours)
@@ -62,7 +62,7 @@ All API endpoints follow Cloudflare Pages Functions conventions:
 #### Core Activity Tracking
 - `/api/eggs` - POST to log eggs, GET to retrieve recent eggs
 - `/api/feeding` - POST to log feeding, GET to retrieve recent feeding records
-- `/api/free-range` - POST to log free range time, GET to retrieve recent records
+- `/api/free-range` - POST to log free range time (time_start, time_end - duration calculated automatically), GET to retrieve recent records with H:MM formatted duration
 - `/api/health` - POST to log health observations, GET to retrieve recent observations
 - `/api/photos` - POST to upload (stores in R2 + DB), GET to list photos
 - `/api/photos/[id]` - Dynamic route to retrieve individual photos from R2

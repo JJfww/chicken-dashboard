@@ -210,7 +210,7 @@ async function gatherDailyActivity(db, date) {
 
     // Get free range for this date
     const freeRange = await db.prepare(`
-        SELECT duration_minutes, notes
+        SELECT time_start, time_end, duration_minutes, notes
         FROM free_range
         WHERE date = ?
     `).bind(date).all();
@@ -219,7 +219,11 @@ async function gatherDailyActivity(db, date) {
         activity.hasActivity = true;
         activity.summary.push('\nFree Range:');
         freeRange.results.forEach(fr => {
-            activity.summary.push(`- ${fr.duration_minutes} minutes${fr.notes ? ' - ' + fr.notes : ''}`);
+            // Format duration as H:MM
+            const hours = Math.floor(fr.duration_minutes / 60);
+            const mins = fr.duration_minutes % 60;
+            const durationFormatted = `${hours}:${mins.toString().padStart(2, '0')}`;
+            activity.summary.push(`- ${durationFormatted} (${fr.time_start} to ${fr.time_end})${fr.notes ? ' - ' + fr.notes : ''}`);
         });
     }
 
@@ -318,9 +322,11 @@ async function gatherWeeklySummary(db, sundayDate) {
     `).bind(startDate, endDate).all();
 
     if (freeRange.results[0]?.total_minutes) {
-        const mins = freeRange.results[0].total_minutes;
-        const hours = Math.round(mins / 60 * 10) / 10;
-        summary.push(`Total free range time: ${hours} hours`);
+        const totalMins = freeRange.results[0].total_minutes;
+        const hours = Math.floor(totalMins / 60);
+        const mins = totalMins % 60;
+        const formatted = `${hours}:${mins.toString().padStart(2, '0')}`;
+        summary.push(`Total free range time: ${formatted}`);
     }
 
     // Count of treats/feeding events

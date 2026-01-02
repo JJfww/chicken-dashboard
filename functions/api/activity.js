@@ -40,17 +40,23 @@ export async function onRequestGet(context) {
 
         // Get recent free range
         const freeRange = await context.env.DB.prepare(`
-            SELECT date, duration_minutes, notes
+            SELECT date, time_start, time_end, duration_minutes, notes
             FROM free_range
-            ORDER BY date DESC, created_at DESC
+            ORDER BY date DESC, time_start DESC, created_at DESC
             LIMIT 10
         `).all();
 
         freeRange.results.forEach(fr => {
+            // Format duration as H:MM
+            const hours = Math.floor(fr.duration_minutes / 60);
+            const mins = fr.duration_minutes % 60;
+            const durationFormatted = `${hours}:${mins.toString().padStart(2, '0')}`;
             activities.push({
                 type: '🌿 Free Range',
-                details: `${fr.duration_minutes} minutes${fr.notes ? `: ${fr.notes}` : ''}`,
-                date: fr.date
+                details: `${durationFormatted}${fr.notes ? ` - ${fr.notes}` : ''}`,
+                date: fr.date,
+                time_start: fr.time_start,
+                time_end: fr.time_end
             });
         });
 

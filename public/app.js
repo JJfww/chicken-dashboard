@@ -143,9 +143,9 @@ document.getElementById('free-range-form').addEventListener('submit', async (e) 
     const formData = new FormData(e.target);
     const data = {
         date: getCurrentDateCST(),
-        duration_minutes: parseInt(formData.get('duration_minutes')),
-        notes: formData.get('notes') || null,
-        time: formData.get('time') || null
+        time_start: formData.get('time_start'),
+        time_end: formData.get('time_end'),
+        notes: formData.get('notes') || null
     };
 
     try {
@@ -160,7 +160,8 @@ document.getElementById('free-range-form').addEventListener('submit', async (e) 
             showMessage('success', 'Free range time logged successfully!');
             e.target.reset();
         } else {
-            showMessage('error', 'Failed to log free range. Please try again.');
+            const error = await response.json();
+            showMessage('error', error.error || 'Failed to log free range. Please try again.');
         }
     } catch (error) {
         showMessage('error', 'Network error. Please check your connection.');

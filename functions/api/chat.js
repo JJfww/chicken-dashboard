@@ -175,7 +175,7 @@ async function gatherContext(db) {
 
     // Recent free range
     const freeRange = await db.prepare(`
-        SELECT date, duration_minutes
+        SELECT date, time_start, time_end, duration_minutes
         FROM free_range
         ORDER BY date DESC
         LIMIT 10
@@ -184,7 +184,10 @@ async function gatherContext(db) {
     if (freeRange.results.length > 0) {
         context.push('\nRecent free range:');
         freeRange.results.forEach(fr => {
-            context.push(`- ${fr.date}: ${fr.duration_minutes} minutes`);
+            const hours = Math.floor(fr.duration_minutes / 60);
+            const mins = fr.duration_minutes % 60;
+            const durationFormatted = `${hours}:${mins.toString().padStart(2, '0')}`;
+            context.push(`- ${fr.date}: ${durationFormatted} (${fr.time_start} to ${fr.time_end})`);
         });
     }
 

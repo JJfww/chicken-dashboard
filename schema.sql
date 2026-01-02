@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS feeding (
 CREATE TABLE IF NOT EXISTS free_range (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT NOT NULL,
+    time_start TEXT NOT NULL,
+    time_end TEXT NOT NULL,
     duration_minutes INTEGER NOT NULL,
     notes TEXT,
     created_at TEXT DEFAULT (datetime('now'))
