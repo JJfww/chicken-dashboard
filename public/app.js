@@ -41,7 +41,7 @@ document.querySelectorAll('.chicken-btn').forEach(btn => {
     });
 });
 
-// Photo preview
+// Photo/video preview
 document.getElementById('photo-file').addEventListener('change', function(e) {
     const file = e.target.files[0];
     const preview = document.getElementById('photo-preview');
@@ -49,7 +49,11 @@ document.getElementById('photo-file').addEventListener('change', function(e) {
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            if (file.type.startsWith('video/')) {
+                preview.innerHTML = `<video src="${e.target.result}" controls style="max-width: 100%;"></video>`;
+            } else {
+                preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            }
         };
         reader.readAsDataURL(file);
     } else {
@@ -141,10 +145,19 @@ document.getElementById('free-range-form').addEventListener('submit', async (e) 
     e.preventDefault();
 
     const formData = new FormData(e.target);
+    const time_start = formData.get('time_start') || null;
+    const time_end = formData.get('time_end') || null;
+
+    // Validate at least one time is provided
+    if (!time_start && !time_end) {
+        showMessage('error', 'Please provide at least a start time or end time.');
+        return;
+    }
+
     const data = {
         date: getCurrentDateCST(),
-        time_start: formData.get('time_start'),
-        time_end: formData.get('time_end'),
+        time_start,
+        time_end,
         notes: formData.get('notes') || null
     };
 
@@ -156,12 +169,20 @@ document.getElementById('free-range-form').addEventListener('submit', async (e) 
             body: JSON.stringify(data)
         });
 
+        const result = await response.json();
+
         if (response.ok) {
-            showMessage('success', 'Free range time logged successfully!');
+            // Show appropriate message based on action
+            if (result.action === 'started') {
+                showMessage('success', 'Free range session started! Submit end time when they return.');
+            } else if (result.action === 'completed') {
+                showMessage('success', 'Free range session completed!');
+            } else {
+                showMessage('success', 'Free range time logged successfully!');
+            }
             e.target.reset();
         } else {
-            const error = await response.json();
-            showMessage('error', error.error || 'Failed to log free range. Please try again.');
+            showMessage('error', result.error || 'Failed to log free range. Please try again.');
         }
     } catch (error) {
         showMessage('error', 'Network error. Please check your connection.');
@@ -202,6 +223,35 @@ document.getElementById('health-form').addEventListener('submit', async (e) => {
     }
 });
 
+// Notes Form Submission
+document.getElementById('notes-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = {
+        date: getCurrentDateCST(),
+        content: formData.get('content')
+    };
+
+    try {
+        const response = await fetch('/api/notes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            showMessage('success', 'Note added successfully!');
+            e.target.reset();
+        } else {
+            showMessage('error', 'Failed to add note. Please try again.');
+        }
+    } catch (error) {
+        showMessage('error', 'Network error. Please check your connection.');
+    }
+});
+
 // Photo Form Submission
 document.getElementById('photo-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -211,7 +261,7 @@ document.getElementById('photo-form').addEventListener('submit', async (e) => {
     const submitBtn = e.target.querySelector('button[type="submit"]');
 
     if (!fileInput.files[0]) {
-        showMessage('error', 'Please select a photo to upload.');
+        showMessage('error', 'Please select a photo or video to upload.');
         return;
     }
 
@@ -232,19 +282,19 @@ document.getElementById('photo-form').addEventListener('submit', async (e) => {
         });
 
         if (response.ok) {
-            showMessage('success', 'Photo uploaded successfully!');
+            showMessage('success', 'Uploaded successfully!');
             e.target.reset();
             document.getElementById('photo-preview').innerHTML = '';
             loadPhotos();
         } else {
-            showMessage('error', 'Failed to upload photo. Please try again.');
+            showMessage('error', 'Failed to upload. Please try again.');
         }
     } catch (error) {
         showMessage('error', 'Network error. Please check your connection.');
     } finally {
         // Restore button state
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Upload Photo';
+        submitBtn.textContent = 'Upload';
     }
 });
 
@@ -317,30 +367,33 @@ function addChatMessage(role, content) {
 
 async function loadPhotos() {
     const gallery = document.getElementById('photos-gallery');
-    gallery.innerHTML = '<p class="loading">Loading photos...</p>';
+    gallery.innerHTML = '<p class="loading">Loading media...</p>';
 
     try {
         const response = await fetch('/api/photos', { credentials: 'include' });
         if (response.ok) {
-            const photos = await response.json();
+            const media = await response.json();
 
-            if (photos.length === 0) {
-                gallery.innerHTML = '<p class="loading">No photos yet. Upload your first photo!</p>';
+            if (media.length === 0) {
+                gallery.innerHTML = '<p class="loading">No photos or videos yet. Upload your first one!</p>';
                 return;
             }
 
-            gallery.innerHTML = photos.map(photo => `
+            gallery.innerHTML = media.map(item => `
                 <div class="photo-item">
-                    <img src="/api/photos/${photo.id}" alt="${photo.caption || 'Chicken photo'}">
-                    ${photo.caption ? `<div class="caption">${photo.caption}</div>` : ''}
-                    <div class="date">${formatDate(photo.date)}</div>
+                    ${item.media_type === 'video'
+                        ? `<video src="/api/photos/${item.id}" controls></video>`
+                        : `<img src="/api/photos/${item.id}" alt="${item.caption || 'Chicken photo'}">`
+                    }
+                    ${item.caption ? `<div class="caption">${item.caption}</div>` : ''}
+                    <div class="date">${formatDate(item.date)}</div>
                 </div>
             `).join('');
         } else {
-            gallery.innerHTML = '<p class="loading">Failed to load photos.</p>';
+            gallery.innerHTML = '<p class="loading">Failed to load media.</p>';
         }
     } catch (error) {
-        gallery.innerHTML = '<p class="loading">Network error loading photos.</p>';
+        gallery.innerHTML = '<p class="loading">Network error loading media.</p>';
     }
 }
 
@@ -349,7 +402,7 @@ function getActivityDataType(activityType) {
     if (activityType.includes('Treats') || activityType.includes('Scraps')) return 'feeding';
     if (activityType.includes('Free Range')) return 'free_range';
     if (activityType.includes('Health')) return 'health';
-    if (activityType.includes('Photo')) return 'photo';
+    if (activityType.includes('Photo') || activityType.includes('Video')) return 'photo';
     return 'other';
 }
 
@@ -427,12 +480,16 @@ async function loadActivity() {
                                 <div class="activity-item" data-type="${getActivityDataType(activity.type)}">
                                     <div class="activity-type">${activity.type.includes('Egg') ? getEggTypeDisplay(activity) : activity.type}</div>
                                     <div class="activity-details">${activity.details}</div>
-                                    ${activity.photo_id ? `
-                                        <img src="/api/photos/${activity.photo_id}"
-                                             alt="${activity.details}"
-                                             class="activity-photo-thumb"
-                                             loading="lazy">
-                                    ` : ''}
+                                    ${activity.photo_id ? (
+                                        activity.media_type === 'video'
+                                            ? `<video src="/api/photos/${activity.photo_id}"
+                                                   class="activity-photo-thumb"
+                                                   controls></video>`
+                                            : `<img src="/api/photos/${activity.photo_id}"
+                                                   alt="${activity.details}"
+                                                   class="activity-photo-thumb"
+                                                   loading="lazy">`
+                                    ) : ''}
                                 </div>
                             `).join('')}
                         </div>

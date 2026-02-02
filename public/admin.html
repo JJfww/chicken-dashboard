@@ -229,11 +229,11 @@
                     <form id="free-range-form">
                         <div class="form-group">
                             <label for="free-range-time-start">Start Time</label>
-                            <input type="time" id="free-range-time-start" name="time_start" required>
+                            <input type="time" id="free-range-time-start" name="time_start">
                         </div>
                         <div class="form-group">
                             <label for="free-range-time-end">End Time</label>
-                            <input type="time" id="free-range-time-end" name="time_end" required>
+                            <input type="time" id="free-range-time-end" name="time_end">
                         </div>
                         <div class="form-group">
                             <label for="free-range-notes">Notes (optional)</label>
@@ -310,30 +310,42 @@
                         <button type="submit" class="btn btn-primary">Log Observation</button>
                     </form>
                 </section>
+
+                <!-- General Notes -->
+                <section class="card">
+                    <h2>Add Note</h2>
+                    <form id="notes-form">
+                        <div class="form-group">
+                            <label for="note-content">Note</label>
+                            <textarea id="note-content" name="content" rows="3" placeholder="Any general observations, reminders, or notes about the day..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Note</button>
+                    </form>
+                </section>
             </div>
 
             <!-- Photos Tab -->
             <div id="photos-tab" class="tab-content">
                 <section class="card">
-                    <h2>Upload Photo</h2>
+                    <h2>Upload Photo or Video</h2>
                     <form id="photo-form">
                         <div class="form-group">
-                            <label for="photo-file">Choose Photo</label>
-                            <input type="file" id="photo-file" name="photo" accept="image/*" required>
+                            <label for="photo-file">Choose Photo or Video</label>
+                            <input type="file" id="photo-file" name="photo" accept="image/*,video/*" required>
                             <div id="photo-preview" class="photo-preview"></div>
                         </div>
                         <div class="form-group">
                             <label for="photo-caption">Caption (optional)</label>
-                            <textarea id="photo-caption" name="caption" rows="2" placeholder="What's happening in this photo?"></textarea>
+                            <textarea id="photo-caption" name="caption" rows="2" placeholder="What's happening in this photo or video?"></textarea>
                         </div>
-                        <button type="submit" class="btn btn-primary">Upload Photo</button>
+                        <button type="submit" class="btn btn-primary">Upload</button>
                     </form>
                 </section>
 
                 <section class="card">
-                    <h2>Recent Photos</h2>
+                    <h2>Recent Photos & Videos</h2>
                     <div id="photos-gallery" class="photos-gallery">
-                        <p class="loading">Loading photos...</p>
+                        <p class="loading">Loading media...</p>
                     </div>
                 </section>
             </div>

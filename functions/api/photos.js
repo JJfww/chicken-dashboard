@@ -20,12 +20,12 @@ export async function onRequestPost(context) {
 
     try {
         const formData = await context.request.formData();
-        const photo = formData.get('photo');
+        const file = formData.get('photo');
         const caption = formData.get('caption');
         const date = formData.get('date');
 
-        if (!photo) {
-            return new Response(JSON.stringify({ error: 'No photo provided' }), {
+        if (!file) {
+            return new Response(JSON.stringify({ error: 'No file provided' }), {
                 status: 400,
                 headers: {
                 'Content-Type': 'application/json',
@@ -35,23 +35,26 @@ export async function onRequestPost(context) {
             });
         }
 
+        // Determine media type from file MIME type
+        const mediaType = file.type.startsWith('video/') ? 'video' : 'photo';
+
         // Generate unique filename
         const timestamp = Date.now();
-        const extension = photo.name.split('.').pop();
+        const extension = file.name.split('.').pop();
         const filename = `${timestamp}.${extension}`;
         const r2Key = `photos/${filename}`;
 
         // Upload to R2
-        await context.env.PHOTOS.put(r2Key, photo.stream(), {
+        await context.env.PHOTOS.put(r2Key, file.stream(), {
             httpMetadata: {
-                contentType: photo.type
+                contentType: file.type
             }
         });
 
-        // Save photo metadata to database
+        // Save media metadata to database
         const result = await context.env.DB.prepare(
-            'INSERT INTO photos (date, filename, r2_key, caption) VALUES (?, ?, ?, ?)'
-        ).bind(date, filename, r2Key, caption || null).run();
+            'INSERT INTO photos (date, filename, r2_key, caption, media_type) VALUES (?, ?, ?, ?, ?)'
+        ).bind(date, filename, r2Key, caption || null, mediaType).run();
 
         return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
             status: 200,
@@ -75,9 +78,9 @@ export async function onRequestPost(context) {
 
 export async function onRequestGet(context) {
     try {
-        // Get recent photos
+        // Get recent photos and videos
         const { results } = await context.env.DB.prepare(`
-            SELECT id, date, filename, caption, created_at
+            SELECT id, date, filename, caption, media_type, created_at
             FROM photos
             ORDER BY date DESC, created_at DESC
             LIMIT 50
