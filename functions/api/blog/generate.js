@@ -67,11 +67,11 @@ Guidelines:
 - Use chicken puns sparingly - one or two is enough
 - Be conversational and entertaining while staying factual to the data
 - Include specific details from the activities (chicken names, what they did, etc.)
-- When mentioning a hen laying an egg, use her specific egg image inline with markdown:
-  - Mamma Mia: ![egg](/images/egg_mamma_mia.png) (brown-olive)
-  - Brown Betty: ![egg](/images/egg_brown_betty.png) (green)
-  - Madame Pompadour: ![egg](/images/egg_madame_pompadour.png) (eggshell)
-  - Example: "Mamma Mia gifted us a beautiful brown-olive ![egg](/images/egg_mamma_mia.png) this morning"
+- When mentioning a hen laying an egg, use her specific egg image inline with markdown (the image shows the egg color, so don't mention the color in text):
+  - Mamma Mia: ![egg](/images/egg_mamma_mia.png)
+  - Brown Betty: ![egg](/images/egg_brown_betty.png)
+  - Madame Pompadour: ![egg](/images/egg_madame_pompadour.png)
+  - Example: "Mamma Mia gifted us a lovely ![egg](/images/egg_mamma_mia.png) this morning"
 - Use the logged times provided in the data - don't make up times of day
 - End with: "Reporting live from Hensington Palace, this is Clucky for The Clucking Times."
 - Format as plain text paragraphs (no markdown headers)
@@ -126,10 +126,14 @@ Write a delightful dispatch about this day!`;
         // Auto-generate a title from the first sentence or use a default
         const title = generateTitle(blogContent, date);
 
-        // Include photo in content if one was taken that day
+        // Include photo/video in content if one was taken that day
         let finalContent = blogContent;
         if (activityData.photoId) {
-            finalContent = `![Photo from the day](/api/photos/${activityData.photoId})\n\n${blogContent}`;
+            if (activityData.photoMediaType === 'video') {
+                finalContent = `<video controls playsinline style="max-width:100%;border-radius:8px;margin-bottom:1rem;"><source src="/api/photos/${activityData.photoId}" type="video/mp4"></video>\n\n${blogContent}`;
+            } else {
+                finalContent = `![Photo from the day](/api/photos/${activityData.photoId})\n\n${blogContent}`;
+            }
         }
 
         return new Response(JSON.stringify({
@@ -244,24 +248,48 @@ async function gatherDailyActivity(db, date) {
         });
     }
 
-    // Get photos for this date
+    // Get photos/videos for this date
     const photos = await db.prepare(`
-        SELECT id, caption
+        SELECT id, caption, media_type
         FROM photos
         WHERE date = ?
     `).bind(date).all();
 
     if (photos.results.length > 0) {
         activity.hasActivity = true;
-        activity.summary.push(`\nPhotos: ${photos.results.length} photo(s) taken`);
+        const photoCount = photos.results.filter(p => p.media_type === 'photo').length;
+        const videoCount = photos.results.filter(p => p.media_type === 'video').length;
+        const mediaParts = [];
+        if (photoCount > 0) mediaParts.push(`${photoCount} photo${photoCount !== 1 ? 's' : ''}`);
+        if (videoCount > 0) mediaParts.push(`${videoCount} video${videoCount !== 1 ? 's' : ''}`);
+        activity.summary.push(`\nMedia: ${mediaParts.join(' and ')} captured`);
         photos.results.forEach(photo => {
+            const typeLabel = photo.media_type === 'video' ? '[video]' : '[photo]';
             if (photo.caption) {
-                activity.summary.push(`- ${photo.caption}`);
+                activity.summary.push(`- ${typeLabel} ${photo.caption}`);
+            } else {
+                activity.summary.push(`- ${typeLabel}`);
             }
         });
-        // Pick a random photo to include in the blog post
+        // Pick a random photo/video to include in the blog post
         const randomIndex = Math.floor(Math.random() * photos.results.length);
         activity.photoId = photos.results[randomIndex].id;
+        activity.photoMediaType = photos.results[randomIndex].media_type;
+    }
+
+    // Get notes for this date
+    const notes = await db.prepare(`
+        SELECT content
+        FROM notes
+        WHERE date = ?
+    `).bind(date).all();
+
+    if (notes.results.length > 0) {
+        activity.hasActivity = true;
+        activity.summary.push('\nNotes:');
+        notes.results.forEach(note => {
+            activity.summary.push(`- ${note.content}`);
+        });
     }
 
     // Get weather for this date
@@ -280,6 +308,7 @@ async function gatherDailyActivity(db, date) {
         hasActivity: activity.hasActivity,
         summary: activity.summary.join('\n'),
         photoId: activity.photoId || null,
+        photoMediaType: activity.photoMediaType || null,
         weeklySummary: activity.weeklySummary,
         eggLayers: activity.eggLayers || []
     };

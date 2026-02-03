@@ -20,13 +20,13 @@ npx wrangler d1 execute chicken-dashboard-db --command "SELECT * FROM chickens"
 
 ## Architecture Overview
 
-This is a Cloudflare Pages application with a vanilla JavaScript frontend and Cloudflare Workers-based API backend. It tracks backyard chicken activities including egg production, feeding, health observations, photos, expenses (feed, medication, supplies), and blog posts.
+This is a Cloudflare Pages application with a vanilla JavaScript frontend and Cloudflare Workers-based API backend. It tracks backyard chicken activities including egg production, feeding, health observations, photos/videos, expenses (feed, medication, supplies), and blog posts.
 
 ### Tech Stack
 - **Frontend**: Vanilla JavaScript (no framework), HTML, CSS, Marked.js (markdown parsing)
 - **Backend**: Cloudflare Pages Functions (Workers)
 - **Database**: Cloudflare D1 (SQLite)
-- **Storage**: Cloudflare R2 (for photos)
+- **Storage**: Cloudflare R2 (for photos and videos)
 - **External APIs**: US National Weather Service (weather data), OpenRouter (AI chat and blog generation via Google Gemini models)
 
 ### Key Bindings (wrangler.toml)
@@ -41,14 +41,15 @@ The D1 database contains these tables:
 - `chickens`: Four chickens (Mamma Mia, Brown Betty, Madame Pompadour, and Rudy the rooster) with egg color info
 - `eggs`: Egg production logs linked to chickens
 - `feeding`: Feeding activity (treats, scraps)
-- `free_range`: Free range time tracking (time_start, time_end, duration_minutes calculated automatically, displayed as H:MM)
+- `free_range`: Free range time tracking (time_start, time_end, duration_minutes - all nullable for partial entries, duration calculated automatically when both times present, displayed as H:MM)
 - `health_observations`: Health notes per chicken or general observations (types: molting, sneezing, behavior, other)
-- `photos`: Photo metadata (actual files stored in R2)
+- `photos`: Photo and video metadata (actual files stored in R2, media_type column distinguishes 'photo' vs 'video')
 - `weather_logs`: Daily weather data (temp high/low, humidity, wind, precipitation, pressure, conditions, daylight hours)
 - `feed_purchases`: Feed/food purchase records (date, item, quantity, cost, supplier, notes)
 - `medication`: Medication purchases and administration (linked to chickens table via chicken_id)
 - `supplies`: General supplies purchases (categories: bedding, equipment, coop-maintenance, other)
 - `blog_posts`: Blog entries with `is_auto_generated` flag to distinguish manual vs AI-generated posts
+- `notes`: General daily notes (date, content)
 
 ### API Architecture Pattern
 All API endpoints follow Cloudflare Pages Functions conventions:
@@ -62,10 +63,15 @@ All API endpoints follow Cloudflare Pages Functions conventions:
 #### Core Activity Tracking
 - `/api/eggs` - POST to log eggs, GET to retrieve recent eggs
 - `/api/feeding` - POST to log feeding, GET to retrieve recent feeding records
-- `/api/free-range` - POST to log free range time (time_start, time_end - duration calculated automatically), GET to retrieve recent records with H:MM formatted duration
+- `/api/free-range` - POST to log free range time, GET to retrieve recent records with H:MM formatted duration
+  - Supports partial entries: submit start time only when chickens go out, end time only to complete the session
+  - Start time only: creates incomplete record (time_end and duration_minutes NULL)
+  - End time only: finds today's incomplete record and completes it with calculated duration
+  - Both times: creates complete record with calculated duration
 - `/api/health` - POST to log health observations, GET to retrieve recent observations
-- `/api/photos` - POST to upload (stores in R2 + DB), GET to list photos
-- `/api/photos/[id]` - Dynamic route to retrieve individual photos from R2
+- `/api/photos` - POST to upload photos or videos (stores in R2 + DB), GET to list media with media_type field
+- `/api/photos/[id]` - Dynamic route to retrieve individual photos/videos from R2
+- `/api/notes` - POST to log general notes, GET to retrieve recent 50 notes
 
 #### Expenses Tracking
 - `/api/feed-purchases` - POST to log feed purchases, GET to retrieve recent 50 records
@@ -77,7 +83,7 @@ All API endpoints follow Cloudflare Pages Functions conventions:
   - Query params: `limit` (default 5), `offset` (default 0)
   - Returns `{ posts, total, hasMore }` for pagination support
 - `/api/blog/generate` - POST to auto-generate blog posts using AI
-  - Gathers daily activity from eggs, feeding, free_range, health_observations, photos, and weather
+  - Gathers daily activity from eggs, feeding, free_range, health_observations, photos, notes, and weather
   - Uses OpenRouter API with Google Gemini 3 Flash Preview model
   - Returns error if no activity found for specified date
   - Sets `is_auto_generated` flag to 1
@@ -127,7 +133,7 @@ The admin dashboard uses session-based cookie authentication:
 #### Protected vs Public Endpoints
 | Endpoint | GET | POST |
 |----------|-----|------|
-| `/api/eggs`, `/api/feeding`, `/api/health`, `/api/free-range` | Public | Protected |
+| `/api/eggs`, `/api/feeding`, `/api/health`, `/api/free-range`, `/api/notes` | Public | Protected |
 | `/api/photos` | Public | Protected |
 | `/api/blog` | Public | Protected |
 | `/api/blog/generate` | - | Protected |
@@ -152,7 +158,7 @@ The admin dashboard uses session-based cookie authentication:
 
 Tab-based interface:
 - **Log**: Consolidated interface for Eggs, Feeding, Free Range, and Health Observations
-- **Photos**: Photo upload and gallery
+- **Photos**: Photo and video upload and gallery
 - **Expenses**: Expense tracking summary with floating action button (FAB) for quick logging
   - Displays three expense cards: Feed Purchases, Medication, Supplies
   - FAB menu with options: Feed (🌾), Medication (💊), Supplies (🛠️)
@@ -214,12 +220,12 @@ The `/api/chat` endpoint gathers recent context before calling OpenRouter:
 ### Blog Generation System
 The `/api/blog/generate` endpoint creates AI-generated blog posts:
 1. Accepts a date parameter (defaults to today)
-2. Gathers all activity for that date: eggs (with time and egg color), feeding (with time), free_range, health_observations, photos
+2. Gathers all activity for that date: eggs (with time and egg color), feeding (with time), free_range, health_observations, photos/videos (with media type labels)
 3. Fetches weather data for the date from weather_logs table
 4. Compiles activity into a detailed context summary including logged times
 5. Sends to OpenRouter API with Google Gemini 3 Flash Preview model (temperature 0.9 for creativity)
 6. AI generates a blog title and markdown-formatted content
-7. If photos exist for the date, randomly selects one and prepends it as a markdown image
+7. If media exists for the date, randomly selects one and prepends it (photos as markdown image, videos as HTML video element)
 8. Stores in `blog_posts` table with `is_auto_generated=1` flag
 9. Returns error if no activity found for the date
 
@@ -229,20 +235,21 @@ The public blog is branded as "The Clucking Times" - the official publication co
 - Converts free range minutes to hours when > 60 minutes
 - **CRITICAL: Only writes about activities actually in the data - never invents hen activities**
 - **Uses logged times** from the data - does not make up times of day
-- **Uses hen-specific egg images inline** with markdown syntax (e.g., `![egg](/images/egg_brown_betty.png)`) - these render text-sized in the blog
-- **Always mentions egg color** when describing a hen's egg (e.g., "Brown Betty's gorgeous green egg")
+- **Uses hen-specific egg images inline** with markdown syntax (e.g., `![egg](/images/egg_brown_betty.png)`) - these render text-sized in the blog and show the egg color visually
+- **Does NOT mention egg color in text** - the hen-specific egg image conveys the color (e.g., "Brown Betty gifted us a lovely ![egg](/images/egg_brown_betty.png)")
 - Post length scales with data volume (75-150 words for light days, 150-250 for busy days)
 - Rudy anecdotes are optional (roughly 1 in 3 posts) - crowing between 5:30-7:30am, chasing squirrels/robins/doves/rabbits, being "randy", watching over his flock
 - Ends with: "Reporting live from Hensington Palace, this is Clucky for The Clucking Times."
 - **Sunday posts include a "Week in Review"** with egg totals by chicken, total free range hours, treat count, and any health notes
 
-### Photo Storage Flow
-1. Frontend uploads photo as FormData to `/api/photos`
+### Photo/Video Storage Flow
+1. Frontend uploads photo or video as FormData to `/api/photos`
 2. Upload button shows "Uploading..." and is disabled to prevent double-submissions
-3. Backend generates unique filename: `timestamp.extension`
-4. Stores file in R2 at `photos/timestamp.extension`
-5. Saves metadata (date, filename, r2_key, caption) to D1
-6. `/api/photos/[id]` retrieves photo from R2 by looking up r2_key in D1
+3. Backend detects media type from MIME type (video/* = 'video', else 'photo')
+4. Backend generates unique filename: `timestamp.extension`
+5. Stores file in R2 at `photos/timestamp.extension`
+6. Saves metadata (date, filename, r2_key, caption, media_type) to D1
+7. `/api/photos/[id]` retrieves photo/video from R2 by looking up r2_key in D1
 
 ### Weather Logging System
 The app automatically logs daily weather data using a Cloudflare Cron Trigger:

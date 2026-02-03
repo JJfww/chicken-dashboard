@@ -9,8 +9,11 @@ function calculateDurationMinutes(timeStart, timeEnd) {
     return endTotal - startTotal;
 }
 
-// Format minutes as H:MM
+// Format minutes as H:MM (returns null for incomplete sessions)
 function formatDuration(minutes) {
+    if (minutes === null || minutes === undefined) {
+        return null;
+    }
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}:${mins.toString().padStart(2, '0')}`;
@@ -34,48 +37,97 @@ export async function onRequestPost(context) {
     const authError = await requireSession(context.request, context.env);
     if (authError) return authError;
 
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+        'Access-Control-Allow-Credentials': 'true'
+    };
+
     try {
         const { date, time_start, time_end, notes } = await context.request.json();
 
-        // Validate required fields
-        if (!date || !time_start || !time_end) {
-            return new Response(JSON.stringify({ error: 'Missing required fields (date, time_start, time_end)' }), {
+        // Validate date is provided
+        if (!date) {
+            return new Response(JSON.stringify({ error: 'Missing required field: date' }), {
                 status: 400,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
-                    'Access-Control-Allow-Credentials': 'true'
-                }
+                headers
             });
         }
 
-        // Calculate duration from start and end times
-        const duration_minutes = calculateDurationMinutes(time_start, time_end);
-
-        if (duration_minutes <= 0) {
-            return new Response(JSON.stringify({ error: 'End time must be after start time' }), {
+        // Must have at least one time
+        if (!time_start && !time_end) {
+            return new Response(JSON.stringify({ error: 'Must provide at least start time or end time' }), {
                 status: 400,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
-                    'Access-Control-Allow-Credentials': 'true'
-                }
+                headers
             });
         }
 
-        // Insert free range record
-        const result = await context.env.DB.prepare(
-            'INSERT INTO free_range (date, time_start, time_end, duration_minutes, notes) VALUES (?, ?, ?, ?, ?)'
-        ).bind(date, time_start, time_end, duration_minutes, notes || null).run();
+        // Case 1: Both times provided - insert complete record
+        if (time_start && time_end) {
+            const duration_minutes = calculateDurationMinutes(time_start, time_end);
 
-        return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
-            status: 200,
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
-                'Access-Control-Allow-Credentials': 'true'
+            if (duration_minutes <= 0) {
+                return new Response(JSON.stringify({ error: 'End time must be after start time' }), {
+                    status: 400,
+                    headers
+                });
             }
-        });
+
+            const result = await context.env.DB.prepare(
+                'INSERT INTO free_range (date, time_start, time_end, duration_minutes, notes) VALUES (?, ?, ?, ?, ?)'
+            ).bind(date, time_start, time_end, duration_minutes, notes || null).run();
+
+            return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id, action: 'created' }), {
+                status: 200,
+                headers
+            });
+        }
+
+        // Case 2: Only start time - create new incomplete record
+        if (time_start && !time_end) {
+            const result = await context.env.DB.prepare(
+                'INSERT INTO free_range (date, time_start, time_end, duration_minutes, notes) VALUES (?, ?, NULL, NULL, ?)'
+            ).bind(date, time_start, notes || null).run();
+
+            return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id, action: 'started' }), {
+                status: 200,
+                headers
+            });
+        }
+
+        // Case 3: Only end time - find and complete today's incomplete record
+        if (!time_start && time_end) {
+            // Find the most recent incomplete record for this date
+            const incomplete = await context.env.DB.prepare(
+                'SELECT id, time_start FROM free_range WHERE date = ? AND time_end IS NULL ORDER BY created_at DESC LIMIT 1'
+            ).bind(date).first();
+
+            if (!incomplete) {
+                return new Response(JSON.stringify({ error: 'No incomplete free range session found for this date' }), {
+                    status: 400,
+                    headers
+                });
+            }
+
+            const duration_minutes = calculateDurationMinutes(incomplete.time_start, time_end);
+
+            if (duration_minutes <= 0) {
+                return new Response(JSON.stringify({ error: 'End time must be after start time' }), {
+                    status: 400,
+                    headers
+                });
+            }
+
+            // Update the incomplete record with end time and duration
+            await context.env.DB.prepare(
+                'UPDATE free_range SET time_end = ?, duration_minutes = ?, notes = COALESCE(?, notes) WHERE id = ?'
+            ).bind(time_end, duration_minutes, notes || null, incomplete.id).run();
+
+            return new Response(JSON.stringify({ success: true, id: incomplete.id, action: 'completed' }), {
+                status: 200,
+                headers
+            });
+        }
     } catch (error) {
         return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
