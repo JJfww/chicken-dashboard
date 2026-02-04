@@ -208,14 +208,31 @@ These are used:
 - On the status page as small icons next to egg color text
 - Inline in blog posts when mentioning eggs (rendered text-sized via CSS `img[src*="egg_"]`)
 
-### AI Chat Context System
-The `/api/chat` endpoint gathers recent context before calling OpenRouter:
-1. `gatherContext()` queries the last 10-20 records from eggs, feeding, free_range, health_observations
-2. Also queries recent expenses: feed_purchases, medication, supplies (10 records each)
-3. Calculates expense summary: total eggs, total spent by category, grand total, and cost per egg
-4. Formats data into a text summary for the system prompt
-5. Provides AI with chicken names, egg colors, recent activity, and financial data
-6. Uses Google Gemini model via OpenRouter API
+### AI Chat Tool Calling System
+The `/api/chat` endpoint uses Gemini function calling to query the database on demand:
+
+**How it works:**
+1. User asks a question
+2. AI receives tool definitions and decides which queries to run
+3. Backend executes tool calls against D1 database
+4. Results returned to AI, which formulates a response with real data
+5. Loop continues until AI provides final answer (max 5 iterations)
+
+**Available tools:**
+- `get_eggs` - Individual egg records with optional chicken filter
+- `get_egg_totals` - Aggregated egg counts, supports `group_by` (day/week/month)
+- `get_feeding` - Feeding records, supports `group_by`
+- `get_free_range` - Free range sessions, supports `group_by`
+- `get_health_observations` - Health records with optional chicken filter
+- `get_expenses` - Expenses across all categories, supports `group_by` and category filter
+- `get_weather` - Weather log data
+- `get_chicken_info` - Static chicken information
+
+**Features:**
+- `group_by` parameter enables tabular data (e.g., eggs by chicken per week)
+- AI formats results as markdown tables when appropriate
+- All queries are read-only with parameterized SQL
+- Uses Google Gemini 2.0 Flash model via OpenRouter API
 
 ### Blog Generation System
 The `/api/blog/generate` endpoint creates AI-generated blog posts:

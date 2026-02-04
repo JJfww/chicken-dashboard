@@ -1,4 +1,11 @@
 import { requireSession } from './_auth.js';
+import { TOOL_DEFINITIONS, executeTool } from './_chat-tools.js';
+
+const CORS_HEADERS = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+    'Access-Control-Allow-Credentials': 'true'
+};
 
 export async function onRequestOptions() {
     return new Response(null, {
@@ -14,268 +21,159 @@ export async function onRequestOptions() {
 }
 
 export async function onRequestPost(context) {
-    console.log('=== Chat function called ===');
-
     // Require authentication
     const authError = await requireSession(context.request, context.env);
     if (authError) return authError;
 
     try {
         const { question } = await context.request.json();
-        console.log('Question received:', question);
 
         if (!question) {
-            console.log('ERROR: No question provided');
             return new Response(JSON.stringify({ error: 'No question provided' }), {
                 status: 400,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
-                    'Access-Control-Allow-Credentials': 'true'
-                }
+                headers: CORS_HEADERS
             });
         }
 
-        // Check if API key is set
-        const hasApiKey = !!context.env.OPENROUTER_API_KEY;
-        console.log('API Key present:', hasApiKey);
-        console.log('API Key preview:', hasApiKey ? context.env.OPENROUTER_API_KEY.substring(0, 10) + '...' : 'MISSING');
+        // Get today's date for context
+        const today = new Date().toISOString().split('T')[0];
 
-        // Get recent data to provide context to the AI
-        console.log('Gathering context from database...');
-        const contextData = await gatherContext(context.env.DB);
-        console.log('Context gathered:', contextData.substring(0, 100) + '...');
-
-        // Build the system prompt with context
-        const systemPrompt = `You are Clucky, the witty and knowledgeable AI assistant for this chicken dashboard. Your personality is egg-ceptionally friendly, always ready with a good pun, and deeply passionate about poultry matters.
+        // Build the system prompt
+        const systemPrompt = `You are Clucky, the witty and knowledgeable AI assistant for this chicken dashboard. Today's date is ${today}.
 
 Persona Guidelines:
-- Pepper your responses liberally with chicken puns, but never at the expense of clarity
-- Use phrases like "Let me scratch around in the data for you," "No need to be cooped up by confusion," or "I'm not chicken to tackle tough questions!"
-- Sign off messages with variations like "Keep on cluckin'!" "Don't count your eggs before they hatch!" or "Winging it with you!"
-- When users make errors, be gentle: "No worries - we all lay an egg sometimes!"
-- Celebrate successes enthusiastically: "That's eggs-traordinary!" "You're no spring chicken at this!"
+- Be friendly and occasionally use chicken puns, but never at the expense of clarity
+- When presenting data, be precise and accurate
+- Use markdown tables when showing comparisons or trends
+- Format durations as H:MM (e.g., 2:30 for 2 hours 30 minutes)
+- Format currency with $ symbol
 
-Accuracy Standards:
-- Provide precise data and statistics without embellishment
-- When presenting serious information (health issues, mortality, production metrics), maintain the friendly tone but ensure clarity
-- If uncertain about data, say "I'd be putting all my eggs in one basket if I guessed - let me get you accurate information"
-- Never sacrifice data integrity for the sake of a pun
-
-Tone Balance:
-- Fun and punny: 70% of the time
-- Straightforward and clear: 30% of the time (especially for critical alerts or concerning trends)
-- Always helpful, never condescending
-
-The user has 4 chickens:
-- Mamma Mia (lays brown-olive eggs)
-- Brown Betty (lays green eggs)
-- Madame Pompadour (lays eggshell-colored eggs)
+The flock at Hensington Palace:
+- Mamma Mia (hen, lays brown-olive eggs)
+- Brown Betty (hen, lays green eggs)
+- Madame Pompadour (hen, lays eggshell-colored eggs)
 - Rudy (rooster, doesn't lay eggs)
 
-Recent data:
-${contextData}
+IMPORTANT: Use the provided tools to query data. Don't guess or make up numbers - always call a tool if you need data. If you're unsure what date range to use, ask or use reasonable defaults (e.g., "last 7 days" = last week, "this month" = current month).`;
 
-Answer questions helpfully and conversationally. When referencing data, be specific (e.g., dates, chicken names). If you don't have enough data to answer accurately, say so.`;
+        // Start conversation with tool definitions
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: question }
+        ];
 
-        // Call OpenRouter API
-        const requestBody = {
-            model: 'google/gemini-3-flash-preview',
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: question }
-            ],
-            temperature: 0.7,
-            max_tokens: 500
-        };
-        console.log('Calling OpenRouter with model:', requestBody.model);
+        // Tool calling loop (max 5 iterations to prevent infinite loops)
+        const MAX_ITERATIONS = 5;
+        let iteration = 0;
+        let finalAnswer = null;
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${context.env.OPENROUTER_API_KEY}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://chicken-dashboard.pages.dev',
-                'X-Title': 'Chicken Dashboard'
-            },
-            body: JSON.stringify(requestBody)
-        });
+        while (iteration < MAX_ITERATIONS && !finalAnswer) {
+            iteration++;
 
-        console.log('OpenRouter response status:', response.status);
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${context.env.OPENROUTER_API_KEY}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://chicken-dashboard.pages.dev',
+                    'X-Title': 'Chicken Dashboard'
+                },
+                body: JSON.stringify({
+                    model: 'google/gemini-2.0-flash-001',
+                    messages: messages,
+                    tools: TOOL_DEFINITIONS,
+                    temperature: 0.7,
+                    max_tokens: 1000
+                })
+            });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('OpenRouter error response:', errorText);
-            throw new Error(`OpenRouter API error (${response.status}): ${errorText}`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`OpenRouter API error (${response.status}): ${errorText}`);
+            }
+
+            const data = await response.json();
+            const choice = data.choices[0];
+            const message = choice.message;
+
+            // Add assistant's response to message history
+            messages.push(message);
+
+            // Check if there are tool calls
+            if (message.tool_calls && message.tool_calls.length > 0) {
+                // Execute each tool call
+                for (const toolCall of message.tool_calls) {
+                    const toolName = toolCall.function.name;
+                    let toolParams = {};
+
+                    try {
+                        toolParams = JSON.parse(toolCall.function.arguments);
+                    } catch (e) {
+                        toolParams = {};
+                    }
+
+                    // Execute the tool
+                    const toolResult = await executeTool(context.env.DB, toolName, toolParams);
+
+                    // Add tool result to message history
+                    messages.push({
+                        role: 'tool',
+                        tool_call_id: toolCall.id,
+                        content: JSON.stringify(toolResult)
+                    });
+                }
+            } else {
+                // No tool calls - this is the final answer
+                finalAnswer = message.content;
+            }
+
+            // Check for finish reason
+            if (choice.finish_reason === 'stop' && !message.tool_calls) {
+                finalAnswer = message.content;
+            }
         }
 
-        const data = await response.json();
-        console.log('OpenRouter response data:', JSON.stringify(data).substring(0, 200));
+        // If we hit max iterations without a final answer, ask for a summary
+        if (!finalAnswer) {
+            messages.push({
+                role: 'user',
+                content: 'Please provide your final answer based on the data you have gathered.'
+            });
 
-        const answer = data.choices[0].message.content;
-        console.log('Answer extracted successfully, length:', answer.length);
+            const finalResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${context.env.OPENROUTER_API_KEY}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://chicken-dashboard.pages.dev',
+                    'X-Title': 'Chicken Dashboard'
+                },
+                body: JSON.stringify({
+                    model: 'google/gemini-2.0-flash-001',
+                    messages: messages,
+                    temperature: 0.7,
+                    max_tokens: 1000
+                })
+            });
 
-        return new Response(JSON.stringify({ answer }), {
-            status: 200,
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
-                'Access-Control-Allow-Credentials': 'true'
+            if (finalResponse.ok) {
+                const finalData = await finalResponse.json();
+                finalAnswer = finalData.choices[0].message.content;
+            } else {
+                finalAnswer = "I gathered some data but had trouble formulating a complete response. Please try asking again.";
             }
+        }
+
+        return new Response(JSON.stringify({ answer: finalAnswer }), {
+            status: 200,
+            headers: CORS_HEADERS
         });
+
     } catch (error) {
-        console.error('=== Chat error ===');
-        console.error('Error name:', error.name);
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
+        console.error('Chat error:', error.message);
         return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
-                'Access-Control-Allow-Credentials': 'true'
-            }
+            headers: CORS_HEADERS
         });
     }
-}
-
-async function gatherContext(db) {
-    const context = [];
-
-    // Recent eggs
-    const eggs = await db.prepare(`
-        SELECT e.date, c.name, e.notes
-        FROM eggs e
-        JOIN chickens c ON e.chicken_id = c.id
-        ORDER BY e.date DESC
-        LIMIT 20
-    `).all();
-
-    if (eggs.results.length > 0) {
-        context.push('Recent eggs:');
-        eggs.results.forEach(egg => {
-            context.push(`- ${egg.date}: ${egg.name}${egg.notes ? ' (' + egg.notes + ')' : ''}`);
-        });
-    }
-
-    // Recent feeding
-    const feeding = await db.prepare(`
-        SELECT date, feed_type, description
-        FROM feeding
-        ORDER BY date DESC
-        LIMIT 10
-    `).all();
-
-    if (feeding.results.length > 0) {
-        context.push('\nRecent feeding:');
-        feeding.results.forEach(feed => {
-            context.push(`- ${feed.date}: ${feed.description} (${feed.feed_type})`);
-        });
-    }
-
-    // Recent free range
-    const freeRange = await db.prepare(`
-        SELECT date, time_start, time_end, duration_minutes
-        FROM free_range
-        ORDER BY date DESC
-        LIMIT 10
-    `).all();
-
-    if (freeRange.results.length > 0) {
-        context.push('\nRecent free range:');
-        freeRange.results.forEach(fr => {
-            const hours = Math.floor(fr.duration_minutes / 60);
-            const mins = fr.duration_minutes % 60;
-            const durationFormatted = `${hours}:${mins.toString().padStart(2, '0')}`;
-            context.push(`- ${fr.date}: ${durationFormatted} (${fr.time_start} to ${fr.time_end})`);
-        });
-    }
-
-    // Recent health observations
-    const health = await db.prepare(`
-        SELECT h.date, h.observation_type, h.description, c.name
-        FROM health_observations h
-        LEFT JOIN chickens c ON h.chicken_id = c.id
-        ORDER BY h.date DESC
-        LIMIT 10
-    `).all();
-
-    if (health.results.length > 0) {
-        context.push('\nRecent health observations:');
-        health.results.forEach(obs => {
-            const chicken = obs.name ? obs.name : 'General';
-            context.push(`- ${obs.date}: ${chicken} - ${obs.observation_type}: ${obs.description}`);
-        });
-    }
-
-    // Feed purchases
-    const feedPurchases = await db.prepare(`
-        SELECT date, item, quantity, cost, supplier
-        FROM feed_purchases
-        ORDER BY date DESC
-        LIMIT 10
-    `).all();
-
-    if (feedPurchases.results.length > 0) {
-        context.push('\nRecent feed purchases:');
-        feedPurchases.results.forEach(p => {
-            context.push(`- ${p.date}: ${p.item}${p.quantity ? ' (' + p.quantity + ')' : ''} - $${p.cost.toFixed(2)}${p.supplier ? ' from ' + p.supplier : ''}`);
-        });
-    }
-
-    // Medication
-    const medication = await db.prepare(`
-        SELECT m.date, m.medication_name, m.quantity, m.cost, m.purpose, c.name as chicken_name
-        FROM medication m
-        LEFT JOIN chickens c ON m.chicken_id = c.id
-        ORDER BY m.date DESC
-        LIMIT 10
-    `).all();
-
-    if (medication.results.length > 0) {
-        context.push('\nRecent medication:');
-        medication.results.forEach(m => {
-            const chicken = m.chicken_name || 'All chickens';
-            context.push(`- ${m.date}: ${m.medication_name} for ${chicken}${m.cost ? ' - $' + m.cost.toFixed(2) : ''}${m.purpose ? ' (' + m.purpose + ')' : ''}`);
-        });
-    }
-
-    // Supplies
-    const supplies = await db.prepare(`
-        SELECT date, item, category, cost
-        FROM supplies
-        ORDER BY date DESC
-        LIMIT 10
-    `).all();
-
-    if (supplies.results.length > 0) {
-        context.push('\nRecent supplies:');
-        supplies.results.forEach(s => {
-            context.push(`- ${s.date}: ${s.item}${s.category ? ' [' + s.category + ']' : ''} - $${s.cost.toFixed(2)}`);
-        });
-    }
-
-    // Calculate totals for cost analysis
-    const totalEggs = await db.prepare('SELECT COUNT(*) as count FROM eggs').first();
-    const totalFeedCost = await db.prepare('SELECT SUM(cost) as total FROM feed_purchases').first();
-    const totalMedCost = await db.prepare('SELECT SUM(cost) as total FROM medication').first();
-    const totalSuppliesCost = await db.prepare('SELECT SUM(cost) as total FROM supplies').first();
-
-    const feedCost = totalFeedCost.total || 0;
-    const medCost = totalMedCost.total || 0;
-    const suppliesCost = totalSuppliesCost.total || 0;
-    const totalSpent = feedCost + medCost + suppliesCost;
-    const eggCount = totalEggs.count || 0;
-
-    context.push('\nExpense Summary:');
-    context.push(`- Total eggs collected: ${eggCount}`);
-    context.push(`- Total spent on feed: $${feedCost.toFixed(2)}`);
-    context.push(`- Total spent on medication: $${medCost.toFixed(2)}`);
-    context.push(`- Total spent on supplies: $${suppliesCost.toFixed(2)}`);
-    context.push(`- Grand total spent: $${totalSpent.toFixed(2)}`);
-    if (eggCount > 0) {
-        context.push(`- Cost per egg: $${(totalSpent / eggCount).toFixed(2)}`);
-    }
-
-    return context.join('\n');
 }
