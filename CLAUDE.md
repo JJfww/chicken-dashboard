@@ -1,6 +1,16 @@
 # CLAUDE.md
 
+**This project uses production deployments. Commands that affect data should target production unless the user says 'local' or 'development'.**
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Database Operations
+
+When running database commands or migrations, ALWAYS use the `--remote` flag to target the production database unless explicitly told otherwise. Never run database operations locally by default.
+
+## Debugging Guidelines
+
+Before concluding that a feature 'isn't deployed' or 'isn't working', first ask the user to confirm - they may have context about previous deployments that contradicts your analysis.
 
 ## Development Commands
 

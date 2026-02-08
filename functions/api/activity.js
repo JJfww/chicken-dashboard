@@ -78,20 +78,38 @@ export async function onRequestGet(context) {
             });
         });
 
-        // Get recent photos
+        // Get recent photos and videos
         const photos = await context.env.DB.prepare(`
-            SELECT id, date, caption
+            SELECT id, date, caption, media_type
             FROM photos
             ORDER BY date DESC, created_at DESC
             LIMIT 10
         `).all();
 
         photos.results.forEach(photo => {
+            const isVideo = photo.media_type === 'video';
             activities.push({
-                type: '📸 Photo',
-                details: photo.caption || 'New photo uploaded',
+                type: isVideo ? '🎬 Video' : '📸 Photo',
+                details: photo.caption || (isVideo ? 'New video uploaded' : 'New photo uploaded'),
                 date: photo.date,
-                photo_id: photo.id
+                photo_id: photo.id,
+                media_type: photo.media_type
+            });
+        });
+
+        // Get recent notes
+        const notes = await context.env.DB.prepare(`
+            SELECT date, content
+            FROM notes
+            ORDER BY date DESC, created_at DESC
+            LIMIT 10
+        `).all();
+
+        notes.results.forEach(note => {
+            activities.push({
+                type: '📝 Note',
+                details: note.content,
+                date: note.date
             });
         });
 

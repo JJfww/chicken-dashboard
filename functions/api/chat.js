@@ -54,6 +54,10 @@ The flock at Hensington Palace:
 - Madame Pompadour (hen, lays eggshell-colored eggs)
 - Rudy (rooster, doesn't lay eggs)
 
+Conversation Context:
+- You are given the full conversation history in the message list; use it to answer questions about prior turns.
+- Never claim you can't see the conversation history in this session.
+
 IMPORTANT: Use the provided tools to query data. Don't guess or make up numbers - always call a tool if you need data. If you're unsure what date range to use, ask or use reasonable defaults (e.g., "last 7 days" = last week, "this month" = current month).`;
 
         // Build messages with conversation history

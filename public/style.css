@@ -370,7 +370,8 @@ button[form="egg-form"]:hover {
     background: var(--bg-secondary);
 }
 
-.photo-item img {
+.photo-item img,
+.photo-item video {
     width: 100%;
     display: block;
 }
