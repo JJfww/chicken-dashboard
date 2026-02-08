@@ -31,9 +31,9 @@ CREATE TABLE IF NOT EXISTS feeding (
 CREATE TABLE IF NOT EXISTS free_range (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT NOT NULL,
-    time_start TEXT NOT NULL,
-    time_end TEXT NOT NULL,
-    duration_minutes INTEGER NOT NULL,
+    time_start TEXT,
+    time_end TEXT,
+    duration_minutes INTEGER,
     notes TEXT,
     created_at TEXT DEFAULT (datetime('now'))
 );
@@ -50,13 +50,14 @@ CREATE TABLE IF NOT EXISTS health_observations (
     FOREIGN KEY (chicken_id) REFERENCES chickens(id)
 );
 
--- Photos table: tracks uploaded photos
+-- Photos/videos table: tracks uploaded media
 CREATE TABLE IF NOT EXISTS photos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT NOT NULL,
     filename TEXT NOT NULL,
     r2_key TEXT NOT NULL,
     caption TEXT,
+    media_type TEXT DEFAULT 'photo', -- 'photo' or 'video'
     created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -119,6 +120,14 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     title TEXT,
     content TEXT NOT NULL,
     is_auto_generated INTEGER DEFAULT 0, -- 0 = manual, 1 = AI-generated
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Notes table: tracks general daily notes
+CREATE TABLE IF NOT EXISTS notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    content TEXT NOT NULL,
     created_at TEXT DEFAULT (datetime('now'))
 );
 
