@@ -299,6 +299,8 @@ document.getElementById('photo-form').addEventListener('submit', async (e) => {
 });
 
 // Chat Form Submission
+let chatHistory = [];
+
 document.getElementById('chat-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -309,6 +311,7 @@ document.getElementById('chat-form').addEventListener('submit', async (e) => {
 
     // Add user message to chat
     addChatMessage('user', question);
+    chatHistory.push({ role: 'user', content: question });
     input.value = '';
 
     // Add loading message
@@ -319,13 +322,14 @@ document.getElementById('chat-form').addEventListener('submit', async (e) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ question })
+            body: JSON.stringify({ question, history: chatHistory })
         });
 
         if (response.ok) {
             const data = await response.json();
             loadingDiv.remove();
             addChatMessage('assistant', data.answer);
+            chatHistory.push({ role: 'assistant', content: data.answer });
         } else {
             loadingDiv.remove();
             addChatMessage('assistant', 'Sorry, I encountered an error. Please try again.');

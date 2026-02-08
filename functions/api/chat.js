@@ -26,7 +26,7 @@ export async function onRequestPost(context) {
     if (authError) return authError;
 
     try {
-        const { question } = await context.request.json();
+        const { question, history } = await context.request.json();
 
         if (!question) {
             return new Response(JSON.stringify({ error: 'No question provided' }), {
@@ -56,11 +56,22 @@ The flock at Hensington Palace:
 
 IMPORTANT: Use the provided tools to query data. Don't guess or make up numbers - always call a tool if you need data. If you're unsure what date range to use, ask or use reasonable defaults (e.g., "last 7 days" = last week, "this month" = current month).`;
 
-        // Start conversation with tool definitions
+        // Build messages with conversation history
         const messages = [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: question }
+            { role: 'system', content: systemPrompt }
         ];
+
+        // Include prior conversation history (exclude the current question, which is the last entry)
+        if (history && Array.isArray(history)) {
+            const priorHistory = history.slice(0, -1);
+            for (const msg of priorHistory) {
+                if (msg.role === 'user' || msg.role === 'assistant') {
+                    messages.push({ role: msg.role, content: msg.content });
+                }
+            }
+        }
+
+        messages.push({ role: 'user', content: question });
 
         // Tool calling loop (max 5 iterations to prevent infinite loops)
         const MAX_ITERATIONS = 5;
