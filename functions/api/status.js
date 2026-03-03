@@ -107,10 +107,10 @@ export async function onRequestGet(context) {
 
             status.last_egg_date = lastEgg.length > 0 ? lastEgg[0].date : null;
 
-            // Check for recent health observations (within last 7 days)
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-            const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+            // Check for recent health observations (within last 1 day)
+            const oneDayAgo = new Date();
+            oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+            const oneDayAgoStr = oneDayAgo.toISOString().split('T')[0];
 
             const { results: healthConcerns } = await context.env.DB.prepare(`
                 SELECT observation_type, description, date
@@ -118,7 +118,7 @@ export async function onRequestGet(context) {
                 WHERE chicken_id = ? AND date >= ?
                 ORDER BY date DESC
                 LIMIT 1
-            `).bind(chicken.id, sevenDaysAgoStr).all();
+            `).bind(chicken.id, oneDayAgoStr).all();
 
             status.health_concern = healthConcerns.length > 0 ? healthConcerns[0] : null;
 

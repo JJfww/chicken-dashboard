@@ -97,6 +97,10 @@ All API endpoints follow Cloudflare Pages Functions conventions:
   - Uses OpenRouter API with Google Gemini 3 Flash Preview model
   - Returns error if no activity found for specified date
   - Sets `is_auto_generated` flag to 1
+- `/api/blog/rss` - GET returns RSS 2.0 XML feed of the 20 most recent blog posts
+  - Public endpoint (no auth required)
+  - Content-Type: `application/rss+xml`
+  - Auto-discoverable via `<link>` tag in blog.html
 
 #### Status & Aggregation
 - `/api/status` - GET current chicken status
@@ -147,6 +151,7 @@ The admin dashboard uses session-based cookie authentication:
 | `/api/photos` | Public | Protected |
 | `/api/blog` | Public | Protected |
 | `/api/blog/generate` | - | Protected |
+| `/api/blog/rss` | Public | - |
 | `/api/chat` | - | Protected |
 | `/api/feed-purchases`, `/api/medication`, `/api/supplies` | Public | Protected |
 | `/api/status`, `/api/activity`, `/api/weather` | Public | - |
