@@ -1,0 +1,27 @@
+name: Daily Weather Log
+
+on:
+  schedule:
+    # 11:55 PM CST = 5:55 AM UTC
+    - cron: '55 5 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  log-weather:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log daily weather
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://thecluckingtimes.com/api/weather-log" \
+            -H "Authorization: Bearer ${{ secrets.WEATHER_LOG_TOKEN }}")
+
+          body=$(echo "$response" | head -1)
+          status=$(echo "$response" | tail -1)
+
+          echo "HTTP $status: $body"
+
+          if [ "$status" -ge 400 ]; then
+            echo "::error::Weather log failed with HTTP $status"
+            exit 1
+          fi
