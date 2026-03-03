@@ -284,16 +284,18 @@ The public blog is branded as "The Clucking Times" - the official publication co
 7. `/api/photos/[id]` retrieves photo/video from R2 by looking up r2_key in D1
 
 ### Weather Logging System
-The app automatically logs daily weather data using a Cloudflare Cron Trigger:
-1. **Scheduled Task**: `functions/scheduled.js` runs daily at 11:55pm CST (5:55am UTC)
-2. **Activity Check**: Queries all activity tables (eggs, feeding, free_range, health_observations, photos) for today's date
-3. **Weather Logging**: If any activity occurred today, fetches weather data from NWS API and stores in `weather_logs` table
-4. **Data Captured**: Temperature high/low (°F), humidity (%), wind max (mph), precipitation (inches), barometric pressure (inHg), conditions description, daylight hours
-5. **Utility**: `functions/api/_weather-data.js` provides `fetchDailyWeather(date)` function for fetching NWS weather data
-6. **One Record Per Day**: The `date` field is UNIQUE, ensuring only one weather record per day
-7. **API Source**: US National Weather Service (api.weather.gov) - no API key required
+The app automatically logs daily weather data via a GitHub Actions cron workflow:
+1. **Scheduled Task**: `.github/workflows/daily-weather.yml` runs daily at 11:55pm CST (5:55am UTC)
+2. **Mechanism**: Calls `POST /api/weather-log` with Bearer token authentication
+3. **Activity Check**: The endpoint queries all activity tables (eggs, feeding, free_range, health_observations, photos) for today's date
+4. **Weather Logging**: If any activity occurred today, fetches weather data from NWS API and stores in `weather_logs` table
+5. **Data Captured**: Temperature high/low (°F), humidity (%), wind max (mph), precipitation (inches), barometric pressure (inHg), conditions description, daylight hours
+6. **Utility**: `functions/api/_weather-data.js` provides `fetchDailyWeather(date)` function for fetching NWS weather data
+7. **One Record Per Day**: The `date` field is UNIQUE, ensuring only one weather record per day
+8. **API Source**: US National Weather Service (api.weather.gov) - no API key required
+9. **Backfill**: `scripts/backfill-weather.js` uses the Open-Meteo archive API to backfill historical gaps
 
-The cron trigger configuration is in `wrangler.toml` under `[triggers]`.
+The `WEATHER_LOG_TOKEN` secret must be set in both Cloudflare (environment variable) and GitHub (repository secret).
 
 ### Expenses Tracking System
 Three expense categories are tracked:
