@@ -1,6 +1,23 @@
 export async function onRequestGet(context) {
     try {
         const chickens = [];
+        const rudyPrefix = 'RUDY_METER::';
+        const rudyLabels = {
+            0: 'Gentleman',
+            1: 'Annoying',
+            2: 'Pushy',
+            3: 'Asshole',
+            4: 'Spur of the Moment',
+            5: 'Full Rooster Assault'
+        };
+        const rudyEmoji = {
+            0: '🎩',
+            1: '🙂',
+            2: '🛡️',
+            3: '🍹',
+            4: '😤',
+            5: '💥'
+        };
 
         // Get all chickens from database
         const { results: chickenList } = await context.env.DB.prepare(`
@@ -17,6 +34,33 @@ export async function onRequestGet(context) {
         const day = String(cstDate.getDate()).padStart(2, '0');
         const today = `${year}-${month}-${day}`;
 
+        const latestRudyRow = await context.env.DB.prepare(`
+            SELECT content, date
+            FROM notes
+            WHERE date = ? AND content LIKE ?
+            ORDER BY created_at DESC
+            LIMIT 1
+        `).bind(today, `${rudyPrefix}%`).first();
+
+        let todaysRudyMeter = null;
+        if (latestRudyRow?.content?.startsWith(rudyPrefix)) {
+            try {
+                const payload = JSON.parse(latestRudyRow.content.slice(rudyPrefix.length));
+                const score = Number(payload.score);
+                if (Object.prototype.hasOwnProperty.call(rudyLabels, score)) {
+                    todaysRudyMeter = {
+                        score,
+                        label: rudyLabels[score],
+                        emoji: rudyEmoji[score],
+                        notes: payload.notes || null,
+                        date: latestRudyRow.date
+                    };
+                }
+            } catch {
+                // Ignore malformed Rudy meter data and fall back to the default Rudy status.
+            }
+        }
+
         for (const chicken of chickenList) {
             const status = {
                 id: chicken.id,
@@ -26,63 +70,11 @@ export async function onRequestGet(context) {
 
             // Skip egg tracking for Rudy (id 4)
             if (chicken.id === 4) {
-                // Rudy gets a random funny status
-                const rudyStatuses = [
-                    { emoji: '😎', text: 'Feeling Randy' },
-                    { emoji: '😌', text: "He's Chill" },
-                    { emoji: '🪞', text: 'Basking in the Mirror' },
-                    { emoji: '🎺', text: 'Cock-a-doodle-doing' },
-                    { emoji: '💪', text: 'Flexing for the Ladies' },
-                    { emoji: '🕺', text: 'Strutting His Stuff' },
-                    { emoji: '👑', text: 'King of the Coop' },
-                    { emoji: '🎩', text: 'Looking Dapper' },
-                    { emoji: '🕶️', text: 'On Coop Patrol' },
-                    { emoji: '📣', text: 'Making Announcements' },
-                    { emoji: '🥾', text: 'Guarding the Door' },
-                    { emoji: '🐓', text: 'Supervising Everyone' },
-                    { emoji: '🪶', text: 'Feather Check Complete' },
-                    { emoji: '🌅', text: 'Greeting the Sunrise' },
-                    { emoji: '🍽️', text: 'First at the Feeder' },
-                    { emoji: '🚨', text: 'Sounding the Alarm' },
-                    { emoji: '🧭', text: 'Leading the Flock' },
-                    { emoji: '🧠', text: 'Planning Something' },
-                    { emoji: '👀', text: 'Watching Closely' },
-                    { emoji: '🪜', text: 'Perched and Proud' },
-                    { emoji: '🧹', text: 'Tidying the Yard' },
-                    { emoji: '🐾', text: 'Claiming Territory' },
-                    { emoji: '🕰️', text: 'Keeping Time' },
-                    { emoji: '📸', text: 'Ready for His Close-Up' },
-                    { emoji: '🛑', text: 'Breaking Up Drama' },
-                    { emoji: '🪙', text: 'Paying His Dues' },
-                    { emoji: '🧑‍✈️', text: 'Captain of the Coop' },
-                    { emoji: '😏', text: 'Knows He\'s Handsome' },
-                    { emoji: '🌞', text: 'On Sunrise Duty' },
-                    { emoji: '🐔', text: 'Holding Court' },
-                    { emoji: '🧑‍⚖️', text: 'Laying Down the Law' },
-                    { emoji: '📢', text: 'Broadcasting Opinions' },
-                    { emoji: '🥇', text: 'Acting Like a Winner' },
-                    { emoji: '🪶', text: 'Preening with Purpose' },
-                    { emoji: '🚶‍♂️', text: 'Pacing the Yard' },
-                    { emoji: '🧿', text: 'Keeping an Eye Out' },
-                    { emoji: '🏰', text: 'Defending the Realm' },
-                    { emoji: '🪜', text: 'Taking the High Ground' },
-                    { emoji: '🗣️', text: 'Saying His Piece' },
-                    { emoji: '🧠', text: 'Deep in Thought' },
-                    { emoji: '🎯', text: 'Focused on the Mission' },
-                    { emoji: '🛡️', text: 'Standing Guard' },
-                    { emoji: '👞', text: 'Stepping Lightly' },
-                    { emoji: '🐾', text: 'Leaving His Mark' },
-                    { emoji: '🧭', text: 'Setting the Direction' },
-                    { emoji: '🕶️', text: 'Too Cool for Feed' },
-                    { emoji: '😌', text: 'Unbothered' },
-                    { emoji: '👑', text: 'Ruling Casually' }
-                ];
-
-                // Pick a truly random status on each page refresh
-                const randomIndex = Math.floor(Math.random() * rudyStatuses.length);
-                const randomStatus = rudyStatuses[randomIndex];
-
-                status.rudy_status = randomStatus;
+                status.rudy_status = todaysRudyMeter || {
+                    emoji: '🐓',
+                    text: 'No Rudy Meter entry yet today'
+                };
+                status.rudy_meter = todaysRudyMeter;
                 chickens.push(status);
                 continue;
             }

@@ -1,5 +1,11 @@
 import { createSession } from './_auth.js';
 
+function buildSessionCookie(request, sessionToken, maxAge) {
+    const url = new URL(request.url);
+    const secureFlag = url.protocol === 'https:' ? ' Secure;' : '';
+    return `session=${sessionToken}; HttpOnly;${secureFlag} SameSite=Strict; Path=/; Max-Age=${maxAge}`;
+}
+
 export async function onRequestOptions() {
     return new Response(null, {
         status: 204,
@@ -38,7 +44,7 @@ export async function onRequestPost(context) {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
                 'Access-Control-Allow-Credentials': 'true',
-                'Set-Cookie': `session=${sessionToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`
+                'Set-Cookie': buildSessionCookie(context.request, sessionToken, 86400)
             }
         });
     } catch (error) {

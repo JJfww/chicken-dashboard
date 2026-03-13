@@ -166,6 +166,29 @@
             margin: 0.4rem 0;
         }
 
+        .rudy-meter-summary {
+            margin-top: 0.75rem;
+            padding: 0.85rem;
+            border-radius: 10px;
+            background: rgba(169, 74, 74, 0.12);
+            text-align: left;
+        }
+
+        .rudy-meter-summary p {
+            margin: 0;
+        }
+
+        .rudy-meter-score {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .rudy-meter-notes {
+            margin-top: 0.4rem !important;
+            opacity: 0.82;
+            font-size: 0.92rem;
+        }
+
         .rudy-emoji {
             font-size: 1.8rem;
             display: block;
@@ -246,17 +269,25 @@
                 // Render Rudy's card
                 if (rudy) {
                     const avatarImage = chickenAvatars[rudy.name] || '/images/default.png';
+                    const rudyMeterMarkup = rudy.rudy_meter ? `
+                        <div class="rudy-meter-summary">
+                            <p class="rudy-meter-score">Rudy Meter: ${rudy.rudy_meter.score}/5 - ${rudy.rudy_meter.label}</p>
+                            ${rudy.rudy_meter.notes ? `<p class="rudy-meter-notes">${rudy.rudy_meter.notes}</p>` : ''}
+                        </div>
+                    ` : '';
+
                     rudyContainer.innerHTML = `
                         <div class="chicken-card rudy-card">
                             <div class="chicken-avatar">
                                 <img src="${avatarImage}" alt="${rudy.name}">
                             </div>
                             <h2 class="chicken-name">${rudy.name}</h2>
-                            <p class="egg-color">The Gentleman of the Coop</p>
+                            <p class="egg-color">${rudy.rudy_meter ? 'Today\'s public Rudy reading' : 'The Gentleman of the Coop'}</p>
                             <div class="rudy-status">
                                 <span class="rudy-emoji">${rudy.rudy_status.emoji}</span>
                                 <strong>${rudy.rudy_status.text}</strong>
                             </div>
+                            ${rudyMeterMarkup}
                         </div>
                     `;
                 }

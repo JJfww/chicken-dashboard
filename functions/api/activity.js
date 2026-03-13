@@ -1,6 +1,7 @@
 export async function onRequestGet(context) {
     try {
         const activities = [];
+        const rudyPrefix = 'RUDY_METER::';
 
         // Get recent eggs
         const eggs = await context.env.DB.prepare(`
@@ -106,6 +107,40 @@ export async function onRequestGet(context) {
         `).all();
 
         notes.results.forEach(note => {
+            if (note.content.startsWith(rudyPrefix)) {
+                try {
+                    const payload = JSON.parse(note.content.slice(rudyPrefix.length));
+                    const score = Number(payload.score);
+                    const labels = {
+                        0: 'Gentleman',
+                        1: 'Annoying',
+                        2: 'Pushy',
+                        3: 'Asshole',
+                        4: 'Spur of the Moment',
+                        5: 'Full Rooster Assault'
+                    };
+                    const taglines = {
+                        0: 'Surprisingly civilized today.',
+                        1: 'Mild nonsense, but still manageable.',
+                        2: 'Crowding you and testing boundaries.',
+                        3: 'Fully committed to being difficult.',
+                        4: 'Considering an ankle-based decision.',
+                        5: 'Talons, rage, and no respect.'
+                    };
+
+                    if (labels[score]) {
+                        activities.push({
+                            type: '🐓 Rudy Meter',
+                            details: `${score}/5 - ${labels[score]}: ${taglines[score]}${payload.notes ? ` Notes: ${payload.notes}` : ''}`,
+                            date: note.date
+                        });
+                        return;
+                    }
+                } catch {
+                    // Fall through and treat malformed entries as normal notes.
+                }
+            }
+
             activities.push({
                 type: '📝 Note',
                 details: note.content,

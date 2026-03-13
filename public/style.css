@@ -198,6 +198,104 @@ body {
     color: var(--text-primary);
 }
 
+.rudy-card {
+    background:
+        radial-gradient(circle at top right, rgba(169, 74, 74, 0.12), transparent 38%),
+        linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+}
+
+.rudy-intro {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+}
+
+.rudy-meter-shell {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.32);
+}
+
+.rudy-meter-readout {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.rudy-score-value {
+    display: inline-flex;
+    width: 3rem;
+    height: 3rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--color-red);
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 700;
+    box-shadow: var(--shadow-sm);
+}
+
+.rudy-score-label {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.rudy-score-description {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+#rudy-score {
+    width: 100%;
+    accent-color: var(--color-red);
+}
+
+.rudy-scale-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.4rem;
+    color: var(--text-tertiary);
+    font-size: 0.85rem;
+}
+
+.rudy-quick-picks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.rudy-pick {
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s, background 0.2s;
+    text-align: left;
+}
+
+.rudy-pick:hover,
+.rudy-pick.is-active {
+    border-color: var(--color-red);
+    background: rgba(169, 74, 74, 0.08);
+    color: var(--text-primary);
+}
+
+.rudy-pick:active {
+    transform: scale(0.98);
+}
+
+.rudy-last-saved {
+    margin-top: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
 /* Forms */
 .form-group {
     margin-bottom: 1.25rem;

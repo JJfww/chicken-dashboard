@@ -9,6 +9,86 @@ function getCurrentDateCST() {
     return `${year}-${month}-${day}`;
 }
 
+const rudyMeterLevels = [
+    { score: 0, label: 'Gentleman', description: 'Surprisingly civilized today.' },
+    { score: 1, label: 'Annoying', description: 'Mild nonsense, but still manageable.' },
+    { score: 2, label: 'Pushy', description: 'Crowding you and testing boundaries.' },
+    { score: 3, label: 'Asshole', description: 'Fully committed to being difficult.' },
+    { score: 4, label: 'Spur of the Moment', description: 'Considering an ankle-based decision.' },
+    { score: 5, label: 'Full Rooster Assault', description: 'Talons, rage, and no respect.' }
+];
+
+const rudyScoreInput = document.getElementById('rudy-score');
+const rudyNotesInput = document.getElementById('rudy-notes');
+const rudyScoreValue = document.getElementById('rudy-score-value');
+const rudyScoreLabel = document.getElementById('rudy-score-label');
+const rudyScoreDescription = document.getElementById('rudy-score-description');
+const rudyQuickPicks = document.getElementById('rudy-quick-picks');
+const rudyLastSaved = document.getElementById('rudy-last-saved');
+
+function getRudyLevel(score) {
+    return rudyMeterLevels.find(level => level.score === score) || rudyMeterLevels[0];
+}
+
+function renderRudyQuickPicks(activeScore) {
+    rudyQuickPicks.innerHTML = rudyMeterLevels.map(level => `
+        <button
+            type="button"
+            class="rudy-pick ${level.score === activeScore ? 'is-active' : ''}"
+            data-score="${level.score}"
+        >
+            <strong>${level.score} · ${level.label}</strong><br>
+            <span>${level.description}</span>
+        </button>
+    `).join('');
+
+    rudyQuickPicks.querySelectorAll('.rudy-pick').forEach(button => {
+        button.addEventListener('click', () => {
+            rudyScoreInput.value = button.dataset.score;
+            updateRudyMeterUI();
+        });
+    });
+}
+
+function updateRudyMeterUI() {
+    const score = parseInt(rudyScoreInput.value, 10);
+    const level = getRudyLevel(score);
+
+    rudyScoreValue.textContent = score;
+    rudyScoreLabel.textContent = level.label;
+    rudyScoreDescription.textContent = level.description;
+    renderRudyQuickPicks(score);
+}
+
+async function loadRudyMeter() {
+    const today = getCurrentDateCST();
+
+    try {
+        const response = await fetch(`/api/rudy-meter?date=${today}`, { credentials: 'include' });
+        if (!response.ok) {
+            rudyLastSaved.textContent = "Today's Rudy reading is unavailable right now.";
+            updateRudyMeterUI();
+            return;
+        }
+
+        const result = await response.json();
+        if (result.entry) {
+            rudyScoreInput.value = result.entry.score;
+            rudyNotesInput.value = result.entry.notes || '';
+            updateRudyMeterUI();
+            rudyLastSaved.textContent = `Saved for today: ${result.entry.label}${result.entry.notes ? ` - ${result.entry.notes}` : ''}`;
+            return;
+        }
+
+        rudyNotesInput.value = '';
+        updateRudyMeterUI();
+        rudyLastSaved.textContent = "No Rudy rating saved for today yet.";
+    } catch (error) {
+        updateRudyMeterUI();
+        rudyLastSaved.textContent = "Today's Rudy reading is unavailable right now.";
+    }
+}
+
 // Tab switching
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -29,9 +109,14 @@ document.querySelectorAll('.tab').forEach(tab => {
             loadPhotos();
         } else if (tabName === 'history') {
             loadActivity();
+        } else if (tabName === 'log') {
+            loadRudyMeter();
         }
     });
 });
+
+rudyScoreInput.addEventListener('input', updateRudyMeterUI);
+updateRudyMeterUI();
 
 // Chicken button selection for egg logging (allows multiple selections)
 document.querySelectorAll('.chicken-btn').forEach(btn => {
@@ -223,34 +308,68 @@ document.getElementById('health-form').addEventListener('submit', async (e) => {
     }
 });
 
-// Notes Form Submission
-document.getElementById('notes-form').addEventListener('submit', async (e) => {
+document.getElementById('rudy-meter-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const formData = new FormData(e.target);
-    const data = {
-        date: getCurrentDateCST(),
-        content: formData.get('content')
-    };
+    const score = parseInt(rudyScoreInput.value, 10);
+    const notes = rudyNotesInput.value.trim();
 
     try {
-        const response = await fetch('/api/notes', {
+        const response = await fetch('/api/rudy-meter', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify(data)
+            body: JSON.stringify({
+                date: getCurrentDateCST(),
+                score,
+                notes: notes || null
+            })
         });
 
+        const result = await response.json();
+
         if (response.ok) {
-            showMessage('success', 'Note added successfully!');
-            e.target.reset();
+            rudyLastSaved.textContent = `Saved for today: ${result.entry.label}${result.entry.notes ? ` - ${result.entry.notes}` : ''}`;
+            showMessage('success', 'Rudy Meter updated.');
         } else {
-            showMessage('error', 'Failed to add note. Please try again.');
+            showMessage('error', result.error || 'Failed to save Rudy rating.');
         }
     } catch (error) {
         showMessage('error', 'Network error. Please check your connection.');
     }
 });
+
+// Notes Form Submission
+const notesForm = document.getElementById('notes-form');
+if (notesForm) {
+    notesForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+        const data = {
+            date: getCurrentDateCST(),
+            content: formData.get('content')
+        };
+
+        try {
+            const response = await fetch('/api/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                showMessage('success', 'Note added successfully!');
+                e.target.reset();
+            } else {
+                showMessage('error', 'Failed to add note. Please try again.');
+            }
+        } catch (error) {
+            showMessage('error', 'Network error. Please check your connection.');
+        }
+    });
+}
 
 // Photo Form Submission
 document.getElementById('photo-form').addEventListener('submit', async (e) => {
@@ -406,6 +525,7 @@ function getActivityDataType(activityType) {
     if (activityType.includes('Treats') || activityType.includes('Scraps')) return 'feeding';
     if (activityType.includes('Free Range')) return 'free_range';
     if (activityType.includes('Health')) return 'health';
+    if (activityType.includes('Rudy')) return 'rudy';
     if (activityType.includes('Photo') || activityType.includes('Video')) return 'photo';
     return 'other';
 }
@@ -572,6 +692,7 @@ function formatDate(dateString) {
 
 // Load weather on page load
 loadWeather();
+loadRudyMeter();
 
 // ===== EXPENSE TRACKING FUNCTIONALITY =====
 
