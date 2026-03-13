@@ -67,6 +67,7 @@ Guidelines:
 - Use chicken puns sparingly - one or two is enough
 - Be conversational and entertaining while staying factual to the data
 - Include specific details from the activities (chicken names, what they did, etc.)
+- If Rudy Meter data is present, treat it as an important factual detail of the day and weave it in naturally
 - When mentioning a hen laying an egg, use her specific egg image inline with markdown (the image shows the egg color, so don't mention the color in text):
   - Mamma Mia: ![egg](/images/egg_mamma_mia.png)
   - Brown Betty: ![egg](/images/egg_brown_betty.png)
@@ -78,11 +79,11 @@ Guidelines:
 - Convert minutes (free range time) to hours when more than 60 minutes
 - Do NOT start with "Extra! Extra!" or similar newspaper clichés - jump straight into the story
 
-Optional Rudy mentions (use sparingly - maybe 1 in 3 posts):
-- Rudy doesn't have logged activities, so you MAY occasionally add a brief Rudy anecdote for color
-- Ideas: watching over his flock, crowing somewhere between 5:30-7:30am (his variability is something to crow about!), being "randy", chasing squirrels/robins/doves/rabbits
-- But it's also fine to skip Rudy entirely - not every post needs him
-- NEVER make up activities for the hens - only Rudy can have occasional fictional flourishes
+Rudy rules:
+- If Rudy Meter data is present, mention Rudy in a way that reflects that logged score/label/tagline/notes
+- If no Rudy Meter data is present, you MAY occasionally add a very brief Rudy anecdote for color
+- NEVER invent Rudy behavior when a Rudy Meter entry exists; use the logged details instead
+- NEVER make up activities for the hens
 
 ${isSunday ? `SUNDAY SPECIAL - Weekly Recap:
 Since it's Sunday, include a brief "Week in Review" section summarizing the week's egg production totals and any notable events from the weekly data provided below.
@@ -167,6 +168,15 @@ async function gatherDailyActivity(db, date) {
         hasActivity: false,
         summary: [],
         weeklySummary: null
+    };
+    const rudyPrefix = 'RUDY_METER::';
+    const rudyLevels = {
+        0: { label: 'Gentleman', tagline: 'Surprisingly civilized today.' },
+        1: { label: 'Annoying', tagline: 'Mild nonsense, but still manageable.' },
+        2: { label: 'Pushy', tagline: 'Crowding you and testing boundaries.' },
+        3: { label: 'Asshole', tagline: 'Fully committed to being difficult.' },
+        4: { label: 'Spur of the Moment', tagline: 'Considering an ankle-based decision.' },
+        5: { label: 'Full Rooster Assault', tagline: 'Talons, rage, and no respect.' }
     };
 
     // Check if it's Sunday - if so, gather weekly recap
@@ -285,11 +295,40 @@ async function gatherDailyActivity(db, date) {
     `).bind(date).all();
 
     if (notes.results.length > 0) {
-        activity.hasActivity = true;
-        activity.summary.push('\nNotes:');
+        const generalNotes = [];
+
         notes.results.forEach(note => {
-            activity.summary.push(`- ${note.content}`);
+            if (note.content.startsWith(rudyPrefix)) {
+                try {
+                    const payload = JSON.parse(note.content.slice(rudyPrefix.length));
+                    const score = Number(payload.score);
+                    const level = rudyLevels[score];
+
+                    if (level) {
+                        activity.hasActivity = true;
+                        activity.summary.push('\nRudy Meter:');
+                        activity.summary.push(`- ${score}/5 - ${level.label}`);
+                        activity.summary.push(`- Tagline: ${level.tagline}`);
+                        if (payload.notes) {
+                            activity.summary.push(`- Notes: ${payload.notes}`);
+                        }
+                        return;
+                    }
+                } catch {
+                    // Fall through and treat malformed Rudy entries as normal notes.
+                }
+            }
+
+            generalNotes.push(note.content);
         });
+
+        if (generalNotes.length > 0) {
+            activity.hasActivity = true;
+            activity.summary.push('\nNotes:');
+            generalNotes.forEach(note => {
+                activity.summary.push(`- ${note}`);
+            });
+        }
     }
 
     // Get weather for this date
