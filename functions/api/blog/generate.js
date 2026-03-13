@@ -429,7 +429,7 @@ async function gatherWeeklySummary(db, sundayDate) {
 
 function generateTitle(content, date) {
     // Strip common newspaper intros before extracting title
-    let cleanContent = content
+    const cleanContent = content
         .replace(/^Extra[!,]*\s*Extra[!,]*\s*/i, '')
         .replace(/^Extra[!,]*\s*/i, '')
         .trim();
@@ -438,23 +438,90 @@ function generateTitle(content, date) {
     const firstSentence = cleanContent.split(/[.!?]/)[0].trim();
 
     // Skip if it's too short/generic or still starts with "Extra"
-    if (firstSentence.length >= 10 && firstSentence.length <= 60 && !firstSentence.toLowerCase().startsWith('extra')) {
+    if (firstSentence.length >= 18 && firstSentence.length <= 72 && !firstSentence.toLowerCase().startsWith('extra')) {
         return firstSentence;
     }
 
-    // Otherwise, create a generic fun title
+    const normalized = cleanContent.toLowerCase();
     const dateObj = new Date(date + 'T00:00:00');
     const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
 
-    const titles = [
-        `${dayOfWeek}'s Coop Chronicles`,
-        `Another Egg-citing Day in the Coop`,
-        `Tales from the Henhouse`,
-        `Clucking Around on ${dayOfWeek}`,
-        `Feathered Adventures: ${dayOfWeek} Edition`
-    ];
+    const titleBuckets = [];
 
-    // Use the date to pick a consistent title for the same date
-    const index = dateObj.getDate() % titles.length;
-    return titles[index];
+    if (normalized.includes('rudy meter') || normalized.includes('rudy')) {
+        titleBuckets.push([
+            `Rudy Sets the Tone on ${dayOfWeek}`,
+            `Rudy's Mood Report from the Yard`,
+            `The Rudy Meter Was Not Quiet Today`,
+            `Rudy's Latest Campaign Against Peace`,
+            `A Rooster Reckoning at Hensington Palace`
+        ]);
+    }
+
+    if (normalized.includes('egg') || normalized.includes('/images/egg_')) {
+        titleBuckets.push([
+            `Egg Diplomacy at Hensington Palace`,
+            `Shells, Scandals, and Supper Talk`,
+            `A Productive Day in the Nesting Department`,
+            `The Ladies Delivered Again`,
+            `${dayOfWeek}'s Egg Bulletin`
+        ]);
+    }
+
+    if (normalized.includes('free range') || normalized.includes('yard')) {
+        titleBuckets.push([
+            `Yard Hours and Other Developments`,
+            `Dispatches from the Free-Range Beat`,
+            `Patrols, Pecking, and Open-Air Affairs`,
+            `The Yard Was Busy Today`,
+            `Field Notes from ${dayOfWeek}`
+        ]);
+    }
+
+    if (normalized.includes('health') || normalized.includes('observation') || normalized.includes('injury') || normalized.includes('sneezing')) {
+        titleBuckets.push([
+            `Medical Notes from the Coop Desk`,
+            `A Watchful Day at Hensington Palace`,
+            `Health, Drama, and Daily Proceedings`,
+            `The Coop Infirmary Report`,
+            `${dayOfWeek}'s Health Bulletin`
+        ]);
+    }
+
+    if (normalized.includes('photo') || normalized.includes('video') || normalized.includes('/api/photos/')) {
+        titleBuckets.push([
+            `Today's Feathered Photo Evidence`,
+            `Scenes from Inside the Palace Grounds`,
+            `A Well-Documented Day in the Coop`,
+            `Witness Accounts and Visual Proof`,
+            `The Camera Caught Everything`
+        ]);
+    }
+
+    if (normalized.includes('weather') || normalized.includes('rain') || normalized.includes('wind') || normalized.includes('sun')) {
+        titleBuckets.push([
+            `Weather, Wings, and Daily Affairs`,
+            `Forecast: Clucking with a Chance of Drama`,
+            `${dayOfWeek}'s Conditions and Consequences`,
+            `The Flock Under Today's Skies`,
+            `A Weather-Touched Day at the Palace`
+        ]);
+    }
+
+    titleBuckets.push([
+        `${dayOfWeek}'s Palace Dispatch`,
+        `The Clucking Times: ${dayOfWeek} Edition`,
+        `News from the Henhouse Desk`,
+        `Another Day of Coop Affairs`,
+        `The Daily Pecking Order Report`,
+        `Matters from the Yard`,
+        `Hensington Palace: The Latest`,
+        `Feathers, Fuss, and Field Notes`
+    ]);
+
+    const flattened = titleBuckets.flat();
+    const hashSeed = Array.from(`${date}|${cleanContent.slice(0, 120)}`)
+        .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+
+    return flattened[hashSeed % flattened.length];
 }
