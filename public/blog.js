@@ -18,7 +18,11 @@ function getEggImage(name) {
 }
 
 function getRudyStatusText(rudyStatus) {
-    return rudyStatus?.text || rudyStatus?.label || 'No Rudy Meter entry yet today';
+    return rudyStatus?.text || rudyStatus?.label || 'No Rudy Meter entry yet';
+}
+
+function getRudyMeterCaption(rudyStatus) {
+    return Number.isFinite(rudyStatus?.score) ? `${rudyStatus.score}/5 on the Rudy Meter` : '';
 }
 
 // Hash routing system
@@ -133,16 +137,18 @@ async function loadChickenStatus() {
         // Render Rudy's card
         if (rudy) {
             const avatarImage = chickenAvatars[rudy.name] || '/images/default.png';
+            const rudyMeterCaption = getRudyMeterCaption(rudy.rudy_status);
             rudyContainer.innerHTML = `
                 <div class="chicken-card rudy-card">
                     <div class="chicken-avatar">
                         <img src="${avatarImage}" alt="${rudy.name}">
                     </div>
                     <h2 class="chicken-name">${rudy.name}</h2>
-                    <p class="egg-color">The Gentleman of the Coop</p>
+                    <p class="egg-color">${rudy.rudy_meter ? 'Latest Rudy reading' : 'The Gentleman of the Coop'}</p>
                     <div class="rudy-status">
                         <span class="rudy-emoji">${rudy.rudy_status.emoji}</span>
                         <strong>${getRudyStatusText(rudy.rudy_status)}</strong>
+                        ${rudyMeterCaption ? `<span class="rudy-meter-inline">${rudyMeterCaption}</span>` : ''}
                     </div>
                 </div>
             `;

@@ -1292,6 +1292,14 @@ button:disabled {
     margin-bottom: 0.4rem;
 }
 
+.rudy-meter-inline {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    opacity: 0.72;
+}
+
 /* Poetry Page Styles */
 .poem-container {
     background: var(--bg-secondary);

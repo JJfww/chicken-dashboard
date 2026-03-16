@@ -183,6 +183,14 @@
             font-weight: 700;
         }
 
+        .rudy-meter-inline {
+            display: block;
+            margin-top: 0.35rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+            opacity: 0.72;
+        }
+
         .rudy-meter-notes {
             margin-top: 0.4rem !important;
             opacity: 0.82;
@@ -253,7 +261,11 @@
         }
 
         function getRudyStatusText(rudyStatus) {
-            return rudyStatus?.text || rudyStatus?.label || 'No Rudy Meter entry yet today';
+            return rudyStatus?.text || rudyStatus?.label || 'No Rudy Meter entry yet';
+        }
+
+        function getRudyMeterCaption(rudyStatus) {
+            return Number.isFinite(rudyStatus?.score) ? `${rudyStatus.score}/5 on the Rudy Meter` : '';
         }
 
         async function loadChickenStatus() {
@@ -273,6 +285,7 @@
                 // Render Rudy's card
                 if (rudy) {
                     const avatarImage = chickenAvatars[rudy.name] || '/images/default.png';
+                    const rudyMeterCaption = getRudyMeterCaption(rudy.rudy_status);
                     const rudyMeterMarkup = rudy.rudy_meter ? `
                         <div class="rudy-meter-summary">
                             <p class="rudy-meter-score">Rudy Meter: ${rudy.rudy_meter.score}/5 - ${rudy.rudy_meter.label}</p>
@@ -286,10 +299,11 @@
                                 <img src="${avatarImage}" alt="${rudy.name}">
                             </div>
                             <h2 class="chicken-name">${rudy.name}</h2>
-                            <p class="egg-color">${rudy.rudy_meter ? 'Today\'s public Rudy reading' : 'The Gentleman of the Coop'}</p>
+                            <p class="egg-color">${rudy.rudy_meter ? 'Latest Rudy reading' : 'The Gentleman of the Coop'}</p>
                             <div class="rudy-status">
                                 <span class="rudy-emoji">${rudy.rudy_status.emoji}</span>
                                 <strong>${getRudyStatusText(rudy.rudy_status)}</strong>
+                                ${rudyMeterCaption ? `<span class="rudy-meter-inline">${rudyMeterCaption}</span>` : ''}
                             </div>
                             ${rudyMeterMarkup}
                         </div>

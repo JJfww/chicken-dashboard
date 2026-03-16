@@ -37,18 +37,18 @@ export async function onRequestGet(context) {
         const latestRudyRow = await context.env.DB.prepare(`
             SELECT content, date
             FROM notes
-            WHERE date = ? AND content LIKE ?
-            ORDER BY created_at DESC
+            WHERE content LIKE ?
+            ORDER BY date DESC, created_at DESC
             LIMIT 1
-        `).bind(today, `${rudyPrefix}%`).first();
+        `).bind(`${rudyPrefix}%`).first();
 
-        let todaysRudyMeter = null;
+        let latestRudyMeter = null;
         if (latestRudyRow?.content?.startsWith(rudyPrefix)) {
             try {
                 const payload = JSON.parse(latestRudyRow.content.slice(rudyPrefix.length));
                 const score = Number(payload.score);
                 if (Object.prototype.hasOwnProperty.call(rudyLabels, score)) {
-                    todaysRudyMeter = {
+                    latestRudyMeter = {
                         score,
                         label: rudyLabels[score],
                         emoji: rudyEmoji[score],
@@ -70,11 +70,11 @@ export async function onRequestGet(context) {
 
             // Skip egg tracking for Rudy (id 4)
             if (chicken.id === 4) {
-                status.rudy_status = todaysRudyMeter || {
+                status.rudy_status = latestRudyMeter || {
                     emoji: '🐓',
-                    text: 'No Rudy Meter entry yet today'
+                    text: 'No Rudy Meter entry yet'
                 };
-                status.rudy_meter = todaysRudyMeter;
+                status.rudy_meter = latestRudyMeter;
                 chickens.push(status);
                 continue;
             }
