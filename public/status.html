@@ -252,6 +252,10 @@
             return eggs[name] || null;
         }
 
+        function getRudyStatusText(rudyStatus) {
+            return rudyStatus?.text || rudyStatus?.label || 'No Rudy Meter entry yet today';
+        }
+
         async function loadChickenStatus() {
             const rudyContainer = document.getElementById('rudy-container');
             const hensGrid = document.getElementById('hens-grid');
@@ -285,7 +289,7 @@
                             <p class="egg-color">${rudy.rudy_meter ? 'Today\'s public Rudy reading' : 'The Gentleman of the Coop'}</p>
                             <div class="rudy-status">
                                 <span class="rudy-emoji">${rudy.rudy_status.emoji}</span>
-                                <strong>${rudy.rudy_status.text}</strong>
+                                <strong>${getRudyStatusText(rudy.rudy_status)}</strong>
                             </div>
                             ${rudyMeterMarkup}
                         </div>

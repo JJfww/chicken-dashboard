@@ -17,6 +17,10 @@ function getEggImage(name) {
     return chickenEggImages[name] || null;
 }
 
+function getRudyStatusText(rudyStatus) {
+    return rudyStatus?.text || rudyStatus?.label || 'No Rudy Meter entry yet today';
+}
+
 // Hash routing system
 const RouterManager = {
     currentTab: 'status',
@@ -138,7 +142,7 @@ async function loadChickenStatus() {
                     <p class="egg-color">The Gentleman of the Coop</p>
                     <div class="rudy-status">
                         <span class="rudy-emoji">${rudy.rudy_status.emoji}</span>
-                        <strong>${rudy.rudy_status.text}</strong>
+                        <strong>${getRudyStatusText(rudy.rudy_status)}</strong>
                     </div>
                 </div>
             `;
