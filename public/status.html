@@ -264,8 +264,21 @@
             return rudyStatus?.text || rudyStatus?.label || 'No Rudy Meter entry yet';
         }
 
+        function getRudyMenaceLabel(score) {
+            const menaceLevels = {
+                0: 'Low',
+                1: 'Mild',
+                2: 'Elevated',
+                3: 'High',
+                4: 'Severe',
+                5: 'Maximum'
+            };
+            return menaceLevels[score] || '';
+        }
+
         function getRudyMeterCaption(rudyStatus) {
-            return Number.isFinite(rudyStatus?.score) ? `${rudyStatus.score}/5 on the Rudy Meter` : '';
+            const menaceLabel = getRudyMenaceLabel(rudyStatus?.score);
+            return menaceLabel ? `Menace Level: ${menaceLabel}` : '';
         }
 
         async function loadChickenStatus() {
@@ -288,7 +301,7 @@
                     const rudyMeterCaption = getRudyMeterCaption(rudy.rudy_status);
                     const rudyMeterMarkup = rudy.rudy_meter ? `
                         <div class="rudy-meter-summary">
-                            <p class="rudy-meter-score">Rudy Meter: ${rudy.rudy_meter.score}/5 - ${rudy.rudy_meter.label}</p>
+                            <p class="rudy-meter-score">${getRudyMeterCaption(rudy.rudy_meter)} - ${rudy.rudy_meter.label}</p>
                             ${rudy.rudy_meter.notes ? `<p class="rudy-meter-notes">${rudy.rudy_meter.notes}</p>` : ''}
                         </div>
                     ` : '';

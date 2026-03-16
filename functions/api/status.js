@@ -3,7 +3,7 @@ export async function onRequestGet(context) {
         const chickens = [];
         const rudyPrefix = 'RUDY_METER::';
         const rudyLabels = {
-            0: 'Gentleman',
+            0: 'True Gentleman',
             1: 'Annoying',
             2: 'Pushy',
             3: 'Asshole',

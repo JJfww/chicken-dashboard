@@ -3,7 +3,7 @@ import { requireSession } from './_auth.js';
 const RUDY_PREFIX = 'RUDY_METER::';
 
 const rudyMeterLevels = [
-    { score: 0, label: 'Gentleman', description: 'Surprisingly civilized today.' },
+    { score: 0, label: 'True Gentleman', description: 'Low menace. Surprisingly civilized today.' },
     { score: 1, label: 'Annoying', description: 'Mild nonsense, but still manageable.' },
     { score: 2, label: 'Pushy', description: 'Crowding you and testing boundaries.' },
     { score: 3, label: 'Asshole', description: 'Fully committed to being difficult.' },

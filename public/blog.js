@@ -21,8 +21,21 @@ function getRudyStatusText(rudyStatus) {
     return rudyStatus?.text || rudyStatus?.label || 'No Rudy Meter entry yet';
 }
 
+function getRudyMenaceLabel(score) {
+    const menaceLevels = {
+        0: 'Low',
+        1: 'Mild',
+        2: 'Elevated',
+        3: 'High',
+        4: 'Severe',
+        5: 'Maximum'
+    };
+    return menaceLevels[score] || '';
+}
+
 function getRudyMeterCaption(rudyStatus) {
-    return Number.isFinite(rudyStatus?.score) ? `${rudyStatus.score}/5 on the Rudy Meter` : '';
+    const menaceLabel = getRudyMenaceLabel(rudyStatus?.score);
+    return menaceLabel ? `Menace Level: ${menaceLabel}` : '';
 }
 
 // Hash routing system

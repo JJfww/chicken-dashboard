@@ -112,7 +112,7 @@ export async function onRequestGet(context) {
                     const payload = JSON.parse(note.content.slice(rudyPrefix.length));
                     const score = Number(payload.score);
                     const labels = {
-                        0: 'Gentleman',
+                        0: 'True Gentleman',
                         1: 'Annoying',
                         2: 'Pushy',
                         3: 'Asshole',
@@ -120,7 +120,7 @@ export async function onRequestGet(context) {
                         5: 'Full Rooster Assault'
                     };
                     const taglines = {
-                        0: 'Surprisingly civilized today.',
+                        0: 'Low menace and surprisingly civilized today.',
                         1: 'Mild nonsense, but still manageable.',
                         2: 'Crowding you and testing boundaries.',
                         3: 'Fully committed to being difficult.',

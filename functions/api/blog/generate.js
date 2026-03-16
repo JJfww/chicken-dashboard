@@ -171,7 +171,7 @@ async function gatherDailyActivity(db, date) {
     };
     const rudyPrefix = 'RUDY_METER::';
     const rudyLevels = {
-        0: { label: 'Gentleman', tagline: 'Surprisingly civilized today.' },
+        0: { label: 'True Gentleman', tagline: 'Low menace and surprisingly civilized today.' },
         1: { label: 'Annoying', tagline: 'Mild nonsense, but still manageable.' },
         2: { label: 'Pushy', tagline: 'Crowding you and testing boundaries.' },
         3: { label: 'Asshole', tagline: 'Fully committed to being difficult.' },
