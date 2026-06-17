@@ -4,39 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Clucking Times</title>
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=5">
     <link rel="alternate" type="application/rss+xml" title="The Clucking Times" href="/api/blog/rss">
     <style>
         .public-header {
-            background: var(--bg-card);
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 8px;
+            background:
+                radial-gradient(circle at top, rgba(111, 143, 114, 0.18), transparent 42%),
+                linear-gradient(180deg, var(--bg-secondary), var(--bg-primary));
+            padding: 1.25rem 1rem 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 16px;
             text-align: center;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
         }
         .public-header h1 {
             margin: 0 0 0.5rem 0;
+            font-size: clamp(2rem, 5vw, 2.5rem);
         }
         .public-header p {
-            margin: 0 0 1.25rem 0;
-            opacity: 0.8;
-            font-size: 1.1rem;
+            margin: 0 0 0.85rem 0;
+            color: var(--text-secondary);
+            font-size: 1rem;
         }
-        .dashboard-link {
-            display: inline-block;
-            margin-top: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: var(--primary);
-            color: white;
+        .public-header-utility {
+            margin-top: 0.85rem;
+            font-size: 0.88rem;
+        }
+        .public-header-utility a {
+            color: var(--text-secondary);
             text-decoration: none;
-            border-radius: 4px;
-            font-size: 0.9rem;
         }
-        .dashboard-link:hover {
-            opacity: 0.9;
+        .public-header-utility a:hover,
+        .public-header-utility a:focus-visible {
+            color: var(--text-primary);
+            text-decoration: underline;
         }
         .tabs {
-            margin-bottom: 1rem;
+            margin-bottom: 0.9rem;
         }
         .content {
             max-width: 800px;
@@ -47,57 +52,138 @@
 <body>
     <div class="app blog-page">
         <!-- Header -->
-        <div class="public-header">
+        <header class="public-header">
             <h1>📰 The Clucking Times</h1>
             <p>Covering Hensington Palace since 2025</p>
             <div id="weather" class="weather-widget">
                 <span class="loading">Loading weather...</span>
             </div>
-            <a href="https://www.instagram.com/thecluckingtimes" target="_blank" class="dashboard-link" style="background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); margin-right: 0.5rem; padding: 0.4rem 0.6rem; min-width: auto;">IG</a>
-            <a href="/api/blog/rss" target="_blank" class="dashboard-link" style="background: #f26522; margin-right: 0.5rem; padding: 0.4rem 0.6rem; min-width: auto;">RSS</a>
-            <a href="/admin.html" class="dashboard-link">🔒 Login to Dashboard</a>
-        </div>
+            <div class="public-cta-row">
+                <a href="https://www.instagram.com/thecluckingtimes" target="_blank" rel="noopener noreferrer" class="dashboard-link dashboard-link-primary">Follow on Instagram</a>
+                <a href="/api/blog/rss" target="_blank" rel="noopener noreferrer" class="dashboard-link dashboard-link-secondary">Read via RSS</a>
+            </div>
+            <div class="public-header-utility">
+                <a href="/admin.html">Dashboard admin login</a>
+            </div>
+        </header>
 
         <!-- Navigation Tabs -->
-        <nav class="tabs">
-            <button class="tab active" data-tab="status">Status</button>
-            <button class="tab" data-tab="blog">Blog</button>
-            <button class="tab" data-tab="history">History</button>
-            <button class="tab" data-tab="poetry">Poetry</button>
+        <nav class="tabs" aria-label="Clucking Times sections">
+            <div class="tab-list" role="tablist" aria-label="Public page sections">
+                <button class="tab active" role="tab" aria-selected="true" aria-controls="status-tab" id="tab-status" tabindex="0" data-tab="status">Status</button>
+                <button class="tab" role="tab" aria-selected="false" aria-controls="blog-tab" id="tab-blog" tabindex="-1" data-tab="blog">Blog</button>
+                <button class="tab" role="tab" aria-selected="false" aria-controls="history-tab" id="tab-history" tabindex="-1" data-tab="history">History</button>
+                <button class="tab" role="tab" aria-selected="false" aria-controls="poetry-tab" id="tab-poetry" tabindex="-1" data-tab="poetry">Poetry</button>
+            </div>
         </nav>
 
         <!-- Tab Content -->
         <main class="content">
             <!-- Status Tab -->
-            <div id="status-tab" class="tab-content active">
-                <div id="rudy-container" class="rudy-container"></div>
-                <div id="hens-grid" class="hens-grid">
-                    <p style="text-align: center; opacity: 0.7; grid-column: 1 / -1;">Loading chicken status...</p>
+            <section id="status-tab" class="tab-content active" role="tabpanel" aria-labelledby="tab-status">
+                <div class="status-summary-shell">
+                    <div class="status-summary-header">
+                        <h2 class="section-heading">Today at a glance</h2>
+                        <p class="section-subheading">Fast public updates from Hensington Palace.</p>
+                    </div>
+                    <div id="status-summary-strip" class="status-summary" aria-live="polite">
+                        <div class="summary-card skeleton-card">
+                            <span class="skeleton-line skeleton-line-short"></span>
+                            <span class="skeleton-line"></span>
+                        </div>
+                        <div class="summary-card skeleton-card">
+                            <span class="skeleton-line skeleton-line-short"></span>
+                            <span class="skeleton-line"></span>
+                        </div>
+                        <div class="summary-card skeleton-card">
+                            <span class="skeleton-line skeleton-line-short"></span>
+                            <span class="skeleton-line"></span>
+                        </div>
+                        <div class="summary-card skeleton-card">
+                            <span class="skeleton-line skeleton-line-short"></span>
+                            <span class="skeleton-line"></span>
+                        </div>
+                    </div>
                 </div>
-            </div>
+                <section class="status-section">
+                    <h2 class="section-heading">Current Flock</h2>
+                    <p class="section-subheading">Who is laying, who is watching, and what the chicks are up to today.</p>
+                    <div id="boss-hen-row" class="feature-flock-row">
+                        <article class="chicken-card chicken-card--feature skeleton-card" aria-hidden="true">
+                            <div class="avatar-skeleton skeleton-circle"></div>
+                            <span class="skeleton-line skeleton-line-short centered"></span>
+                            <span class="skeleton-line skeleton-line-medium centered"></span>
+                            <div class="status-item skeleton-block"></div>
+                            <div class="status-item skeleton-block"></div>
+                        </article>
+                    </div>
+                    <div id="active-flock-grid" class="hens-grid" aria-live="polite">
+                        <article class="chicken-card chicken-card--compact skeleton-card" aria-hidden="true">
+                            <div class="avatar-skeleton skeleton-circle small"></div>
+                            <span class="skeleton-line skeleton-line-medium centered"></span>
+                            <div class="status-item skeleton-block compact"></div>
+                            <div class="status-item skeleton-block compact"></div>
+                        </article>
+                        <article class="chicken-card chicken-card--compact skeleton-card" aria-hidden="true">
+                            <div class="avatar-skeleton skeleton-circle small"></div>
+                            <span class="skeleton-line skeleton-line-medium centered"></span>
+                            <div class="status-item skeleton-block compact"></div>
+                            <div class="status-item skeleton-block compact"></div>
+                        </article>
+                        <article class="chicken-card chicken-card--compact skeleton-card" aria-hidden="true">
+                            <div class="avatar-skeleton skeleton-circle small"></div>
+                            <span class="skeleton-line skeleton-line-medium centered"></span>
+                            <div class="status-item skeleton-block compact"></div>
+                            <div class="status-item skeleton-block compact"></div>
+                        </article>
+                    </div>
+                    <div id="chicks-row" class="feature-flock-row" aria-live="polite">
+                        <article class="chicken-card chicken-card--feature chicken-card--chicks skeleton-card" aria-hidden="true">
+                            <div class="avatar-skeleton skeleton-circle"></div>
+                            <span class="skeleton-line skeleton-line-short centered"></span>
+                            <span class="skeleton-line centered"></span>
+                            <span class="skeleton-line centered"></span>
+                            <div class="status-item skeleton-block"></div>
+                            <div class="status-item skeleton-block"></div>
+                        </article>
+                    </div>
+                </section>
+                <section class="status-section memorial-section">
+                    <h2 class="section-heading">Remembering Rudy</h2>
+                    <p class="section-subheading">A lower-priority memorial note for a former flock member.</p>
+                    <div id="former-flock-grid" class="former-flock-grid" aria-live="polite">
+                        <article class="chicken-card chicken-card--memorial skeleton-card" aria-hidden="true">
+                            <div class="avatar-skeleton skeleton-circle small"></div>
+                            <span class="skeleton-line skeleton-line-short centered"></span>
+                            <span class="skeleton-line centered"></span>
+                            <span class="skeleton-line centered"></span>
+                        </article>
+                    </div>
+                </section>
+            </section>
 
             <!-- Blog Tab -->
-            <div id="blog-tab" class="tab-content">
+            <section id="blog-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-blog" hidden>
                 <section class="card">
                     <h2>Blog Posts</h2>
                     <div id="blog-feed" class="activity-feed">
                         <p class="loading">Loading blog posts...</p>
                     </div>
                 </section>
-            </div>
+            </section>
 
             <!-- History Tab -->
-            <div id="history-tab" class="tab-content">
+            <section id="history-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-history" hidden>
                 <section class="card">
                     <h2>Recent Activity</h2>
                     <div id="activity-feed" class="activity-feed">
                         <p class="loading">Loading activity...</p>
                     </div>
                 </section>
-            </div>
+            </section>
 
             <!-- Poetry Tab -->
-            <div id="poetry-tab" class="tab-content">
+            <section id="poetry-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-poetry" hidden>
                 <section class="card">
                     <h2 style="text-align: center;">📖 Poetry Corner</h2>
                     <p style="text-align: center; margin-bottom: 1.5rem; color: var(--text-secondary); font-style: italic;">
@@ -107,11 +193,11 @@
                         <p class="loading">Composing a poem...</p>
                     </div>
                 </section>
-            </div>
+            </section>
         </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/lib/marked.umd.min.js"></script>
-    <script src="blog.js?v=5"></script>
+    <script src="blog.js?v=9"></script>
 </body>
 </html>
