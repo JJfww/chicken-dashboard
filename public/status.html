@@ -26,10 +26,40 @@
             margin: 0;
         }
 
-        .rudy-container {
+        .status-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-heading {
+            margin: 0 0 0.35rem;
+            text-align: center;
+        }
+
+        .section-subheading {
+            margin: 0 0 1rem;
+            text-align: center;
+            opacity: 0.8;
+        }
+
+        .former-flock-grid {
             display: flex;
             justify-content: center;
             margin-bottom: 2rem;
+        }
+
+        .feature-flock-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .feature-flock-row .chicken-card {
+            width: min(100%, 340px);
+        }
+
+        .group-card.rudy-card,
+        .feature-flock-row .rudy-card {
+            max-width: none;
         }
 
         .hens-grid {
@@ -56,6 +86,26 @@
             transform: translateY(-4px);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4),
                         0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .role-badge {
+            display: inline-flex;
+            align-self: center;
+            margin-bottom: 0.65rem;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, 0.16);
+            color: #f59e0b;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        .feature-flock-row .role-badge {
+            align-self: center;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .chicken-card.rudy-card {
@@ -197,6 +247,62 @@
             font-size: 0.92rem;
         }
 
+        .former-flock-caption {
+            margin: 0;
+            text-align: center;
+            opacity: 0.82;
+            line-height: 1.5;
+        }
+
+        .chick-hatch-dates {
+            text-align: center;
+            opacity: 0.8;
+            font-size: 0.9rem;
+            margin: 0 0 0.75rem;
+        }
+
+        .lineage-note {
+            margin: 0.75rem 0 0;
+            text-align: center;
+            opacity: 0.8;
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+
+        .group-card .status-item {
+            justify-content: center;
+            text-align: center;
+        }
+
+        .group-card .status-icon {
+            margin-right: 0.85rem;
+        }
+
+        .group-card .status-text {
+            flex: 0 1 auto;
+        }
+
+        .group-card .status-label,
+        .group-card .status-value,
+        .feature-flock-row .egg-color,
+        .group-card .former-flock-caption {
+            text-align: center;
+        }
+
+        .chick-group-card .status-item {
+            justify-content: flex-start;
+            text-align: left;
+        }
+
+        .chick-group-card .status-text {
+            flex: 1 1 auto;
+        }
+
+        .chick-group-card .status-label,
+        .chick-group-card .status-value {
+            text-align: left;
+        }
+
         .rudy-emoji {
             font-size: 1.8rem;
             display: block;
@@ -219,6 +325,12 @@
         .nav-links a:hover {
             opacity: 1;
         }
+
+        @media (max-width: 768px) {
+            .feature-flock-row .chicken-card {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -228,10 +340,22 @@
             <p>Current Status</p>
         </div>
 
-        <div id="rudy-container" class="rudy-container"></div>
-        <div id="hens-grid" class="hens-grid">
-            <p style="text-align: center; opacity: 0.7; grid-column: 1 / -1;">Loading chicken status...</p>
-        </div>
+        <section class="status-section">
+            <h2 class="section-heading">Current Flock</h2>
+            <p class="section-subheading">Madame Pompadour appears to be running the coop at the moment.</p>
+            <div id="boss-hen-row" class="feature-flock-row">
+                <p style="text-align: center; opacity: 0.7;">Loading chicken status...</p>
+            </div>
+            <div id="active-flock-grid" class="hens-grid">
+            </div>
+            <div id="chicks-row" class="feature-flock-row">
+            </div>
+        </section>
+        <section class="status-section">
+            <h2 class="section-heading">Rudy</h2>
+            <p class="section-subheading">Rooster, father of the current chicks, and former flock member.</p>
+            <div id="former-flock-grid" class="former-flock-grid"></div>
+        </section>
 
         <div class="nav-links">
             <a href="/blog.html">📝 View Blog</a>
@@ -242,15 +366,15 @@
     </div>
 
     <script>
-        // Map chicken names to their avatar images
         const chickenAvatars = {
-            'Rudy': '/images/rudy.png',
             'Mamma Mia': '/images/mamma-mia.png',
             'Brown Betty': '/images/brown-betty.png',
-            'Madame Pompadour': '/images/madame-pompadour.png'
+            'Madame Pompadour': '/images/MadamePompadour26.png',
+            'Velma': '/images/Velma.png',
+            'The Chicks': '/images/3Chicks.png',
+            'Rudy': '/images/rudy.png'
         };
 
-        // Get egg image path for a chicken
         function getEggImage(name) {
             const eggs = {
                 'Mamma Mia': '/images/egg_mamma_mia.png',
@@ -260,122 +384,145 @@
             return eggs[name] || null;
         }
 
-        function getRudyStatusText(rudyStatus) {
-            return rudyStatus?.text || rudyStatus?.label || 'No Rudy Meter entry yet';
+        function formatShortDate(dateString) {
+            return new Date(`${dateString}T12:00:00`).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
         }
 
-        function getRudyMenaceLabel(score) {
-            const menaceLevels = {
-                0: 'Low',
-                1: 'Mild',
-                2: 'Elevated',
-                3: 'High',
-                4: 'Severe',
-                5: 'Maximum'
-            };
-            return menaceLevels[score] || '';
+        function renderFlockCard(chicken) {
+            const avatarImage = chickenAvatars[chicken.name] || '/images/default.png';
+            const eggImage = getEggImage(chicken.name);
+            const laidToday = chicken.laid_today;
+            const lastEggDate = chicken.last_egg_date ? formatDate(chicken.last_egg_date) : 'Not yet';
+            const isRooster = chicken.is_rooster || chicken.name === 'Velma' || chicken.display_name === 'Velma/Vinnie';
+            const displayName = chicken.display_name || (chicken.name === 'Velma' ? 'Velma/Vinnie' : chicken.name);
+            const subtitle = isRooster
+                ? 'Young rooster, no eggs'
+                : `${eggImage ? `<img src="${eggImage}" alt="${chicken.egg_color} egg" class="egg-icon">` : '🥚'} ${chicken.egg_color} eggs`;
+
+            return `
+                <div class="chicken-card">
+                    <div class="chicken-avatar">
+                        <img src="${avatarImage}" alt="${chicken.name}">
+                    </div>
+                    <h2 class="chicken-name">${displayName}</h2>
+                    ${chicken.role_label ? `<span class="role-badge">${chicken.role_label}</span>` : ''}
+                    <p class="egg-color">${subtitle}</p>
+
+                    <div class="status-item ${laidToday ? 'laid-today' : 'not-yet'}">
+                        <div class="status-icon">${isRooster ? '🚫🥚' : laidToday ? (eggImage ? `<img src="${eggImage}" alt="${chicken.egg_color} egg" class="egg-icon">` : '🥚') : '⏱️'}</div>
+                        <div class="status-text">
+                            <p class="status-label">Today</p>
+                            <p class="status-value">${isRooster ? 'No eggs. Started crowing.' : (laidToday ? 'Egg laid!' : 'Not yet')}</p>
+                        </div>
+                    </div>
+
+                    <div class="status-item">
+                        <div class="status-icon">${isRooster ? '❌📆' : '📆'}</div>
+                        <div class="status-text">
+                            <p class="status-label">${isRooster ? 'Status' : 'Last egg'}</p>
+                            <p class="status-value">${isRooster ? 'Competing for king of the coop' : lastEggDate}</p>
+                        </div>
+                    </div>
+
+                    ${chicken.health_concern ? `
+                        <div class="status-item health-warning">
+                            <div class="status-icon">⚠️</div>
+                            <div class="status-text">
+                                <p class="status-label">${chicken.health_concern.observation_type}</p>
+                                <p class="status-value">${chicken.health_concern.description}</p>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
         }
 
-        function getRudyMeterCaption(rudyStatus) {
-            const menaceLabel = getRudyMenaceLabel(rudyStatus?.score);
-            return menaceLabel ? `Menace Level: ${menaceLabel}` : '';
+        function renderChickGroupCard(chickGroup) {
+            const avatarImage = chickenAvatars[chickGroup.name] || '/images/default.png';
+            const milestone = chickGroup.milestone;
+
+            return `
+                <div class="chicken-card group-card chick-group-card">
+                    <div class="chicken-avatar">
+                        <img src="${avatarImage}" alt="${chickGroup.name}">
+                    </div>
+                    <h2 class="chicken-name">${chickGroup.name}</h2>
+                    <p class="chick-hatch-dates">${chickGroup.hatch_summary}</p>
+                    <div class="status-item">
+                        <div class="status-icon">🐥</div>
+                        <div class="status-text">
+                            <p class="status-label">Milestone</p>
+                            <p class="status-value">${milestone ? milestone.label : 'No milestone logged yet'}</p>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon">🪺</div>
+                        <div class="status-text">
+                            <p class="status-label">Today</p>
+                            <p class="status-value">${milestone ? milestone.description : chickGroup.summary}</p>
+                        </div>
+                    </div>
+                    ${chickGroup.lineage_note ? `
+                        <p class="lineage-note">${chickGroup.lineage_note}</p>
+                    ` : ''}
+                    ${milestone?.notes ? `
+                        <div class="status-item">
+                            <div class="status-icon">📝</div>
+                            <div class="status-text">
+                                <p class="status-label">Notes</p>
+                                <p class="status-value">${milestone.notes}</p>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function renderFormerFlockCard(chicken) {
+            const avatarImage = chickenAvatars[chicken.name] || '/images/default.png';
+
+            return `
+                <div class="chicken-card rudy-card group-card">
+                    <div class="chicken-avatar">
+                        <img src="${avatarImage}" alt="${chicken.name}">
+                    </div>
+                    <h2 class="chicken-name">${chicken.name}</h2>
+                    <p class="egg-color">Rooster and chick dad</p>
+                    <p class="former-flock-caption">${chicken.caption}</p>
+                </div>
+            `;
         }
 
         async function loadChickenStatus() {
-            const rudyContainer = document.getElementById('rudy-container');
-            const hensGrid = document.getElementById('hens-grid');
+            const bossHenRow = document.getElementById('boss-hen-row');
+            const activeFlockGrid = document.getElementById('active-flock-grid');
+            const chicksRow = document.getElementById('chicks-row');
+            const formerFlockGrid = document.getElementById('former-flock-grid');
 
             try {
                 const response = await fetch('/api/status');
                 if (!response.ok) throw new Error('Failed to load status');
 
-                const chickens = await response.json();
+                const data = await response.json();
+                const bossHen = data.activeFlock.find(chicken => chicken.name === 'Madame Pompadour');
+                const trioOrder = ['Brown Betty', 'Mamma Mia', 'Velma'];
+                const remainingFlock = trioOrder
+                    .map(name => data.activeFlock.find(chicken => chicken.name === name))
+                    .filter(Boolean);
 
-                // Separate Rudy from the hens
-                const rudy = chickens.find(c => c.rudy_status);
-                const hens = chickens.filter(c => !c.rudy_status);
-
-                // Render Rudy's card
-                if (rudy) {
-                    const avatarImage = chickenAvatars[rudy.name] || '/images/default.png';
-                    const rudyMeterCaption = getRudyMeterCaption(rudy.rudy_status);
-                    const rudyMeterMarkup = rudy.rudy_meter ? `
-                        <div class="rudy-meter-summary">
-                            <p class="rudy-meter-score">${getRudyMeterCaption(rudy.rudy_meter)} - ${rudy.rudy_meter.label}</p>
-                            ${rudy.rudy_meter.notes ? `<p class="rudy-meter-notes">${rudy.rudy_meter.notes}</p>` : ''}
-                        </div>
-                    ` : '';
-
-                    rudyContainer.innerHTML = `
-                        <div class="chicken-card rudy-card">
-                            <div class="chicken-avatar">
-                                <img src="${avatarImage}" alt="${rudy.name}">
-                            </div>
-                            <h2 class="chicken-name">${rudy.name}</h2>
-                            <p class="egg-color">${rudy.rudy_meter ? 'Latest Rudy reading' : 'The Gentleman of the Coop'}</p>
-                            <div class="rudy-status">
-                                <span class="rudy-emoji">${rudy.rudy_status.emoji}</span>
-                                <strong>${getRudyStatusText(rudy.rudy_status)}</strong>
-                                ${rudyMeterCaption ? `<span class="rudy-meter-inline">${rudyMeterCaption}</span>` : ''}
-                            </div>
-                            ${rudyMeterMarkup}
-                        </div>
-                    `;
-                }
-
-                // Render hens' cards
-                hensGrid.innerHTML = hens.map(chicken => {
-                    const avatarImage = chickenAvatars[chicken.name] || '/images/default.png';
-                    const eggImage = getEggImage(chicken.name);
-                    const laidToday = chicken.laid_today;
-                    const lastEggDate = chicken.last_egg_date ? formatDate(chicken.last_egg_date) : 'Never';
-
-                    // Build egg display HTML
-                    const eggIcon = eggImage
-                        ? `<img src="${eggImage}" alt="${chicken.egg_color} egg" class="egg-icon">`
-                        : '🥚';
-
-                    return `
-                        <div class="chicken-card">
-                            <div class="chicken-avatar">
-                                <img src="${avatarImage}" alt="${chicken.name}">
-                            </div>
-                            <h2 class="chicken-name">${chicken.name}</h2>
-                            <p class="egg-color">
-                                ${eggIcon}
-                                ${chicken.egg_color} eggs
-                            </p>
-
-                            <div class="status-item ${laidToday ? 'laid-today' : 'not-yet'}">
-                                <div class="status-icon">${laidToday ? eggIcon : '⏱️'}</div>
-                                <div class="status-text">
-                                    <p class="status-label">Today</p>
-                                    <p class="status-value">${laidToday ? 'Egg laid!' : 'Not yet'}</p>
-                                </div>
-                            </div>
-
-                            <div class="status-item">
-                                <div class="status-icon">📅</div>
-                                <div class="status-text">
-                                    <p class="status-label">Last egg</p>
-                                    <p class="status-value">${lastEggDate}</p>
-                                </div>
-                            </div>
-
-                            ${chicken.health_concern ? `
-                                <div class="status-item health-warning">
-                                    <div class="status-icon">⚠️</div>
-                                    <div class="status-text">
-                                        <p class="status-label">${chicken.health_concern.observation_type}</p>
-                                        <p class="status-value">${chicken.health_concern.description}</p>
-                                    </div>
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
-                }).join('');
+                bossHenRow.innerHTML = bossHen ? renderFlockCard(bossHen) : '';
+                activeFlockGrid.innerHTML = remainingFlock.map(renderFlockCard).join('');
+                chicksRow.innerHTML = renderChickGroupCard(data.chickGroup);
+                formerFlockGrid.innerHTML = data.formerFlock.map(renderFormerFlockCard).join('');
             } catch (error) {
-                hensGrid.innerHTML = '<p style="text-align: center; color: red; grid-column: 1 / -1;">Failed to load status. Please try again.</p>';
+                bossHenRow.innerHTML = '<p style="text-align: center; color: red;">Failed to load status. Please try again.</p>';
+                activeFlockGrid.innerHTML = '<p style="text-align: center; color: red; grid-column: 1 / -1;">Failed to load status. Please try again.</p>';
+                chicksRow.innerHTML = '';
+                formerFlockGrid.innerHTML = '';
             }
         }
 

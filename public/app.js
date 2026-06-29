@@ -9,29 +9,29 @@ function getCurrentDateCST() {
     return `${year}-${month}-${day}`;
 }
 
-const rudyMeterLevels = [
-    { score: 0, label: 'True Gentleman', description: 'Low menace. Surprisingly civilized today.' },
-    { score: 1, label: 'Annoying', description: 'Mild nonsense, but still manageable.' },
-    { score: 2, label: 'Pushy', description: 'Crowding you and testing boundaries.' },
-    { score: 3, label: 'Asshole', description: 'Fully committed to being difficult.' },
-    { score: 4, label: 'Spur of the Moment', description: 'Considering an ankle-based decision.' },
-    { score: 5, label: 'Full Rooster Assault', description: 'Talons, rage, and no respect.' }
+const chickMilestoneLevels = [
+    { score: 0, label: 'Hatchling Bubble', description: 'Freshly hatched and mostly tucked in close.' },
+    { score: 1, label: 'Following Mama', description: 'Shadowing mom closely and learning the basics.' },
+    { score: 2, label: 'Backyard Peeking', description: 'Starting to notice the wider world in short bursts.' },
+    { score: 3, label: 'Short Solo Missions', description: 'Taking quick little detours before circling back.' },
+    { score: 4, label: 'Confident Explorers', description: 'Covering more ground and acting noticeably bolder.' },
+    { score: 5, label: 'Little Coop Citizens', description: 'Fully engaged in flock life with plenty of independence.' }
 ];
 
-const rudyScoreInput = document.getElementById('rudy-score');
-const rudyNotesInput = document.getElementById('rudy-notes');
-const rudyScoreValue = document.getElementById('rudy-score-value');
-const rudyScoreLabel = document.getElementById('rudy-score-label');
-const rudyScoreDescription = document.getElementById('rudy-score-description');
-const rudyQuickPicks = document.getElementById('rudy-quick-picks');
-const rudyLastSaved = document.getElementById('rudy-last-saved');
+const chickMilestoneScoreInput = document.getElementById('chick-milestone-score');
+const chickMilestoneNotesInput = document.getElementById('chick-milestone-notes');
+const chickMilestoneScoreValue = document.getElementById('chick-milestone-score-value');
+const chickMilestoneScoreLabel = document.getElementById('chick-milestone-score-label');
+const chickMilestoneScoreDescription = document.getElementById('chick-milestone-score-description');
+const chickMilestoneQuickPicks = document.getElementById('chick-milestone-quick-picks');
+const chickMilestoneLastSaved = document.getElementById('chick-milestone-last-saved');
 
-function getRudyLevel(score) {
-    return rudyMeterLevels.find(level => level.score === score) || rudyMeterLevels[0];
+function getChickMilestoneLevel(score) {
+    return chickMilestoneLevels.find(level => level.score === score) || chickMilestoneLevels[0];
 }
 
-function renderRudyQuickPicks(activeScore) {
-    rudyQuickPicks.innerHTML = rudyMeterLevels.map(level => `
+function renderChickMilestoneQuickPicks(activeScore) {
+    chickMilestoneQuickPicks.innerHTML = chickMilestoneLevels.map(level => `
         <button
             type="button"
             class="rudy-pick ${level.score === activeScore ? 'is-active' : ''}"
@@ -42,50 +42,50 @@ function renderRudyQuickPicks(activeScore) {
         </button>
     `).join('');
 
-    rudyQuickPicks.querySelectorAll('.rudy-pick').forEach(button => {
+    chickMilestoneQuickPicks.querySelectorAll('.rudy-pick').forEach(button => {
         button.addEventListener('click', () => {
-            rudyScoreInput.value = button.dataset.score;
-            updateRudyMeterUI();
+            chickMilestoneScoreInput.value = button.dataset.score;
+            updateChickMilestoneUI();
         });
     });
 }
 
-function updateRudyMeterUI() {
-    const score = parseInt(rudyScoreInput.value, 10);
-    const level = getRudyLevel(score);
+function updateChickMilestoneUI() {
+    const score = parseInt(chickMilestoneScoreInput.value, 10);
+    const level = getChickMilestoneLevel(score);
 
-    rudyScoreValue.textContent = score;
-    rudyScoreLabel.textContent = level.label;
-    rudyScoreDescription.textContent = level.description;
-    renderRudyQuickPicks(score);
+    chickMilestoneScoreValue.textContent = score;
+    chickMilestoneScoreLabel.textContent = level.label;
+    chickMilestoneScoreDescription.textContent = level.description;
+    renderChickMilestoneQuickPicks(score);
 }
 
-async function loadRudyMeter() {
+async function loadChickMilestone() {
     const today = getCurrentDateCST();
 
     try {
-        const response = await fetch(`/api/rudy-meter?date=${today}`, { credentials: 'include' });
+        const response = await fetch(`/api/chick-milestone?date=${today}`, { credentials: 'include' });
         if (!response.ok) {
-            rudyLastSaved.textContent = "Today's Rudy reading is unavailable right now.";
-            updateRudyMeterUI();
+            chickMilestoneLastSaved.textContent = "Today's chick milestone is unavailable right now.";
+            updateChickMilestoneUI();
             return;
         }
 
         const result = await response.json();
         if (result.entry) {
-            rudyScoreInput.value = result.entry.score;
-            rudyNotesInput.value = result.entry.notes || '';
-            updateRudyMeterUI();
-            rudyLastSaved.textContent = `Saved for today: ${result.entry.label}${result.entry.notes ? ` - ${result.entry.notes}` : ''}`;
+            chickMilestoneScoreInput.value = result.entry.score;
+            chickMilestoneNotesInput.value = result.entry.notes || '';
+            updateChickMilestoneUI();
+            chickMilestoneLastSaved.textContent = `Saved for today: ${result.entry.label}${result.entry.notes ? ` - ${result.entry.notes}` : ''}`;
             return;
         }
 
-        rudyNotesInput.value = '';
-        updateRudyMeterUI();
-        rudyLastSaved.textContent = "No Rudy rating saved for today yet.";
+        chickMilestoneNotesInput.value = '';
+        updateChickMilestoneUI();
+        chickMilestoneLastSaved.textContent = 'No chick milestone saved for today yet.';
     } catch (error) {
-        updateRudyMeterUI();
-        rudyLastSaved.textContent = "Today's Rudy reading is unavailable right now.";
+        updateChickMilestoneUI();
+        chickMilestoneLastSaved.textContent = "Today's chick milestone is unavailable right now.";
     }
 }
 
@@ -110,13 +110,13 @@ document.querySelectorAll('.tab').forEach(tab => {
         } else if (tabName === 'history') {
             loadActivity();
         } else if (tabName === 'log') {
-            loadRudyMeter();
+            loadChickMilestone();
         }
     });
 });
 
-rudyScoreInput.addEventListener('input', updateRudyMeterUI);
-updateRudyMeterUI();
+chickMilestoneScoreInput.addEventListener('input', updateChickMilestoneUI);
+updateChickMilestoneUI();
 
 // Chicken button selection for egg logging (allows multiple selections)
 document.querySelectorAll('.chicken-btn').forEach(btn => {
@@ -308,14 +308,14 @@ document.getElementById('health-form').addEventListener('submit', async (e) => {
     }
 });
 
-document.getElementById('rudy-meter-form').addEventListener('submit', async (e) => {
+document.getElementById('chick-milestone-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const score = parseInt(rudyScoreInput.value, 10);
-    const notes = rudyNotesInput.value.trim();
+    const score = parseInt(chickMilestoneScoreInput.value, 10);
+    const notes = chickMilestoneNotesInput.value.trim();
 
     try {
-        const response = await fetch('/api/rudy-meter', {
+        const response = await fetch('/api/chick-milestone', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -329,10 +329,10 @@ document.getElementById('rudy-meter-form').addEventListener('submit', async (e) 
         const result = await response.json();
 
         if (response.ok) {
-            rudyLastSaved.textContent = `Saved for today: ${result.entry.label}${result.entry.notes ? ` - ${result.entry.notes}` : ''}`;
-            showMessage('success', 'Rudy Meter updated.');
+            chickMilestoneLastSaved.textContent = `Saved for today: ${result.entry.label}${result.entry.notes ? ` - ${result.entry.notes}` : ''}`;
+            showMessage('success', 'Chick Milestone Meter updated.');
         } else {
-            showMessage('error', result.error || 'Failed to save Rudy rating.');
+            showMessage('error', result.error || 'Failed to save chick milestone.');
         }
     } catch (error) {
         showMessage('error', 'Network error. Please check your connection.');
@@ -525,6 +525,7 @@ function getActivityDataType(activityType) {
     if (activityType.includes('Treats') || activityType.includes('Scraps')) return 'feeding';
     if (activityType.includes('Free Range')) return 'free_range';
     if (activityType.includes('Health')) return 'health';
+    if (activityType.includes('Chick')) return 'chicks';
     if (activityType.includes('Rudy')) return 'rudy';
     if (activityType.includes('Photo') || activityType.includes('Video')) return 'photo';
     return 'other';
@@ -692,7 +693,7 @@ function formatDate(dateString) {
 
 // Load weather on page load
 loadWeather();
-loadRudyMeter();
+loadChickMilestone();
 
 // ===== EXPENSE TRACKING FUNCTIONALITY =====
 

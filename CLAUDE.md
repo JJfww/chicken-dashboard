@@ -48,7 +48,7 @@ This is a Cloudflare Pages application with a vanilla JavaScript frontend and Cl
 
 ### Database Schema
 The D1 database contains these tables:
-- `chickens`: Four chickens (Mamma Mia, Brown Betty, Madame Pompadour, and Rudy the rooster) with egg color info
+- `chickens`: Chicken records for the current flock and historical members
 - `eggs`: Egg production logs linked to chickens
 - `feeding`: Feeding activity (treats, scraps)
 - `free_range`: Free range time tracking (time_start, time_end, duration_minutes - all nullable for partial entries, duration calculated automatically when both times present, displayed as H:MM)
@@ -107,7 +107,6 @@ All API endpoints follow Cloudflare Pages Functions conventions:
   - Whether each hen laid an egg today
   - Last egg date for each chicken
   - Recent health concerns (last 7 days)
-  - Rudy's random personality status (28 different emoji + text combinations)
 - `/api/activity` - GET aggregates all activity types sorted by date
 
 #### Weather
@@ -199,7 +198,6 @@ Frontend uses tab switching without page reloads and Marked.js (v11.1.1) for mar
   - Shows if each hen laid an egg today
   - Shows last egg date with relative time (Today, Yesterday, X days ago)
   - Shows recent health concerns with warning styling
-  - Shows Rudy's random personality status
   - Auto-refreshes every 60 seconds
   - CSS uses `word-spacing: 100vw` on chicken names to force two-line display for alignment across cards
 - **`/blog.html`**: Public blog viewing page
@@ -208,10 +206,11 @@ Frontend uses tab switching without page reloads and Marked.js (v11.1.1) for mar
 
 ### Chicken Avatars
 Each chicken has an associated avatar image:
-- Rudy → `/images/rudy.png`
 - Mamma Mia → `/images/mamma-mia.png`
 - Brown Betty → `/images/brown-betty.png`
-- Madame Pompadour → `/images/madame-pompadour.png`
+- Madame Pompadour → `/images/MadamePompadour26.png`
+- Velma → `/images/Velma.png`
+- The Chicks → `/images/3Chicks.png`
 
 ### Egg Images
 Each hen has a specific egg image matching her egg color:
@@ -270,7 +269,6 @@ The public blog is branded as "The Clucking Times" - the official publication co
 - **Uses hen-specific egg images inline** with markdown syntax (e.g., `![egg](/images/egg_brown_betty.png)`) - these render text-sized in the blog and show the egg color visually
 - **Does NOT mention egg color in text** - the hen-specific egg image conveys the color (e.g., "Brown Betty gifted us a lovely ![egg](/images/egg_brown_betty.png)")
 - Post length scales with data volume (75-150 words for light days, 150-250 for busy days)
-- Rudy anecdotes are optional (roughly 1 in 3 posts) - crowing between 5:30-7:30am, chasing squirrels/robins/doves/rabbits, being "randy", watching over his flock
 - Ends with: "Reporting live from Hensington Palace, this is Clucky for The Clucking Times."
 - **Sunday posts include a "Week in Review"** with egg totals by chicken, total free range hours, treat count, and any health notes
 
@@ -307,13 +305,12 @@ The Expenses tab aggregates totals from all three categories and displays a unif
 
 ## Important Notes
 
-- The app is specific to four chickens: three hens with hardcoded names and egg colors, plus Rudy the rooster
-- Rudy has 28 different random personality statuses that appear on the status page and cycle randomly on each page refresh
+- The app is specific to the current flock and chicks, with some historical records still present in the database
 - Weather is hardcoded to Lawrence, KS coordinates (38.9717°N, 95.2353°W)
 - All dates use ISO format (YYYY-MM-DD)
 - Frontend is intentionally vanilla JS with no build step
 - R2 keys use `photos/` prefix for organization
-- Chicken avatars are stored at `/images/[chicken-name].png` (e.g., `/images/rudy.png`)
+- Chicken avatars are stored at `/images/[chicken-name].png`
 - Blog posts support markdown rendering via Marked.js library
 - The `/api/weather-log` endpoint requires Bearer token authentication for security
 - Weather data comes from the US National Weather Service API (requires User-Agent header with contact email)

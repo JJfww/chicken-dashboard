@@ -136,4 +136,5 @@ INSERT INTO chickens (name, egg_color) VALUES
     ('Mamma Mia', 'brown-olive'),
     ('Brown Betty', 'green'),
     ('Madame Pompadour', 'eggshell'),
-    ('Rudy', 'N/A');
+    ('Rudy', 'N/A'),
+    ('Velma', 'pending');

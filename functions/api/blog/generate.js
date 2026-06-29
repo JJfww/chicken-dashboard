@@ -54,20 +54,24 @@ export async function onRequestPost(context) {
         const isSunday = dateObj.getDay() === 0;
 
         // Build the AI prompt for blog generation
-        const systemPrompt = `You are Clucky, the royal correspondent for The Clucking Times, filing dispatches from Hensington Palace. Write a fun, engaging dispatch about today's chicken activities.
+        const systemPrompt = `You are Clucky, the royal correspondent for The Clucking Times, filing dispatches from Hensington Palace. Write a vivid, witty daily dispatch about the flock's activities.
 
 CRITICAL RULES:
 - ONLY write about activities that are explicitly listed in the data below. Do NOT invent or assume activities that aren't recorded.
 - If there's no free range time in the data, do NOT mention free range time.
+- In this app, "free range" means time outside the run. Time spent inside the run or inside the coop does NOT count as free range.
 - If there's no feeding data, do NOT mention treats or snacks.
 - Match your post length to the amount of data: light data days = shorter posts (75-150 words), busy days = longer posts (150-250 words).
 
-Guidelines:
+Voice and style:
 - Write in first person as a reporter narrating the day at Hensington Palace
+- Sound lively, specific, and lightly gossipy rather than generic or summary-like
+- Use sharp phrasing, distinct observations, and a little attitude when the data supports it
+- Favor colorful sentences over bland recap language
 - Use chicken puns sparingly - one or two is enough
 - Be conversational and entertaining while staying factual to the data
 - Include specific details from the activities (chicken names, what they did, etc.)
-- If Rudy Meter data is present, treat it as an important factual detail of the day and weave it in naturally
+- If Chick Milestone data is present, treat it as an important factual detail of the day and weave it in naturally
 - When mentioning a hen laying an egg, use her specific egg image inline with markdown (the image shows the egg color, so don't mention the color in text):
   - Mamma Mia: ![egg](/images/egg_mamma_mia.png)
   - Brown Betty: ![egg](/images/egg_brown_betty.png)
@@ -78,12 +82,17 @@ Guidelines:
 - Format as plain text paragraphs (no markdown headers)
 - Convert minutes (free range time) to hours when more than 60 minutes
 - Do NOT start with "Extra! Extra!" or similar newspaper clichés - jump straight into the story
+- Avoid sounding like an AI summary or neutral report; this should read like an actual Clucking Times dispatch
 
-Rudy rules:
-- If Rudy Meter data is present, mention Rudy in a way that reflects that logged score/label/tagline/notes
-- If no Rudy Meter data is present, you MAY occasionally add a very brief Rudy anecdote for color
-- NEVER invent Rudy behavior when a Rudy Meter entry exists; use the logged details instead
+Chick rules:
+- If Chick Milestone data is present, mention the chicks in a way that reflects that logged score/label/tagline/notes
+- NEVER invent chick milestone details when a Chick Milestone entry exists; use the logged details instead
 - NEVER make up activities for the hens
+
+Structure guidance:
+- Lead with the most vivid or consequential detail from the day rather than a generic scene-setting sentence
+- If two major developments are present, give each its own paragraph so the post has shape
+- If the day includes a flock change or notable social shift, treat that as real news, not a passing aside
 
 ${isSunday ? `SUNDAY SPECIAL - Weekly Recap:
 Since it's Sunday, include a brief "Week in Review" section summarizing the week's egg production totals and any notable events from the weekly data provided below.
@@ -106,7 +115,7 @@ Write a delightful dispatch about this day!`;
                 'X-Title': 'Chicken Dashboard'
             },
             body: JSON.stringify({
-                model: 'google/gemini-3-flash-preview',
+                model: 'google/gemini-2.5-flash-lite',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: 'Write the blog post!' }
@@ -122,7 +131,11 @@ Write a delightful dispatch about this day!`;
         }
 
         const data = await response.json();
-        const blogContent = data.choices[0].message.content;
+        const blogContent = data?.choices?.[0]?.message?.content?.trim();
+
+        if (!blogContent) {
+            throw new Error('OpenRouter returned an empty blog response');
+        }
 
         // Auto-generate a title from the first sentence or use a default
         const title = generateTitle(blogContent, date);
@@ -169,14 +182,14 @@ async function gatherDailyActivity(db, date) {
         summary: [],
         weeklySummary: null
     };
-    const rudyPrefix = 'RUDY_METER::';
-    const rudyLevels = {
-        0: { label: 'True Gentleman', tagline: 'Low menace and surprisingly civilized today.' },
-        1: { label: 'Annoying', tagline: 'Mild nonsense, but still manageable.' },
-        2: { label: 'Pushy', tagline: 'Crowding you and testing boundaries.' },
-        3: { label: 'Asshole', tagline: 'Fully committed to being difficult.' },
-        4: { label: 'Spur of the Moment', tagline: 'Considering an ankle-based decision.' },
-        5: { label: 'Full Rooster Assault', tagline: 'Talons, rage, and no respect.' }
+    const chickMilestonePrefix = 'CHICK_MILESTONE::';
+    const chickMilestoneLevels = {
+        0: { label: 'Hatchling Bubble', tagline: 'Freshly hatched and mostly tucked in close.' },
+        1: { label: 'Following Mama', tagline: 'Shadowing mom closely and learning the basics.' },
+        2: { label: 'Backyard Peeking', tagline: 'Starting to notice the wider world in short bursts.' },
+        3: { label: 'Short Solo Missions', tagline: 'Taking quick little detours before circling back.' },
+        4: { label: 'Confident Explorers', tagline: 'Covering more ground and acting noticeably bolder.' },
+        5: { label: 'Little Coop Citizens', tagline: 'Fully engaged in flock life with plenty of independence.' }
     };
 
     // Check if it's Sunday - if so, gather weekly recap
@@ -298,15 +311,15 @@ async function gatherDailyActivity(db, date) {
         const generalNotes = [];
 
         notes.results.forEach(note => {
-            if (note.content.startsWith(rudyPrefix)) {
+            if (note.content.startsWith(chickMilestonePrefix)) {
                 try {
-                    const payload = JSON.parse(note.content.slice(rudyPrefix.length));
+                    const payload = JSON.parse(note.content.slice(chickMilestonePrefix.length));
                     const score = Number(payload.score);
-                    const level = rudyLevels[score];
+                    const level = chickMilestoneLevels[score];
 
                     if (level) {
                         activity.hasActivity = true;
-                        activity.summary.push('\nRudy Meter:');
+                        activity.summary.push('\nChick Milestone:');
                         activity.summary.push(`- ${score}/5 - ${level.label}`);
                         activity.summary.push(`- Tagline: ${level.tagline}`);
                         if (payload.notes) {
@@ -315,7 +328,7 @@ async function gatherDailyActivity(db, date) {
                         return;
                     }
                 } catch {
-                    // Fall through and treat malformed Rudy entries as normal notes.
+                    // Fall through and treat malformed chick milestone entries as normal notes.
                 }
             }
 
@@ -448,13 +461,13 @@ function generateTitle(content, date) {
 
     const titleBuckets = [];
 
-    if (normalized.includes('rudy meter') || normalized.includes('rudy')) {
+    if (normalized.includes('chick milestone') || normalized.includes('the chicks')) {
         titleBuckets.push([
-            `Rudy Sets the Tone on ${dayOfWeek}`,
-            `Rudy's Mood Report from the Yard`,
-            `The Rudy Meter Was Not Quiet Today`,
-            `Rudy's Latest Campaign Against Peace`,
-            `A Rooster Reckoning at Hensington Palace`
+            `Tiny Milestones at Hensington Palace`,
+            `The Chicks Tested Their Wings on ${dayOfWeek}`,
+            `Small Adventures from the Brooder Beat`,
+            `The Youngest Residents Had News Today`,
+            `A Chick Dispatch from ${dayOfWeek}`
         ]);
     }
 

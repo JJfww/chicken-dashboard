@@ -17,7 +17,8 @@ A mobile-friendly app to track your backyard chickens!
 - **Mamma Mia** - Brown-olive eggs
 - **Brown Betty** - Green eggs
 - **Madame Pompadour** - Eggshell-colored eggs
-- **Rudy** - Rooster (doesn't lay eggs, but equally important!)
+- **Velma** - Young pullet, likely to start laying in fall 2026
+- **The Chicks** - Three chicks hatched on May 24, 25, and 26, 2026
 
 ## Tech Stack
 

@@ -1,6 +1,8 @@
 import { requireSession } from './_auth.js';
 import { TOOL_DEFINITIONS, executeTool } from './_chat-tools.js';
 
+const OPENROUTER_MODEL = 'google/gemini-2.5-flash';
+
 const CORS_HEADERS = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
@@ -52,7 +54,8 @@ The flock at Hensington Palace:
 - Mamma Mia (hen, lays brown-olive eggs)
 - Brown Betty (hen, lays green eggs)
 - Madame Pompadour (hen, lays eggshell-colored eggs)
-- Rudy (rooster, doesn't lay eggs)
+- Velma/Vinnie (young rooster, recently started crowing, no eggs)
+- Three chicks hatched on May 24, 25, and 26 of 2026
 
 Conversation Context:
 - You are given the full conversation history in the message list; use it to answer questions about prior turns.
@@ -94,7 +97,7 @@ IMPORTANT: Use the provided tools to query data. Don't guess or make up numbers 
                     'X-Title': 'Chicken Dashboard'
                 },
                 body: JSON.stringify({
-                    model: 'google/gemini-2.0-flash-001',
+                    model: OPENROUTER_MODEL,
                     messages: messages,
                     tools: TOOL_DEFINITIONS,
                     temperature: 0.7,
@@ -164,7 +167,7 @@ IMPORTANT: Use the provided tools to query data. Don't guess or make up numbers 
                     'X-Title': 'Chicken Dashboard'
                 },
                 body: JSON.stringify({
-                    model: 'google/gemini-2.0-flash-001',
+                    model: OPENROUTER_MODEL,
                     messages: messages,
                     temperature: 0.7,
                     max_tokens: 1000

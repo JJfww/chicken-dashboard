@@ -94,8 +94,8 @@ function renderHealthAlert(chicken) {
 function renderChickenMeta(chicken) {
     const eggImage = getEggImage(chicken.name);
 
-    if (chicken.is_pullet) {
-        return '<p class="chicken-meta">Pullet in training</p>';
+    if (chicken.is_rooster || chicken.name === 'Velma' || chicken.display_name === 'Velma/Vinnie') {
+        return '<p class="chicken-meta">Young rooster, no eggs</p>';
     }
 
     return `
@@ -110,17 +110,20 @@ function renderFlockCard(chicken, variant = 'feature') {
     const avatarImage = chickenAvatars[chicken.name] || '/images/default.png';
     const eggImage = getEggImage(chicken.name);
     const laidToday = chicken.laid_today;
-    const isPullet = chicken.is_pullet;
+    const isRooster = chicken.is_rooster || chicken.name === 'Velma' || chicken.display_name === 'Velma/Vinnie';
+    const displayName = chicken.display_name || (chicken.name === 'Velma' ? 'Velma/Vinnie' : chicken.name);
     const cardClasses = variant === 'feature'
         ? 'chicken-card chicken-card--feature'
         : 'chicken-card chicken-card--compact';
     const eyebrow = variant === 'feature'
         ? '<p class="card-eyebrow">Current boss hen</p>'
-        : '<p class="card-eyebrow">Supporting hen</p>';
-    const primaryValue = isPullet ? 'Growing into the flock' : (laidToday ? 'Egg laid!' : 'Not yet');
-    const primaryIcon = laidToday
+        : `<p class="card-eyebrow">${isRooster ? 'Young rooster' : 'Supporting hen'}</p>`;
+    const primaryValue = isRooster ? 'No eggs. Started crowing.' : (laidToday ? 'Egg laid!' : 'Not yet');
+    const primaryIcon = isRooster
+        ? '🚫🥚'
+        : laidToday
         ? (eggImage ? `<img src="${eggImage}" alt="${escapeHtml(chicken.egg_color)} egg" class="egg-icon">` : '🥚')
-        : (isPullet ? '🌱' : '⏱️');
+        : '⏱️';
 
     return `
         <article class="${cardClasses}">
@@ -128,21 +131,21 @@ function renderFlockCard(chicken, variant = 'feature') {
             <div class="chicken-avatar ${variant === 'compact' ? 'chicken-avatar--compact' : ''}">
                 <img src="${avatarImage}" alt="${escapeHtml(chicken.name)}">
             </div>
-            <h3 class="chicken-name">${escapeHtml(chicken.name)}</h3>
+            <h3 class="chicken-name">${escapeHtml(displayName)}</h3>
             ${chicken.role_label ? `<span class="role-badge">${escapeHtml(chicken.role_label)}</span>` : ''}
             ${renderChickenMeta(chicken)}
             <div class="status-stack">
                 ${renderStatusRow({
-                    label: isPullet ? 'Stage' : 'Today',
+                    label: 'Today',
                     value: escapeHtml(primaryValue),
                     icon: primaryIcon,
-                    tone: laidToday ? 'laid-today' : (isPullet ? 'growing' : 'not-yet'),
+                    tone: laidToday ? 'laid-today' : (isRooster ? 'growing' : 'not-yet'),
                     compact: variant === 'compact'
                 })}
                 ${renderStatusRow({
-                    label: isPullet ? 'Expected season' : 'Last egg',
-                    value: escapeHtml(isPullet ? 'Likely Oct-Nov 2026' : formatStatusDate(chicken.last_egg_date)),
-                    icon: isPullet ? '📅' : '📆',
+                    label: isRooster ? 'Status' : 'Last egg',
+                    value: escapeHtml(isRooster ? 'Competing for king of the coop' : formatStatusDate(chicken.last_egg_date)),
+                    icon: isRooster ? '❌📆' : '📆',
                     compact: variant === 'compact'
                 })}
             </div>
@@ -212,7 +215,7 @@ function renderFormerFlockCard(chicken) {
                 <img src="${avatarImage}" alt="${escapeHtml(chicken.name)}">
             </div>
             <div class="memorial-copy">
-                <p class="card-eyebrow">Former flock member</p>
+                <p class="card-eyebrow">Rooster and chick dad</p>
                 <h3 class="chicken-name">${escapeHtml(chicken.name)}</h3>
                 <p class="former-flock-caption">${escapeHtml(chicken.caption)}</p>
             </div>

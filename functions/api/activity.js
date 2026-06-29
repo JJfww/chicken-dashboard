@@ -2,6 +2,7 @@ export async function onRequestGet(context) {
     try {
         const activities = [];
         const rudyPrefix = 'RUDY_METER::';
+        const chickMilestonePrefix = 'CHICK_MILESTONE::';
 
         // Get recent eggs
         const eggs = await context.env.DB.prepare(`
@@ -138,6 +139,40 @@ export async function onRequestGet(context) {
                     }
                 } catch {
                     // Fall through and treat malformed entries as normal notes.
+                }
+            }
+
+            if (note.content.startsWith(chickMilestonePrefix)) {
+                try {
+                    const payload = JSON.parse(note.content.slice(chickMilestonePrefix.length));
+                    const score = Number(payload.score);
+                    const labels = {
+                        0: 'Hatchling Bubble',
+                        1: 'Following Mama',
+                        2: 'Backyard Peeking',
+                        3: 'Short Solo Missions',
+                        4: 'Confident Explorers',
+                        5: 'Little Coop Citizens'
+                    };
+                    const taglines = {
+                        0: 'Freshly hatched and mostly tucked in close.',
+                        1: 'Shadowing mom closely and learning the basics.',
+                        2: 'Starting to notice the wider world in short bursts.',
+                        3: 'Taking quick little detours before circling back.',
+                        4: 'Covering more ground and acting noticeably bolder.',
+                        5: 'Fully engaged in flock life with plenty of independence.'
+                    };
+
+                    if (labels[score]) {
+                        activities.push({
+                            type: '🐥 Chick Milestone',
+                            details: `${score}/5 - ${labels[score]}: ${taglines[score]}${payload.notes ? ` Notes: ${payload.notes}` : ''}`,
+                            date: note.date
+                        });
+                        return;
+                    }
+                } catch {
+                    // Fall through and treat malformed chick entries as normal notes.
                 }
             }
 
