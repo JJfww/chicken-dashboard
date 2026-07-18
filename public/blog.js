@@ -4,7 +4,6 @@ const chickenAvatars = {
     'Brown Betty': '/images/brown-betty.png',
     'Madame Pompadour': '/images/MadamePompadour26.png',
     'Velma': '/images/Velma.png',
-    'The Chicks': '/images/3Chicks.png',
     'Girl #1': '/images/girl-1.png',
     'Girl #2': '/images/girl-2.png',
     'Gomez': '/images/gomez.png',
@@ -179,7 +178,6 @@ function renderExpandableText(label, text, className = '') {
 }
 
 function renderChickGroupCard(chickGroup) {
-    const avatarImage = chickenAvatars[chickGroup.name] || '/images/default.png';
     const milestone = chickGroup.milestone;
     const currentUpdate = milestone ? milestone.description : chickGroup.summary;
     const chickProfiles = (chickGroup.chicks || []).map((chick) => {
@@ -199,9 +197,6 @@ function renderChickGroupCard(chickGroup) {
     return `
         <article class="chicken-card chicken-card--feature chicken-card--chicks">
             <p class="card-eyebrow">Latest chick update</p>
-            <div class="chicken-avatar">
-                <img src="${avatarImage}" alt="${escapeHtml(chickGroup.name)}">
-            </div>
             <h3 class="chicken-name">${escapeHtml(chickGroup.name)}</h3>
             <p class="chick-hatch-dates">${escapeHtml(chickGroup.hatch_summary)}</p>
             <div class="status-stack">
