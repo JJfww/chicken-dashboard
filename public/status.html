@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hensington Palace - Current Status</title>
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=5">
     <style>
         .status-container {
             max-width: 1200px;
@@ -351,6 +351,11 @@
             <div id="chicks-row" class="feature-flock-row">
             </div>
         </section>
+        <section class="status-section remember-when-section">
+            <h2 class="section-heading">Remember when…</h2>
+            <p class="section-subheading">All three together when they were little.</p>
+            <div id="remember-when-row" class="former-flock-grid"></div>
+        </section>
         <section class="status-section">
             <h2 class="section-heading">Rudy</h2>
             <p class="section-subheading">Rooster, father of the current chicks, and former flock member.</p>
@@ -372,6 +377,9 @@
             'Madame Pompadour': '/images/MadamePompadour26.png',
             'Velma': '/images/Velma.png',
             'The Chicks': '/images/3Chicks.png',
+            'Girl #1': '/images/girl-1.png',
+            'Girl #2': '/images/girl-2.png',
+            'Gomez': '/images/gomez.png',
             'Rudy': '/images/rudy.png'
         };
 
@@ -444,6 +452,19 @@
         function renderChickGroupCard(chickGroup) {
             const avatarImage = chickenAvatars[chickGroup.name] || '/images/default.png';
             const milestone = chickGroup.milestone;
+            const chickProfiles = (chickGroup.chicks || []).map((chick) => {
+                const chickAvatar = chickenAvatars[chick.avatar || chick.name] || '/images/default.png';
+                return `
+                    <article class="chick-profile">
+                        <img src="${chickAvatar}" alt="${chick.name}">
+                        <div>
+                            <h4>${chick.name}</h4>
+                            <p class="chick-profile-label">${chick.label}</p>
+                            <p>${chick.detail}</p>
+                        </div>
+                    </article>
+                `;
+            }).join('');
 
             return `
                 <div class="chicken-card group-card chick-group-card">
@@ -466,6 +487,7 @@
                             <p class="status-value">${milestone ? milestone.description : chickGroup.summary}</p>
                         </div>
                     </div>
+                    ${chickProfiles ? `<div class="chick-profiles" aria-label="Individual chick profiles">${chickProfiles}</div>` : ''}
                     ${chickGroup.lineage_note ? `
                         <p class="lineage-note">${chickGroup.lineage_note}</p>
                     ` : ''}
@@ -497,10 +519,26 @@
             `;
         }
 
+        function renderRememberWhenCard() {
+            return `
+                <div class="chicken-card chicken-card--memorial remember-when-card">
+                    <div class="chicken-avatar chicken-avatar--compact">
+                        <img src="/images/3Chicks.png" alt="Girl #1, Girl #2, and Gomez when they were little">
+                    </div>
+                    <div class="memorial-copy">
+                        <p class="card-eyebrow">The early days</p>
+                        <h2 class="chicken-name">The three together</h2>
+                        <p class="former-flock-caption">Girl #1, Girl #2, and Gomez—back when they could all fit under Mamma Mia’s wings.</p>
+                    </div>
+                </div>
+            `;
+        }
+
         async function loadChickenStatus() {
             const bossHenRow = document.getElementById('boss-hen-row');
             const activeFlockGrid = document.getElementById('active-flock-grid');
             const chicksRow = document.getElementById('chicks-row');
+            const rememberWhenRow = document.getElementById('remember-when-row');
             const formerFlockGrid = document.getElementById('former-flock-grid');
 
             try {
@@ -517,11 +555,13 @@
                 bossHenRow.innerHTML = bossHen ? renderFlockCard(bossHen) : '';
                 activeFlockGrid.innerHTML = remainingFlock.map(renderFlockCard).join('');
                 chicksRow.innerHTML = renderChickGroupCard(data.chickGroup);
+                rememberWhenRow.innerHTML = renderRememberWhenCard();
                 formerFlockGrid.innerHTML = data.formerFlock.map(renderFormerFlockCard).join('');
             } catch (error) {
                 bossHenRow.innerHTML = '<p style="text-align: center; color: red;">Failed to load status. Please try again.</p>';
                 activeFlockGrid.innerHTML = '<p style="text-align: center; color: red; grid-column: 1 / -1;">Failed to load status. Please try again.</p>';
                 chicksRow.innerHTML = '';
+                rememberWhenRow.innerHTML = '';
                 formerFlockGrid.innerHTML = '';
             }
         }

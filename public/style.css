@@ -1347,6 +1347,14 @@ button:disabled {
         linear-gradient(180deg, var(--bg-secondary), var(--bg-primary));
 }
 
+.remember-when-section {
+    margin-bottom: 1.25rem;
+}
+
+.remember-when-card {
+    max-width: 38rem;
+}
+
 .chicken-card--chicks {
     max-width: 42rem;
 }
@@ -1547,6 +1555,56 @@ button:disabled {
     color: var(--text-secondary);
     font-size: 0.9rem;
     margin: 0 0 0.75rem;
+}
+
+.chick-profiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.7rem;
+    margin-top: 0.85rem;
+}
+
+.chick-profile {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+    padding: 0.65rem;
+    border: 1px solid rgba(111, 143, 114, 0.18);
+    border-radius: 12px;
+    background: var(--bg-primary);
+}
+
+.chick-profile img {
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.chick-profile h4,
+.chick-profile p {
+    margin: 0;
+}
+
+.chick-profile h4 {
+    font-size: 0.95rem;
+}
+
+.chick-profile-label {
+    margin: 0.12rem 0 0.25rem !important;
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-transform: uppercase;
+    letter-spacing: 0.035em;
+}
+
+.chick-profile p:not(.chick-profile-label) {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    line-height: 1.35;
 }
 
 .milestone-summary {
@@ -1756,6 +1814,12 @@ button:disabled {
     .memorial-copy .chicken-name,
     .memorial-copy .former-flock-caption {
         text-align: center;
+    }
+}
+
+@media (max-width: 680px) {
+    .chick-profiles {
+        grid-template-columns: 1fr;
     }
 }
 

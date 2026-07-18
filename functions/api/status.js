@@ -151,10 +151,30 @@ export async function onRequestGet(context) {
             activeFlock,
             chickGroup: {
                 name: 'The Chicks',
-                hatch_summary: 'Yellow chick hatched May 26, 2026. The two black chicks hatched May 24 and May 25, though they are too identical to tell apart.',
+                hatch_summary: 'Three growing chicks, each with her—or his—own look now.',
                 milestone: latestChickMilestone,
-                summary: 'Grouped for now while they are still little and staying close to mom.',
-                lineage_note: 'Rudy and Madame Pompadour are the chicks\' biological parents. Mamma Mia is the acting mom who hatched them and is caring for them.'
+                summary: 'All three are considerably bigger now, though still a little smaller than Mamma Mia—and they still tuck under her wings whenever they can.',
+                lineage_note: 'Rudy and Madame Pompadour are the chicks\' biological parents. Mamma Mia is the acting mom who hatched them and is caring for them.',
+                chicks: [
+                    {
+                        name: 'Girl #1',
+                        avatar: 'Girl #1',
+                        label: 'Young pullet',
+                        detail: 'Glossy black feathers, a little black Crevecœur-like puffball crest, and no red comb.'
+                    },
+                    {
+                        name: 'Girl #2',
+                        avatar: 'Girl #2',
+                        label: 'Young pullet · last to hatch',
+                        detail: 'The white-and-yellow girl with a matching little white puffball crest.'
+                    },
+                    {
+                        name: 'Gomez',
+                        avatar: 'Gomez',
+                        label: 'Young rooster',
+                        detail: 'The black slug hunter with a developing red crown and still-subtle wattles. Future rehoming will be needed.'
+                    }
+                ]
             },
             formerFlock: [
                 {

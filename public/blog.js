@@ -5,6 +5,9 @@ const chickenAvatars = {
     'Madame Pompadour': '/images/MadamePompadour26.png',
     'Velma': '/images/Velma.png',
     'The Chicks': '/images/3Chicks.png',
+    'Girl #1': '/images/girl-1.png',
+    'Girl #2': '/images/girl-2.png',
+    'Gomez': '/images/gomez.png',
     'Rudy': '/images/rudy.png'
 };
 
@@ -179,6 +182,19 @@ function renderChickGroupCard(chickGroup) {
     const avatarImage = chickenAvatars[chickGroup.name] || '/images/default.png';
     const milestone = chickGroup.milestone;
     const currentUpdate = milestone ? milestone.description : chickGroup.summary;
+    const chickProfiles = (chickGroup.chicks || []).map((chick) => {
+        const chickAvatar = chickenAvatars[chick.avatar || chick.name] || '/images/default.png';
+        return `
+            <article class="chick-profile">
+                <img src="${chickAvatar}" alt="${escapeHtml(chick.name)}">
+                <div>
+                    <h4>${escapeHtml(chick.name)}</h4>
+                    <p class="chick-profile-label">${escapeHtml(chick.label)}</p>
+                    <p>${escapeHtml(chick.detail)}</p>
+                </div>
+            </article>
+        `;
+    }).join('');
 
     return `
         <article class="chicken-card chicken-card--feature chicken-card--chicks">
@@ -200,6 +216,7 @@ function renderChickGroupCard(chickGroup) {
                     icon: '🪺'
                 })}
             </div>
+            ${chickProfiles ? `<div class="chick-profiles" aria-label="Individual chick profiles">${chickProfiles}</div>` : ''}
             ${renderExpandableText('More about the chicks', chickGroup.lineage_note, 'lineage-note')}
             ${milestone?.notes ? renderExpandableText('Field notes', milestone.notes, 'field-note') : ''}
         </article>
@@ -218,6 +235,21 @@ function renderFormerFlockCard(chicken) {
                 <p class="card-eyebrow">Rooster and chick dad</p>
                 <h3 class="chicken-name">${escapeHtml(chicken.name)}</h3>
                 <p class="former-flock-caption">${escapeHtml(chicken.caption)}</p>
+            </div>
+        </article>
+    `;
+}
+
+function renderRememberWhenCard() {
+    return `
+        <article class="chicken-card chicken-card--memorial remember-when-card">
+            <div class="chicken-avatar chicken-avatar--compact">
+                <img src="/images/3Chicks.png" alt="Girl #1, Girl #2, and Gomez when they were little">
+            </div>
+            <div class="memorial-copy">
+                <p class="card-eyebrow">The early days</p>
+                <h3 class="chicken-name">The three together</h3>
+                <p class="former-flock-caption">Girl #1, Girl #2, and Gomez—back when they could all fit under Mamma Mia’s wings.</p>
             </div>
         </article>
     `;
@@ -269,6 +301,7 @@ function renderStatusLoadingState() {
     const bossHenRow = document.getElementById('boss-hen-row');
     const activeFlockGrid = document.getElementById('active-flock-grid');
     const chicksRow = document.getElementById('chicks-row');
+    const rememberWhenRow = document.getElementById('remember-when-row');
     const formerFlockGrid = document.getElementById('former-flock-grid');
 
     summaryStrip.innerHTML = `
@@ -431,6 +464,7 @@ async function loadChickenStatus() {
         chicksRow.innerHTML = data.chickGroup
             ? renderChickGroupCard(data.chickGroup)
             : renderSectionError('Chick update unavailable', 'No chick group details are available right now.');
+        rememberWhenRow.innerHTML = renderRememberWhenCard();
         formerFlockGrid.innerHTML = Array.isArray(data.formerFlock) && data.formerFlock.length
             ? data.formerFlock.map(renderFormerFlockCard).join('')
             : renderSectionError('No former flock member listed', 'A memorial card can appear here when a former flock note is available.');
@@ -441,6 +475,7 @@ async function loadChickenStatus() {
         bossHenRow.innerHTML = renderSectionError('Current flock unavailable', 'The featured flock update could not be loaded. Please try again soon.');
         activeFlockGrid.innerHTML = renderSectionError('Supporting hens unavailable', 'The supporting flock cards could not be loaded right now.');
         chicksRow.innerHTML = renderSectionError('Chick update unavailable', 'The chick status feed could not be loaded right now.');
+        rememberWhenRow.innerHTML = '';
         formerFlockGrid.innerHTML = renderSectionError('Memorial update unavailable', 'The former flock section could not be loaded right now.');
     }
 }
