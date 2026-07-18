@@ -261,6 +261,9 @@ function renderSummaryStrip(data, bossHen) {
         ? layingToday.map((chicken) => chicken.name).join(', ')
         : 'No eggs yet';
     const eggsValue = layingToday.length === 1 ? '1 egg today' : `${layingToday.length} eggs today`;
+    const latestLayer = data.activeFlock
+        .filter((chicken) => !chicken.is_rooster && chicken.last_egg_date)
+        .sort((a, b) => b.last_egg_date.localeCompare(a.last_egg_date))[0];
     const milestoneValue = data.chickGroup?.milestone?.label || 'No milestone logged';
 
     return `
@@ -276,8 +279,8 @@ function renderSummaryStrip(data, bossHen) {
         </article>
         <article class="summary-card">
             <p class="summary-label">Latest layer</p>
-            <p class="summary-value">${escapeHtml(layingToday[0]?.name || 'Waiting')}</p>
-            <p class="summary-detail">${escapeHtml(layingToday[0]?.egg_color ? `${layingToday[0].egg_color} egg` : 'No egg logged yet')}</p>
+            <p class="summary-value">${escapeHtml(latestLayer?.name || 'Waiting')}</p>
+            <p class="summary-detail">${escapeHtml(latestLayer?.egg_color ? `${latestLayer.egg_color} egg · ${formatStatusDate(latestLayer.last_egg_date)}` : 'No egg logged yet')}</p>
         </article>
         <article class="summary-card">
             <p class="summary-label">Chick milestone</p>
