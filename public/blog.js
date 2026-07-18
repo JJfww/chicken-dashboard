@@ -440,6 +440,7 @@ async function loadChickenStatus() {
     const bossHenRow = document.getElementById('boss-hen-row');
     const activeFlockGrid = document.getElementById('active-flock-grid');
     const chicksRow = document.getElementById('chicks-row');
+    const rememberWhenRow = document.getElementById('remember-when-row');
     const formerFlockGrid = document.getElementById('former-flock-grid');
 
     if (!statusState.hasLoaded) {
