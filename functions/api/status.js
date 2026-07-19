@@ -157,13 +157,13 @@ export async function onRequestGet(context) {
                 lineage_note: 'Rudy and Madame Pompadour are the chicks\' biological parents. Mamma Mia is the acting mom who hatched them and is caring for them.',
                 chicks: [
                     {
-                        name: 'Girl #1',
+                        name: 'Peppercorn',
                         avatar: 'Girl #1',
                         label: 'Young pullet',
                         detail: 'Glossy black feathers, a little black Crevecœur-like puffball crest, and no red comb.'
                     },
                     {
-                        name: 'Girl #2',
+                        name: 'Salty',
                         avatar: 'Girl #2',
                         label: 'Young pullet · last to hatch',
                         detail: 'The white-and-yellow girl with a matching little white puffball crest.'

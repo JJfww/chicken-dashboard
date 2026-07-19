@@ -239,12 +239,12 @@ function renderRememberWhenCard() {
     return `
         <article class="chicken-card chicken-card--memorial remember-when-card">
             <div class="chicken-avatar chicken-avatar--compact">
-                <img src="/images/3Chicks.png" alt="Girl #1, Girl #2, and Gomez when they were little">
+                <img src="/images/3Chicks.png" alt="Peppercorn, Salty, and Gomez when they were little">
             </div>
             <div class="memorial-copy">
                 <p class="card-eyebrow">The early days</p>
                 <h3 class="chicken-name">The three together</h3>
-                <p class="former-flock-caption">Girl #1, Girl #2, and Gomez—back when they could all fit under Mamma Mia’s wings.</p>
+                <p class="former-flock-caption">Peppercorn, Salty, and Gomez—back when they could all fit under Mamma Mia’s wings.</p>
             </div>
         </article>
     `;
