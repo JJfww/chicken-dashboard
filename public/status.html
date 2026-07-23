@@ -405,11 +405,38 @@
             const eggImage = getEggImage(chicken.name);
             const laidToday = chicken.laid_today;
             const lastEggDate = chicken.last_egg_date ? formatDate(chicken.last_egg_date) : 'Not yet';
-            const isRooster = chicken.is_rooster || chicken.name === 'Velma' || chicken.display_name === 'Velma/Vinnie';
-            const displayName = chicken.display_name || (chicken.name === 'Velma' ? 'Velma/Vinnie' : chicken.name);
+            const isRooster = chicken.is_rooster || chicken.name === 'Velma' || chicken.display_name === 'Vinnie';
+            const displayName = chicken.display_name || (chicken.name === 'Velma' ? 'Vinnie' : chicken.name);
             const subtitle = isRooster
-                ? 'Young rooster, no eggs'
+                ? 'Young rooster finding his way'
                 : `${eggImage ? `<img src="${eggImage}" alt="${chicken.egg_color} egg" class="egg-icon">` : '🥚'} ${chicken.egg_color} eggs`;
+            const statusItems = isRooster
+                ? `
+                    <div class="status-item growing">
+                        <div class="status-icon">🐓</div>
+                        <div class="status-text">
+                            <p class="status-label">Current chapter</p>
+                            <p class="status-value">${chicken.rooster_update || 'Young rooster finding his way.'}</p>
+                        </div>
+                    </div>
+                `
+                : `
+                    <div class="status-item ${laidToday ? 'laid-today' : 'not-yet'}">
+                        <div class="status-icon">${laidToday ? (eggImage ? `<img src="${eggImage}" alt="${chicken.egg_color} egg" class="egg-icon">` : '🥚') : '⏱️'}</div>
+                        <div class="status-text">
+                            <p class="status-label">Today</p>
+                            <p class="status-value">${laidToday ? 'Egg laid!' : 'Not yet'}</p>
+                        </div>
+                    </div>
+
+                    <div class="status-item">
+                        <div class="status-icon">📆</div>
+                        <div class="status-text">
+                            <p class="status-label">Last egg</p>
+                            <p class="status-value">${lastEggDate}</p>
+                        </div>
+                    </div>
+                `;
 
             return `
                 <div class="chicken-card">
@@ -419,22 +446,7 @@
                     <h2 class="chicken-name">${displayName}</h2>
                     ${chicken.role_label ? `<span class="role-badge">${chicken.role_label}</span>` : ''}
                     <p class="egg-color">${subtitle}</p>
-
-                    <div class="status-item ${laidToday ? 'laid-today' : 'not-yet'}">
-                        <div class="status-icon">${isRooster ? '🚫🥚' : laidToday ? (eggImage ? `<img src="${eggImage}" alt="${chicken.egg_color} egg" class="egg-icon">` : '🥚') : '⏱️'}</div>
-                        <div class="status-text">
-                            <p class="status-label">Today</p>
-                            <p class="status-value">${isRooster ? 'No eggs. Started crowing.' : (laidToday ? 'Egg laid!' : 'Not yet')}</p>
-                        </div>
-                    </div>
-
-                    <div class="status-item">
-                        <div class="status-icon">${isRooster ? '❌📆' : '📆'}</div>
-                        <div class="status-text">
-                            <p class="status-label">${isRooster ? 'Status' : 'Last egg'}</p>
-                            <p class="status-value">${isRooster ? 'Competing for king of the coop' : lastEggDate}</p>
-                        </div>
-                    </div>
+                    ${statusItems}
 
                     ${chicken.health_concern ? `
                         <div class="status-item health-warning">

@@ -19,7 +19,7 @@ export const TOOL_DEFINITIONS = [
                     },
                     chicken_name: {
                         type: "string",
-                        description: "Optional: Filter to specific chicken (Mamma Mia, Brown Betty, Madame Pompadour, or Velma/Vinnie)"
+                        description: "Optional: Filter to specific chicken (Mamma Mia, Brown Betty, Madame Pompadour, or Vinnie)"
                     }
                 },
                 required: ["start_date", "end_date"]

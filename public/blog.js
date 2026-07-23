@@ -96,8 +96,8 @@ function renderHealthAlert(chicken) {
 function renderChickenMeta(chicken) {
     const eggImage = getEggImage(chicken.name);
 
-    if (chicken.is_rooster || chicken.name === 'Velma' || chicken.display_name === 'Velma/Vinnie') {
-        return '<p class="chicken-meta">Young rooster, no eggs</p>';
+    if (chicken.is_rooster || chicken.name === 'Velma' || chicken.display_name === 'Vinnie') {
+        return '<p class="chicken-meta">Young rooster finding his way</p>';
     }
 
     return `
@@ -112,20 +112,41 @@ function renderFlockCard(chicken, variant = 'feature') {
     const avatarImage = chickenAvatars[chicken.name] || '/images/default.png';
     const eggImage = getEggImage(chicken.name);
     const laidToday = chicken.laid_today;
-    const isRooster = chicken.is_rooster || chicken.name === 'Velma' || chicken.display_name === 'Velma/Vinnie';
-    const displayName = chicken.display_name || (chicken.name === 'Velma' ? 'Velma/Vinnie' : chicken.name);
+    const isRooster = chicken.is_rooster || chicken.name === 'Velma' || chicken.display_name === 'Vinnie';
+    const displayName = chicken.display_name || (chicken.name === 'Velma' ? 'Vinnie' : chicken.name);
     const cardClasses = variant === 'feature'
         ? 'chicken-card chicken-card--feature'
         : 'chicken-card chicken-card--compact';
     const eyebrow = variant === 'feature'
         ? '<p class="card-eyebrow">Current boss hen</p>'
         : `<p class="card-eyebrow">${isRooster ? 'Young rooster' : 'Supporting hen'}</p>`;
-    const primaryValue = isRooster ? 'No eggs. Started crowing.' : (laidToday ? 'Egg laid!' : 'Not yet');
-    const primaryIcon = isRooster
-        ? '🚫🥚'
-        : laidToday
+    const primaryValue = laidToday ? 'Egg laid!' : 'Not yet';
+    const primaryIcon = laidToday
         ? (eggImage ? `<img src="${eggImage}" alt="${escapeHtml(chicken.egg_color)} egg" class="egg-icon">` : '🥚')
         : '⏱️';
+    const statusRows = isRooster
+        ? renderStatusRow({
+            label: 'Current chapter',
+            value: escapeHtml(chicken.rooster_update || 'Young rooster finding his way.'),
+            icon: '🐓',
+            tone: 'growing',
+            compact: variant === 'compact'
+        })
+        : `
+            ${renderStatusRow({
+                label: 'Today',
+                value: escapeHtml(primaryValue),
+                icon: primaryIcon,
+                tone: laidToday ? 'laid-today' : 'not-yet',
+                compact: variant === 'compact'
+            })}
+            ${renderStatusRow({
+                label: 'Last egg',
+                value: escapeHtml(formatStatusDate(chicken.last_egg_date)),
+                icon: '📆',
+                compact: variant === 'compact'
+            })}
+        `;
 
     return `
         <article class="${cardClasses}">
@@ -137,19 +158,7 @@ function renderFlockCard(chicken, variant = 'feature') {
             ${chicken.role_label ? `<span class="role-badge">${escapeHtml(chicken.role_label)}</span>` : ''}
             ${renderChickenMeta(chicken)}
             <div class="status-stack">
-                ${renderStatusRow({
-                    label: 'Today',
-                    value: escapeHtml(primaryValue),
-                    icon: primaryIcon,
-                    tone: laidToday ? 'laid-today' : (isRooster ? 'growing' : 'not-yet'),
-                    compact: variant === 'compact'
-                })}
-                ${renderStatusRow({
-                    label: isRooster ? 'Status' : 'Last egg',
-                    value: escapeHtml(isRooster ? 'Competing for king of the coop' : formatStatusDate(chicken.last_egg_date)),
-                    icon: isRooster ? '❌📆' : '📆',
-                    compact: variant === 'compact'
-                })}
+                ${statusRows}
             </div>
             ${renderHealthAlert(chicken)}
         </article>

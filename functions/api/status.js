@@ -85,7 +85,7 @@ export async function onRequestGet(context) {
             const status = {
                 id: chicken.id,
                 name: chicken.name,
-                display_name: chicken.name === 'Velma' ? 'Velma/Vinnie' : chicken.name,
+                display_name: chicken.name === 'Velma' ? 'Vinnie' : chicken.name,
                 egg_color: chicken.egg_color,
                 is_placeholder: Boolean(chicken.is_placeholder),
                 is_pullet: false,
@@ -96,9 +96,13 @@ export async function onRequestGet(context) {
                         : chicken.name === 'Mamma Mia'
                             ? 'Mom of the chicks'
                             : chicken.name === 'Velma'
-                                ? 'King of the Coop contender'
+                                ? 'Young rooster finding his way'
                             : null
             };
+
+            if (isRooster) {
+                status.rooster_update = 'He seems bonded with Pompy, though she has been known to chase him all over the yard after he tries to mount her.';
+            }
 
             if (!chicken.is_placeholder) {
                 const { results: todayEggs } = await context.env.DB.prepare(`

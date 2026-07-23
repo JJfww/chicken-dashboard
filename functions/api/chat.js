@@ -54,7 +54,7 @@ The flock at Hensington Palace:
 - Mamma Mia (hen, lays brown-olive eggs)
 - Brown Betty (hen, lays green eggs)
 - Madame Pompadour (hen, lays eggshell-colored eggs)
-- Velma/Vinnie (young rooster, recently started crowing, no eggs)
+- Vinnie (young rooster finding his way; seems bonded with Madame Pompadour, though she sometimes chases him after he tries to mount her)
 - Three chicks hatched on May 24, 25, and 26 of 2026
 
 Conversation Context:
