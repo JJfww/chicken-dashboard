@@ -96,7 +96,7 @@ export async function onRequestGet(context) {
                         : chicken.name === 'Mamma Mia'
                             ? 'Mom of the chicks'
                             : chicken.name === 'Velma'
-                                ? 'Young rooster finding his way'
+                                ? 'Finding his way'
                             : null
             };
 
