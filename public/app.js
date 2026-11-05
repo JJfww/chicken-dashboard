@@ -707,13 +707,21 @@ function getActivityDataType(activityType) {
     return 'other';
 }
 
-// Map chicken names to their egg images
-const chickenEggImages = {
-    'Mamma Mia': '/images/egg_mamma_mia.png',
-    'Brown Betty': '/images/egg_brown_betty.png',
-    'Madame Pompadour': '/images/egg_madame_pompadour.png',
-    'Peppercorn': '/images/egg_peppercorn.png'
-};
+// Chicken name -> egg image, filled from the chickens table (Flock tab) before the feed renders
+let chickenEggImages = {};
+
+async function loadEggImages() {
+    try {
+        const chickens = await loadAdminChickens();
+        chickenEggImages = {};
+        chickens.filter(chicken => chicken.egg_image_url).forEach(chicken => {
+            chickenEggImages[chicken.name] = chicken.egg_image_url;
+            if (chicken.display_name) chickenEggImages[chicken.display_name] = chicken.egg_image_url;
+        });
+    } catch {
+        // Fall back to the plain egg emoji
+    }
+}
 
 function getEggTypeDisplay(activity) {
     if (activity.chicken_name && chickenEggImages[activity.chicken_name]) {
@@ -728,7 +736,7 @@ async function loadActivity() {
     feed.innerHTML = '<p class="loading">Loading activity...</p>';
 
     try {
-        const response = await fetch('/api/activity', { credentials: 'include' });
+        const [response] = await Promise.all([fetch('/api/activity', { credentials: 'include' }), loadEggImages()]);
         if (response.ok) {
             const activities = await response.json();
 

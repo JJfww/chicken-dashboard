@@ -389,16 +389,6 @@
             'Rudy': '/images/rudy.png'
         };
 
-        function getEggImage(name) {
-            const eggs = {
-                'Mamma Mia': '/images/egg_mamma_mia.png',
-                'Brown Betty': '/images/egg_brown_betty.png',
-                'Madame Pompadour': '/images/egg_madame_pompadour.png',
-                'Peppercorn': '/images/egg_peppercorn.png'
-            };
-            return eggs[name] || null;
-        }
-
         function formatShortDate(dateString) {
             return new Date(`${dateString}T12:00:00`).toLocaleDateString('en-US', {
                 month: 'short',
@@ -408,8 +398,8 @@
         }
 
         function renderFlockCard(chicken) {
-            const avatarImage = chickenAvatars[chicken.name] || '/images/default.png';
-            const eggImage = getEggImage(chicken.name);
+            const avatarImage = chicken.avatar_url || chickenAvatars[chicken.name] || '/images/default.png';
+            const eggImage = chicken.egg_image_url || null;
             const laidToday = chicken.laid_today;
             const lastEggDate = chicken.last_egg_date ? formatDate(chicken.last_egg_date) : 'Not yet';
             const isRooster = chicken.is_rooster || chicken.name === 'Velma' || chicken.display_name === 'Vinnie';
@@ -477,7 +467,7 @@
         }
 
         function renderFormerFlockCard(chicken) {
-            const avatarImage = chickenAvatars[chicken.name] || '/images/default.png';
+            const avatarImage = chicken.avatar_url || chickenAvatars[chicken.name] || '/images/default.png';
 
             return `
                 <div class="chicken-card rudy-card group-card">
