@@ -176,22 +176,22 @@ function renderStatTiles() {
 
     document.getElementById('stat-tiles').innerHTML = `
         <article class="stat-tile">
-            <p class="stat-label">Eggs today</p>
+            <p class="stat-label"><span class="stat-icon" aria-hidden="true">🥚</span> Eggs today</p>
             <p class="stat-value">${stats.totals.today}</p>
             <p class="stat-detail">${escapeHtml(layingToday.map(chicken => chicken.display_name).join(', ') || 'None yet today')}</p>
         </article>
         <article class="stat-tile">
-            <p class="stat-label">Last 7 days</p>
+            <p class="stat-label"><span class="stat-icon" aria-hidden="true">🧺</span> Eggs, 7 days</p>
             <p class="stat-value">${stats.totals.this_week}</p>
             <p class="stat-detail">${escapeHtml(trend)}</p>
         </article>
         <article class="stat-tile">
-            <p class="stat-label">Hottest streak</p>
+            <p class="stat-label"><span class="stat-icon" aria-hidden="true">🔥</span> Laying streak</p>
             <p class="stat-value">${streakLeader?.streak ? plural(streakLeader.streak, 'day') : '—'}</p>
             <p class="stat-detail">${streakLeader?.streak ? `${escapeHtml(streakLeader.display_name)}, laying daily` : 'No streak running'}</p>
         </article>
         <article class="stat-tile">
-            <p class="stat-label">All-time eggs</p>
+            <p class="stat-label"><span class="stat-icon" aria-hidden="true">🏆</span> All-time eggs</p>
             <p class="stat-value">${stats.totals.all_time.toLocaleString()}</p>
             <p class="stat-detail">Since ${escapeHtml(since)}${stats.best_day ? ` · record ${stats.best_day.count} in a day` : ''}</p>
         </article>

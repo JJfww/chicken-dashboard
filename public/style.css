@@ -2417,6 +2417,11 @@ button:disabled {
     font-weight: 600;
 }
 
+.stat-icon {
+    font-size: 0.95rem;
+    margin-right: 0.15rem;
+}
+
 .stat-value {
     font-size: 1.75rem;
     font-weight: 700;
