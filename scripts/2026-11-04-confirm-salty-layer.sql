@@ -9,3 +9,7 @@ WHERE id = 11 AND name = 'Salty';
 UPDATE eggs
 SET notes = 'First egg from Salty, dated October 20, 2026 per Jen.'
 WHERE id = 541 AND chicken_id = 11 AND notes LIKE 'Presumed first egg from Salty%';
+
+-- Egg icon recolored from Peppercorn's to match Salty's egg in
+-- public/images/PeppercornOnTop-SaltyBottom.JPG.
+UPDATE chickens SET egg_image_url = '/images/egg_salty.png' WHERE id = 11 AND name = 'Salty';
