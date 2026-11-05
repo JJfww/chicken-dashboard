@@ -1,3 +1,6 @@
+import { requireSession } from '../_auth.js';
+import { setPhotoTags } from '../_photo-tags.js';
+
 export async function onRequestOptions() {
     return new Response(null, {
         status: 204,
@@ -58,6 +61,41 @@ export async function onRequestGet(context) {
             headers: {
                 'Access-Control-Allow-Origin': '*'
             }
+        });
+    }
+}
+
+// POST /api/photos/:id { chicken_ids?: number[], caption?: string } updates tags and/or caption.
+export async function onRequestPost(context) {
+    const authError = await requireSession(context.request, context.env);
+    if (authError) return authError;
+
+    try {
+        const photoId = Number(context.params.id);
+        const { chicken_ids: chickenIds, caption } = await context.request.json();
+        const photo = await context.env.DB.prepare('SELECT id FROM photos WHERE id = ?').bind(photoId).first();
+        if (!photo) {
+            return new Response(JSON.stringify({ error: 'Photo not found' }), {
+                status: 404,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
+        if (Array.isArray(chickenIds)) {
+            await setPhotoTags(context.env.DB, photoId, chickenIds);
+        }
+        if (typeof caption === 'string') {
+            await context.env.DB.prepare('UPDATE photos SET caption = ? WHERE id = ?')
+                .bind(caption.trim() || null, photoId).run();
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
         });
     }
 }

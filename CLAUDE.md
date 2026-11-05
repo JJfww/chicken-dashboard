@@ -48,8 +48,8 @@ This is a Cloudflare Pages application with a vanilla JavaScript frontend and Cl
 
 ### Database Schema
 The D1 database contains these tables:
-- `chickens`: Chicken records for the current flock and historical members
-- `eggs`: Egg production logs linked to chickens
+- `chickens`: Chicken records plus public profile fields (`display_name`, `role_label`, `bio`, `tagline`, `status` active/former, `departed_date`, `departure_note`, `avatar_url`, `egg_image_url`, `hatch_date`, `sort_order`, `is_rooster`). Edited from the admin **Flock** tab; the public site reads everything from here (no hard-coded flock data). Velma's display name is Vinnie. An egg color containing "(provisional)" renders as an "unconfirmed" badge.
+- `eggs`: Egg production logs linked to chickens (optional `time`, optional `weight_g`)
 - `feeding`: Feeding activity (treats, scraps)
 - `free_range`: Free range time tracking (time_start, time_end, duration_minutes - all nullable for partial entries, duration calculated automatically when both times present, displayed as H:MM)
 - `health_observations`: Health notes per chicken or general observations (types: molting, sneezing, behavior, other)
@@ -59,7 +59,11 @@ The D1 database contains these tables:
 - `medication`: Medication purchases and administration (linked to chickens table via chicken_id)
 - `supplies`: General supplies purchases (categories: bedding, equipment, coop-maintenance, other)
 - `blog_posts`: Blog entries with `is_auto_generated` flag to distinguish manual vs AI-generated posts
-- `notes`: General daily notes (date, content)
+- `notes`: General daily notes (date, content, `is_headline` — a headline note shows as a front-page banner for 10 days)
+- `photo_chickens`: Photo tags (photo_id, chicken_id, source 'manual' or 'caption' for tags auto-suggested from captions)
+- `meter_entries`: Generic daily meters (meter key, date, score 0-5, notes). Meter definitions live in `functions/api/_meters.js` (Rudy meter and chick milestones are retired; set `active: true` on a new meter to show its form in admin). Older meter entries were stored as `RUDY_METER::`/`CHICK_MILESTONE::` prefixed notes; those rows remain but are filtered out of notes everywhere.
+
+Schema changes are applied with SQL scripts in `scripts/` (e.g. `scripts/2026-11-04-flock-profiles.sql`); `schema.sql` is the original baseline only.
 
 ### API Architecture Pattern
 All API endpoints follow Cloudflare Pages Functions conventions:
@@ -79,9 +83,12 @@ All API endpoints follow Cloudflare Pages Functions conventions:
   - End time only: finds today's incomplete record and completes it with calculated duration
   - Both times: creates complete record with calculated duration
 - `/api/health` - POST to log health observations, GET to retrieve recent observations
-- `/api/photos` - POST to upload photos or videos (stores in R2 + DB), GET to list media with media_type field
-- `/api/photos/[id]` - Dynamic route to retrieve individual photos/videos from R2
-- `/api/notes` - POST to log general notes, GET to retrieve recent 50 notes
+- `/api/photos` - POST to upload photos or videos (stores in R2 + DB; optional `chicken_ids` comma list tags it), GET to list media with `media_type` and `chickens` tags. Query params: `limit` (max 100), `offset`, `chicken=ID`, `untagged=1`
+- `/api/photos/[id]` - GET retrieves the photo/video from R2; POST `{ chicken_ids, caption }` (protected) updates tags/caption
+- `/api/notes` - POST to log general notes (`is_headline` optional; `{ id, is_headline }` toggles an existing note), GET to retrieve recent 50 notes
+- `/api/chickens` - GET chicken profiles (`?status=active|former`), POST to update a profile (`{ id, ...fields }`) or add a chicken (no id)
+- `/api/stats` - GET egg totals (today, 7-day, prior 7-day, all-time), per-hen streaks/30-day counts/weights, 6-month daily heatmap, 26 weekly egg totals with computed daylight hours, cost per egg, current headline. `?chicken=ID` scopes to one hen.
+- `/api/meters` - GET meter definitions, `?meter=key` for entries; POST `{ meter, date, score, notes }` (protected). `/api/rudy-meter` and `/api/chick-milestone` are legacy wrappers.
 
 #### Expenses Tracking
 - `/api/feed-purchases` - POST to log feed purchases, GET to retrieve recent 50 records
@@ -200,23 +207,13 @@ Frontend uses tab switching without page reloads and Marked.js (v11.1.1) for mar
   - Shows recent health concerns with warning styling
   - Auto-refreshes every 60 seconds
   - CSS uses `word-spacing: 100vw` on chicken names to force two-line display for alignment across cards
-- **`/blog.html`**: Public blog viewing page
-  - Displays blog posts and activity history
-  - Navigation to status page and admin dashboard
+- **`/blog.html`**: The main public site (`/` redirects here), loaded via `status-page-vN.js` → `blog.js` cache-busting redirects in `_redirects`
+  - Hash-routed tabs: `#today` (headline banner, latest dispatch, stat tiles, photo strip, flock cards, egg calendar), `#blog` (dispatches), `#photos` (gallery with per-chicken filter + lightbox), `#flock` (profiles, egg leaderboard, cost per egg, eggs-vs-daylight chart, flock history), `#history`, `#poetry`
+  - `#hen/<id>` opens a chicken profile: bio, stats, personal egg calendar, tagged photos
+  - Old `#status` links land on `#today`
 
-### Chicken Avatars
-Each chicken has an associated avatar image:
-- Mamma Mia → `/images/mamma-mia.png`
-- Brown Betty → `/images/brown-betty.png`
-- Madame Pompadour → `/images/MadamePompadour26.png`
-- Velma → `/images/Velma.png`
-- The Chicks → `/images/3Chicks.png`
-
-### Egg Images
-Each hen has a specific egg image matching her egg color:
-- Mamma Mia → `/images/egg_mamma_mia.png` (brown-olive)
-- Brown Betty → `/images/egg_brown_betty.png` (green)
-- Madame Pompadour → `/images/egg_madame_pompadour.png` (eggshell)
+### Chicken Avatars and Egg Images
+Avatar and egg image paths are stored per chicken (`chickens.avatar_url`, `chickens.egg_image_url`) and edited in the admin Flock tab. `/images/3Chicks.png` is the "Remember when" image of Peppercorn, Salty, and Gomez as chicks. (`public/status.html` is a legacy standalone page that still has its own hard-coded avatar map.)
 
 These are used:
 - On the status page as small icons next to egg color text
@@ -283,10 +280,10 @@ The public blog is branded as "The Clucking Times" - the official publication co
 
 ### Weather Logging System
 The app automatically logs daily weather data via a GitHub Actions cron workflow:
-1. **Scheduled Task**: `.github/workflows/daily-weather.yml` runs daily at 11:55pm CST (5:55am UTC)
-2. **Mechanism**: Calls `POST /api/weather-log` with Bearer token authentication
-3. **Activity Check**: The endpoint queries all activity tables (eggs, feeding, free_range, health_observations, photos) for today's date
-4. **Weather Logging**: If any activity occurred today, fetches weather data from NWS API and stores in `weather_logs` table
+1. **Scheduled Task**: `.github/workflows/daily-weather.yml` runs each morning at 12:00 UTC and logs the *previous* day (GitHub delays scheduled runs by hours, so a late-night run used to slip past midnight and skip every day as "no_activity")
+2. **Mechanism**: Calls `POST /api/weather-log?date=<yesterday in America/Chicago>` with Bearer token authentication
+3. **Activity Check**: The endpoint queries all activity tables (eggs, feeding, free_range, health_observations, photos) for that date
+4. **Weather Logging**: If any activity occurred that day, fetches weather data from NWS API and stores in `weather_logs` table
 5. **Data Captured**: Temperature high/low (°F), humidity (%), wind max (mph), precipitation (inches), barometric pressure (inHg), conditions description, daylight hours
 6. **Utility**: `functions/api/_weather-data.js` provides `fetchDailyWeather(date)` function for fetching NWS weather data
 7. **One Record Per Day**: The `date` field is UNIQUE, ensuring only one weather record per day

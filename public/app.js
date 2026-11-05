@@ -9,86 +9,6 @@ function getCurrentDateCST() {
     return `${year}-${month}-${day}`;
 }
 
-const chickMilestoneLevels = [
-    { score: 0, label: 'Hatchling Bubble', description: 'Freshly hatched and mostly tucked in close.' },
-    { score: 1, label: 'Following Mama', description: 'Shadowing mom closely and learning the basics.' },
-    { score: 2, label: 'Backyard Peeking', description: 'Starting to notice the wider world in short bursts.' },
-    { score: 3, label: 'Short Solo Missions', description: 'Taking quick little detours before circling back.' },
-    { score: 4, label: 'Confident Explorers', description: 'Covering more ground and acting noticeably bolder.' },
-    { score: 5, label: 'Little Coop Citizens', description: 'Fully engaged in flock life with plenty of independence.' }
-];
-
-const chickMilestoneScoreInput = document.getElementById('chick-milestone-score');
-const chickMilestoneNotesInput = document.getElementById('chick-milestone-notes');
-const chickMilestoneScoreValue = document.getElementById('chick-milestone-score-value');
-const chickMilestoneScoreLabel = document.getElementById('chick-milestone-score-label');
-const chickMilestoneScoreDescription = document.getElementById('chick-milestone-score-description');
-const chickMilestoneQuickPicks = document.getElementById('chick-milestone-quick-picks');
-const chickMilestoneLastSaved = document.getElementById('chick-milestone-last-saved');
-
-function getChickMilestoneLevel(score) {
-    return chickMilestoneLevels.find(level => level.score === score) || chickMilestoneLevels[0];
-}
-
-function renderChickMilestoneQuickPicks(activeScore) {
-    chickMilestoneQuickPicks.innerHTML = chickMilestoneLevels.map(level => `
-        <button
-            type="button"
-            class="rudy-pick ${level.score === activeScore ? 'is-active' : ''}"
-            data-score="${level.score}"
-        >
-            <strong>${level.score} · ${level.label}</strong><br>
-            <span>${level.description}</span>
-        </button>
-    `).join('');
-
-    chickMilestoneQuickPicks.querySelectorAll('.rudy-pick').forEach(button => {
-        button.addEventListener('click', () => {
-            chickMilestoneScoreInput.value = button.dataset.score;
-            updateChickMilestoneUI();
-        });
-    });
-}
-
-function updateChickMilestoneUI() {
-    const score = parseInt(chickMilestoneScoreInput.value, 10);
-    const level = getChickMilestoneLevel(score);
-
-    chickMilestoneScoreValue.textContent = score;
-    chickMilestoneScoreLabel.textContent = level.label;
-    chickMilestoneScoreDescription.textContent = level.description;
-    renderChickMilestoneQuickPicks(score);
-}
-
-async function loadChickMilestone() {
-    const today = getCurrentDateCST();
-
-    try {
-        const response = await fetch(`/api/chick-milestone?date=${today}`, { credentials: 'include' });
-        if (!response.ok) {
-            chickMilestoneLastSaved.textContent = "Today's chick milestone is unavailable right now.";
-            updateChickMilestoneUI();
-            return;
-        }
-
-        const result = await response.json();
-        if (result.entry) {
-            chickMilestoneScoreInput.value = result.entry.score;
-            chickMilestoneNotesInput.value = result.entry.notes || '';
-            updateChickMilestoneUI();
-            chickMilestoneLastSaved.textContent = `Saved for today: ${result.entry.label}${result.entry.notes ? ` - ${result.entry.notes}` : ''}`;
-            return;
-        }
-
-        chickMilestoneNotesInput.value = '';
-        updateChickMilestoneUI();
-        chickMilestoneLastSaved.textContent = 'No chick milestone saved for today yet.';
-    } catch (error) {
-        updateChickMilestoneUI();
-        chickMilestoneLastSaved.textContent = "Today's chick milestone is unavailable right now.";
-    }
-}
-
 // Tab switching
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -109,22 +29,227 @@ document.querySelectorAll('.tab').forEach(tab => {
             loadPhotos();
         } else if (tabName === 'history') {
             loadActivity();
-        } else if (tabName === 'log') {
-            loadChickMilestone();
+        } else if (tabName === 'flock') {
+            loadFlockEditor();
         }
     });
 });
 
-chickMilestoneScoreInput.addEventListener('input', updateChickMilestoneUI);
-updateChickMilestoneUI();
+// Natural-language quick entry. Parsing is read-only; saving happens only after confirmation.
+const quickEntryForm = document.getElementById('quick-entry-form');
+const quickEntryInput = document.getElementById('quick-entry-input');
+const quickEntryResult = document.getElementById('quick-entry-result');
+let pendingQuickEntry = null;
+
+quickEntryInput.addEventListener('input', () => {
+    if (!pendingQuickEntry) return;
+    pendingQuickEntry = null;
+    quickEntryResult.replaceChildren();
+});
+
+quickEntryForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const message = quickEntryInput.value.trim();
+    if (!message) return;
+
+    pendingQuickEntry = null;
+    quickEntryResult.replaceChildren();
+    const status = document.createElement('p');
+    status.className = 'loading';
+    status.textContent = 'Preparing a draft…';
+    quickEntryResult.append(status);
+
+    const submitButton = quickEntryForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    quickEntryInput.disabled = true;
+    try {
+        const response = await fetch('/api/quick-entry', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ message, today: getCurrentDateCST() })
+        });
+        const result = await response.json();
+        quickEntryResult.replaceChildren();
+        if (!response.ok) throw new Error(result.error || 'Could not prepare this entry.');
+
+        if (!result.ready) {
+            const clarification = document.createElement('p');
+            clarification.className = 'quick-entry-clarification';
+            clarification.textContent = result.clarification || 'Could you add a little more detail?';
+            quickEntryResult.append(clarification);
+            return;
+        }
+
+        pendingQuickEntry = result.action;
+        renderQuickEntryReview(result.action);
+    } catch (error) {
+        quickEntryResult.replaceChildren();
+        const errorMessage = document.createElement('p');
+        errorMessage.className = 'quick-entry-error';
+        errorMessage.textContent = error.message || 'Network error. Please try again.';
+        quickEntryResult.append(errorMessage);
+    } finally {
+        submitButton.disabled = false;
+        quickEntryInput.disabled = false;
+    }
+});
+
+function renderQuickEntryReview(action) {
+    const labels = {
+        egg: 'Egg',
+        feeding: 'Feeding',
+        free_range: 'Free-range session',
+        health: 'Health observation',
+        note: 'Flock note'
+    };
+    const details = [
+        ['Type', labels[action.type] || action.type],
+        ['Date', action.date]
+    ];
+
+    if (action.type === 'egg') {
+        const names = action.chicken_names || action.chicken_ids.map(id => ({ 1: 'Mamma Mia', 2: 'Brown Betty', 3: 'Madame Pompadour' }[id] || `Chicken ${id}`));
+        details.push(['Chicken', names.join(', ')]);
+        if (action.time) details.push(['Time', action.time]);
+        if (action.notes) details.push(['Notes', action.notes]);
+    } else if (action.type === 'feeding') {
+        details.push(['Food', action.description], ['Category', action.feed_type === 'scrap' ? 'Kitchen scraps' : 'Treat']);
+        if (action.time) details.push(['Time', action.time]);
+        if (action.notes) details.push(['Notes', action.notes]);
+    } else if (action.type === 'free_range') {
+        details.push(['Start', action.time_start], ['End', action.time_end]);
+        if (action.notes) details.push(['Notes', action.notes]);
+    } else if (action.type === 'health') {
+        details.push(['Chicken', action.chicken_name || (action.chicken_id ? `Chicken ${action.chicken_id}` : 'General flock')]);
+        details.push(['Observation', action.observation_type], ['Description', action.description]);
+        if (action.time) details.push(['Time', action.time]);
+        if (action.notes) details.push(['Notes', action.notes]);
+    } else {
+        details.push(['Note', action.content]);
+    }
+
+    const review = document.createElement('div');
+    review.className = 'quick-entry-review';
+    const heading = document.createElement('h3');
+    heading.textContent = 'Review before saving';
+    review.append(heading);
+
+    const list = document.createElement('dl');
+    for (const [label, value] of details) {
+        const row = document.createElement('div');
+        const term = document.createElement('dt');
+        const description = document.createElement('dd');
+        term.textContent = label;
+        description.textContent = value;
+        row.append(term, description);
+        list.append(row);
+    }
+    review.append(list);
+
+    const actions = document.createElement('div');
+    actions.className = 'quick-entry-actions';
+    const saveButton = document.createElement('button');
+    saveButton.type = 'button';
+    saveButton.className = 'btn btn-primary';
+    saveButton.textContent = 'Confirm and Save';
+    saveButton.addEventListener('click', saveQuickEntry);
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className = 'btn btn-secondary';
+    cancelButton.textContent = 'Discard';
+    cancelButton.addEventListener('click', () => {
+        pendingQuickEntry = null;
+        quickEntryResult.replaceChildren();
+    });
+    actions.append(saveButton, cancelButton);
+    review.append(actions);
+    quickEntryResult.replaceChildren(review);
+}
+
+async function saveQuickEntry() {
+    if (!pendingQuickEntry) return;
+    const action = pendingQuickEntry;
+    const saveButton = quickEntryResult.querySelector('.quick-entry-actions .btn-primary');
+    saveButton.disabled = true;
+    saveButton.textContent = 'Saving…';
+
+    try {
+        const requests = [];
+        if (action.type === 'egg') {
+            for (const chickenId of action.chicken_ids) {
+                requests.push(fetch('/api/eggs', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ chicken_id: chickenId, date: action.date, time: action.time, notes: action.notes })
+                }));
+            }
+        } else {
+            const endpoint = { feeding: '/api/feeding', free_range: '/api/free-range', health: '/api/health', note: '/api/notes' }[action.type];
+            requests.push(fetch(endpoint, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify(action)
+            }));
+        }
+
+        const responses = await Promise.all(requests);
+        const failed = responses.find(response => !response.ok);
+        if (failed) {
+            const error = await failed.json().catch(() => ({}));
+            throw new Error(error.error || 'The entry could not be saved. Please check History before retrying.');
+        }
+
+        pendingQuickEntry = null;
+        const success = document.createElement('p');
+        success.className = 'quick-entry-success';
+        success.textContent = 'Saved. You can enter another update whenever you’re ready.';
+        quickEntryResult.replaceChildren(success);
+        quickEntryInput.value = '';
+        if (document.getElementById('history-tab').classList.contains('active')) loadActivity();
+    } catch (error) {
+        saveButton.disabled = false;
+        saveButton.textContent = 'Confirm and Save';
+        const message = document.createElement('p');
+        message.className = 'quick-entry-error';
+        message.textContent = error.message || 'Network error. Check History before retrying.';
+        quickEntryResult.append(message);
+    }
+}
 
 // Chicken button selection for egg logging (allows multiple selections)
-document.querySelectorAll('.chicken-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        // Toggle selection on clicked button
-        btn.classList.toggle('selected');
-    });
+document.querySelector('.chicken-buttons').addEventListener('click', (event) => {
+    const button = event.target.closest('.chicken-btn');
+    if (!button) return;
+    button.classList.toggle('selected');
+    button.setAttribute('aria-pressed', String(button.classList.contains('selected')));
 });
+
+async function loadEggLayers() {
+    try {
+        const response = await fetch('/api/status');
+        if (!response.ok) throw new Error('Could not load egg layers');
+        const data = await response.json();
+        const layers = data.activeFlock.filter(chicken => !chicken.is_rooster && !chicken.is_placeholder
+            && chicken.egg_color && !['pending', 'n/a'].includes(chicken.egg_color.toLowerCase()));
+        const buttons = layers.map(chicken => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'chicken-btn';
+            button.dataset.chicken = chicken.id;
+            button.dataset.color = chicken.egg_color;
+            button.setAttribute('aria-pressed', 'false');
+            button.append(document.createTextNode(chicken.name), document.createElement('br'));
+            const color = document.createElement('small');
+            color.textContent = chicken.egg_color;
+            button.append(color);
+            return button;
+        });
+        if (buttons.length) document.querySelector('.chicken-buttons').replaceChildren(...buttons);
+    } catch (error) {
+        showMessage('error', 'Could not refresh the egg-layer list. Reload to see newly laying hens.');
+    }
+}
+
+loadEggLayers();
 
 // Photo/video preview
 document.getElementById('photo-file').addEventListener('change', function(e) {
@@ -152,6 +277,7 @@ document.getElementById('egg-form').addEventListener('submit', async (e) => {
 
     const notes = document.getElementById('egg-notes').value;
     const time = document.getElementById('egg-time').value;
+    const weight = document.getElementById('egg-weight').value;
 
     // Get all selected chickens
     const selectedChickens = Array.from(document.querySelectorAll('.chicken-btn.selected'))
@@ -173,7 +299,8 @@ document.getElementById('egg-form').addEventListener('submit', async (e) => {
                     chicken_id: chickenId,
                     date: getCurrentDateCST(),
                     notes: notes || null,
-                    time: time || null
+                    time: time || null,
+                    weight_g: weight ? Number(weight) : null
                 })
             })
         );
@@ -184,7 +311,10 @@ document.getElementById('egg-form').addEventListener('submit', async (e) => {
             const count = selectedChickens.length;
             showMessage('success', `${count} egg${count > 1 ? 's' : ''} logged successfully!`);
             e.target.reset();
-            document.querySelectorAll('.chicken-btn').forEach(b => b.classList.remove('selected'));
+            document.querySelectorAll('.chicken-btn').forEach(button => {
+                button.classList.remove('selected');
+                button.setAttribute('aria-pressed', 'false');
+            });
         } else {
             showMessage('error', 'Failed to log some eggs. Please try again.');
         }
@@ -308,37 +438,6 @@ document.getElementById('health-form').addEventListener('submit', async (e) => {
     }
 });
 
-document.getElementById('chick-milestone-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const score = parseInt(chickMilestoneScoreInput.value, 10);
-    const notes = chickMilestoneNotesInput.value.trim();
-
-    try {
-        const response = await fetch('/api/chick-milestone', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-                date: getCurrentDateCST(),
-                score,
-                notes: notes || null
-            })
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            chickMilestoneLastSaved.textContent = `Saved for today: ${result.entry.label}${result.entry.notes ? ` - ${result.entry.notes}` : ''}`;
-            showMessage('success', 'Chick Milestone Meter updated.');
-        } else {
-            showMessage('error', result.error || 'Failed to save chick milestone.');
-        }
-    } catch (error) {
-        showMessage('error', 'Network error. Please check your connection.');
-    }
-});
-
 // Notes Form Submission
 const notesForm = document.getElementById('notes-form');
 if (notesForm) {
@@ -348,7 +447,8 @@ if (notesForm) {
         const formData = new FormData(e.target);
         const data = {
             date: getCurrentDateCST(),
-            content: formData.get('content')
+            content: formData.get('content'),
+            is_headline: formData.get('is_headline') === 'on'
         };
 
         try {
@@ -360,8 +460,9 @@ if (notesForm) {
             });
 
             if (response.ok) {
-                showMessage('success', 'Note added successfully!');
+                showMessage('success', data.is_headline ? 'Headline posted to the front page!' : 'Note added successfully!');
                 e.target.reset();
+                loadRecentNotes();
             } else {
                 showMessage('error', 'Failed to add note. Please try again.');
             }
@@ -392,6 +493,7 @@ document.getElementById('photo-form').addEventListener('submit', async (e) => {
     formData.append('photo', fileInput.files[0]);
     formData.append('caption', caption || '');
     formData.append('date', getCurrentDateCST());
+    formData.append('chicken_ids', selectedTagIds(document.getElementById('photo-tag-picker')).join(','));
 
     try {
         const response = await fetch('/api/photos', {
@@ -404,6 +506,7 @@ document.getElementById('photo-form').addEventListener('submit', async (e) => {
             showMessage('success', 'Uploaded successfully!');
             e.target.reset();
             document.getElementById('photo-preview').innerHTML = '';
+            renderTagPicker(document.getElementById('photo-tag-picker'), []);
             loadPhotos();
         } else {
             showMessage('error', 'Failed to upload. Please try again.');
@@ -488,30 +591,28 @@ function addChatMessage(role, content) {
     return messageDiv;
 }
 
+let galleryFilter = 'all';
+
 async function loadPhotos() {
     const gallery = document.getElementById('photos-gallery');
     gallery.innerHTML = '<p class="loading">Loading media...</p>';
 
     try {
-        const response = await fetch('/api/photos', { credentials: 'include' });
+        const [response, chickens] = await Promise.all([
+            fetch(`/api/photos?limit=60${galleryFilter === 'untagged' ? '&untagged=1' : ''}`, { credentials: 'include' }),
+            loadAdminChickens()
+        ]);
         if (response.ok) {
             const media = await response.json();
 
             if (media.length === 0) {
-                gallery.innerHTML = '<p class="loading">No photos or videos yet. Upload your first one!</p>';
+                gallery.innerHTML = galleryFilter === 'untagged'
+                    ? '<p class="loading">Every photo is tagged. 🎉</p>'
+                    : '<p class="loading">No photos or videos yet. Upload your first one!</p>';
                 return;
             }
 
-            gallery.innerHTML = media.map(item => `
-                <div class="photo-item">
-                    ${item.media_type === 'video'
-                        ? `<video src="/api/photos/${item.id}" controls></video>`
-                        : `<img src="/api/photos/${item.id}" alt="${item.caption || 'Chicken photo'}">`
-                    }
-                    ${item.caption ? `<div class="caption">${item.caption}</div>` : ''}
-                    <div class="date">${formatDate(item.date)}</div>
-                </div>
-            `).join('');
+            gallery.replaceChildren(...media.map(item => renderGalleryItem(item, chickens)));
         } else {
             gallery.innerHTML = '<p class="loading">Failed to load media.</p>';
         }
@@ -519,6 +620,81 @@ async function loadPhotos() {
         gallery.innerHTML = '<p class="loading">Network error loading media.</p>';
     }
 }
+
+function renderGalleryItem(item, chickens) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'photo-item';
+    const media = document.createElement(item.media_type === 'video' ? 'video' : 'img');
+    media.src = `/api/photos/${item.id}`;
+    if (item.media_type === 'video') {
+        media.controls = true;
+        media.preload = 'metadata';
+    } else {
+        media.alt = item.caption || 'Chicken photo';
+        media.loading = 'lazy';
+    }
+    wrapper.append(media);
+
+    if (item.caption) {
+        const caption = document.createElement('div');
+        caption.className = 'caption';
+        caption.textContent = item.caption;
+        wrapper.append(caption);
+    }
+
+    const tagBox = document.createElement('div');
+    tagBox.className = 'photo-tags';
+    const picker = document.createElement('div');
+    picker.className = 'tag-picker';
+    renderTagPicker(picker, item.chickens || [], chickens);
+    const save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'btn btn-secondary btn-small';
+    save.textContent = item.chickens?.some(tag => tag.source === 'caption') ? 'Confirm tags' : 'Save tags';
+    save.addEventListener('click', async () => {
+        save.disabled = true;
+        try {
+            const response = await fetch(`/api/photos/${item.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ chicken_ids: selectedTagIds(picker) })
+            });
+            if (!response.ok) throw new Error();
+            picker.querySelectorAll('.tag-auto').forEach(badge => badge.remove());
+            save.textContent = 'Saved ✓';
+            if (galleryFilter === 'untagged' && selectedTagIds(picker).length) {
+                wrapper.classList.add('photo-item--done');
+            }
+        } catch {
+            showMessage('error', 'Could not save tags. Please try again.');
+            save.textContent = 'Save tags';
+        } finally {
+            save.disabled = false;
+        }
+    });
+    picker.addEventListener('click', () => { save.textContent = 'Save tags'; });
+    tagBox.append(picker, save);
+    wrapper.append(tagBox);
+
+    const date = document.createElement('div');
+    date.className = 'date';
+    date.textContent = formatDate(item.date);
+    wrapper.append(date);
+    return wrapper;
+}
+
+document.querySelectorAll('[data-gallery-filter]').forEach(button => {
+    button.addEventListener('click', () => {
+        galleryFilter = button.dataset.galleryFilter;
+        document.querySelectorAll('[data-gallery-filter]').forEach(other => {
+            const active = other === button;
+            other.classList.toggle('chip--active', active);
+            other.setAttribute('aria-pressed', String(active));
+        });
+        loadPhotos();
+    });
+});
 
 function getActivityDataType(activityType) {
     if (activityType.includes('Egg')) return 'egg';
@@ -535,7 +711,8 @@ function getActivityDataType(activityType) {
 const chickenEggImages = {
     'Mamma Mia': '/images/egg_mamma_mia.png',
     'Brown Betty': '/images/egg_brown_betty.png',
-    'Madame Pompadour': '/images/egg_madame_pompadour.png'
+    'Madame Pompadour': '/images/egg_madame_pompadour.png',
+    'Peppercorn': '/images/egg_peppercorn.png'
 };
 
 function getEggTypeDisplay(activity) {
@@ -693,7 +870,6 @@ function formatDate(dateString) {
 
 // Load weather on page load
 loadWeather();
-loadChickMilestone();
 
 // ===== EXPENSE TRACKING FUNCTIONALITY =====
 
@@ -1111,3 +1287,306 @@ document.querySelectorAll('.tab').forEach(tab => {
         }
     });
 });
+
+// ---------- Chickens: shared list, selects, photo tag pickers ----------
+
+let adminChickensPromise = null;
+
+function loadAdminChickens({ force = false } = {}) {
+    if (force || !adminChickensPromise) {
+        adminChickensPromise = fetch('/api/chickens', { credentials: 'include' })
+            .then(response => (response.ok ? response.json() : Promise.reject(new Error('Could not load chickens'))))
+            .catch(error => {
+                adminChickensPromise = null;
+                throw error;
+            });
+    }
+    return adminChickensPromise;
+}
+
+async function populateChickenSelects() {
+    try {
+        const chickens = await loadAdminChickens();
+        const active = chickens.filter(chicken => chicken.status === 'active');
+        document.querySelectorAll('[data-chicken-select]').forEach(select => {
+            const current = select.value;
+            const general = select.querySelector('option[value=""]');
+            const options = active.map(chicken => new Option(chicken.display_name, chicken.id));
+            select.replaceChildren(...(general ? [general] : []), ...options);
+            select.value = current;
+        });
+        renderTagPicker(document.getElementById('photo-tag-picker'), [], chickens);
+    } catch (error) {
+        showMessage('error', 'Could not load the chicken list. Reload to try again.');
+    }
+}
+
+// Former flock members are listed last so old photos can still be tagged with them.
+function renderTagPicker(container, selectedTags, chickens) {
+    if (!container) return;
+    if (!chickens) {
+        loadAdminChickens().then(list => renderTagPicker(container, selectedTags, list)).catch(() => {});
+        return;
+    }
+    const selected = new Map(selectedTags.map(tag => [tag.id, tag]));
+    const ordered = [...chickens].sort((a, b) => (a.status === b.status ? 0 : a.status === 'active' ? -1 : 1));
+    container.replaceChildren(...ordered.map(chicken => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'chip tag-chip';
+        button.dataset.chickenId = chicken.id;
+        const isSelected = selected.has(chicken.id);
+        button.setAttribute('aria-pressed', String(isSelected));
+        button.textContent = chicken.display_name;
+        if (chicken.status === 'former') button.classList.add('tag-chip--former');
+        if (isSelected && selected.get(chicken.id).source === 'caption') {
+            const auto = document.createElement('span');
+            auto.className = 'tag-auto';
+            auto.textContent = 'auto';
+            button.append(auto);
+        }
+        button.addEventListener('click', () => {
+            button.setAttribute('aria-pressed', String(button.getAttribute('aria-pressed') !== 'true'));
+        });
+        return button;
+    }));
+}
+
+function selectedTagIds(container) {
+    return Array.from(container.querySelectorAll('.tag-chip[aria-pressed="true"]')).map(button => Number(button.dataset.chickenId));
+}
+
+// ---------- Recent notes & headlines ----------
+
+async function loadRecentNotes() {
+    const list = document.getElementById('recent-notes-list');
+    if (!list) return;
+    try {
+        const response = await fetch('/api/notes', { credentials: 'include' });
+        if (!response.ok) throw new Error();
+        const notes = (await response.json()).slice(0, 15);
+        list.replaceChildren(...notes.map(note => {
+            const row = document.createElement('div');
+            row.className = 'note-row';
+            const text = document.createElement('p');
+            text.className = 'note-row-text';
+            text.textContent = `${formatDate(note.date)}: ${note.content}`;
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'chip';
+            const setLabel = on => {
+                toggle.setAttribute('aria-pressed', String(on));
+                toggle.textContent = on ? '📰 Headline' : 'Make headline';
+            };
+            setLabel(Boolean(note.is_headline));
+            toggle.addEventListener('click', async () => {
+                const next = toggle.getAttribute('aria-pressed') !== 'true';
+                toggle.disabled = true;
+                try {
+                    const result = await fetch('/api/notes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ id: note.id, is_headline: next })
+                    });
+                    if (!result.ok) throw new Error();
+                    setLabel(next);
+                } catch {
+                    showMessage('error', 'Could not update the headline.');
+                } finally {
+                    toggle.disabled = false;
+                }
+            });
+            row.append(text, toggle);
+            return row;
+        }));
+        if (!notes.length) list.innerHTML = '<p class="loading">No notes yet.</p>';
+    } catch {
+        list.innerHTML = '<p class="loading">Could not load notes.</p>';
+    }
+}
+
+// ---------- Meters (shown only while a meter in functions/api/_meters.js is active) ----------
+
+async function setupMeterCard() {
+    try {
+        const response = await fetch('/api/meters', { credentials: 'include' });
+        if (!response.ok) return;
+        const { meters } = await response.json();
+        const meter = meters.find(item => item.active);
+        if (!meter) return;
+
+        document.getElementById('meter-card').hidden = false;
+        document.getElementById('meter-title').textContent = `${meter.emoji} ${meter.title}`;
+        document.getElementById('meter-score').replaceChildren(
+            ...meter.levels.map(level => new Option(`${level.score} – ${level.label}: ${level.description}`, level.score))
+        );
+        document.getElementById('meter-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const response = await fetch('/api/meters', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    meter: meter.key,
+                    date: getCurrentDateCST(),
+                    score: Number(formData.get('score')),
+                    notes: formData.get('notes') || null
+                })
+            });
+            if (response.ok) {
+                showMessage('success', `${meter.title} logged!`);
+                event.target.reset();
+            } else {
+                showMessage('error', `Failed to log ${meter.title}.`);
+            }
+        });
+    } catch {
+        // The meter card stays hidden if meters cannot be loaded.
+    }
+}
+
+// ---------- Flock profile editor ----------
+
+const FLOCK_FIELDS = [
+    { name: 'display_name', label: 'Display name', hint: 'Shown publicly instead of the record name (e.g. Velma → Vinnie)' },
+    { name: 'role_label', label: 'Role badge', hint: 'e.g. Mom of the chicks' },
+    { name: 'egg_color', label: 'Egg color', hint: 'Use "pending" before laying, "N/A" for roosters; add "(provisional)" if unsure' },
+    { name: 'bio', label: 'Bio', type: 'textarea' },
+    { name: 'tagline', label: 'Tagline / current chapter', type: 'textarea' },
+    { name: 'avatar_url', label: 'Avatar image path', hint: 'e.g. /images/Vinnie.png' },
+    { name: 'egg_image_url', label: 'Egg image path', hint: 'e.g. /images/egg_peppercorn.png' },
+    { name: 'hatch_date', label: 'Hatch date', type: 'date' },
+    { name: 'sort_order', label: 'Display order', type: 'number' },
+    { name: 'status', label: 'Status', type: 'select', options: [['active', 'Current flock'], ['former', 'Former flock']] },
+    { name: 'departed_date', label: 'Departed on', type: 'date' },
+    { name: 'departure_note', label: 'Departure note', type: 'textarea' },
+    { name: 'is_rooster', label: 'Rooster', type: 'checkbox' }
+];
+
+function buildFlockField(field, chicken) {
+    const group = document.createElement('div');
+    group.className = field.type === 'checkbox' ? 'checkbox-row' : 'form-group';
+    const id = `flock-${chicken.id}-${field.name}`;
+    let input;
+    if (field.type === 'textarea') {
+        input = document.createElement('textarea');
+        input.rows = 2;
+    } else if (field.type === 'select') {
+        input = document.createElement('select');
+        field.options.forEach(([value, label]) => input.append(new Option(label, value)));
+    } else {
+        input = document.createElement('input');
+        input.type = field.type || 'text';
+    }
+    input.id = id;
+    input.name = field.name;
+    if (field.type === 'checkbox') {
+        input.checked = Boolean(chicken[field.name]);
+    } else {
+        input.value = field.name === 'display_name' && chicken.display_name === chicken.name ? '' : (chicken[field.name] ?? '');
+    }
+
+    const label = document.createElement('label');
+    label.htmlFor = id;
+    label.textContent = field.label;
+    if (field.type === 'checkbox') {
+        group.append(input, label);
+    } else {
+        group.append(label, input);
+        if (field.hint) {
+            const hint = document.createElement('small');
+            hint.className = 'form-hint';
+            hint.textContent = field.hint;
+            group.append(hint);
+        }
+    }
+    return group;
+}
+
+async function loadFlockEditor() {
+    const editor = document.getElementById('flock-editor');
+    try {
+        const chickens = await loadAdminChickens({ force: true });
+        editor.replaceChildren(...chickens.map(chicken => {
+            const details = document.createElement('details');
+            details.className = 'flock-editor-item';
+            const summary = document.createElement('summary');
+            const avatar = document.createElement('img');
+            avatar.src = chicken.avatar_url;
+            avatar.alt = '';
+            summary.append(avatar, document.createTextNode(
+                `${chicken.display_name}${chicken.display_name !== chicken.name ? ` (${chicken.name})` : ''}${chicken.status === 'former' ? ' · former' : ''}`
+            ));
+            const form = document.createElement('form');
+            FLOCK_FIELDS.forEach(field => form.append(buildFlockField(field, chicken)));
+            const save = document.createElement('button');
+            save.type = 'submit';
+            save.className = 'btn btn-primary';
+            save.textContent = `Save ${chicken.display_name}`;
+            form.append(save);
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const body = { id: chicken.id };
+                FLOCK_FIELDS.forEach(field => {
+                    const input = form.elements[field.name];
+                    body[field.name] = field.type === 'checkbox' ? input.checked : input.value;
+                });
+                if (!body.display_name) body.display_name = null;
+                save.disabled = true;
+                try {
+                    const response = await fetch('/api/chickens', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(body)
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error);
+                    showMessage('success', `${chicken.display_name} updated.`);
+                    await loadAdminChickens({ force: true });
+                    populateChickenSelects();
+                    loadEggLayers();
+                } catch (error) {
+                    showMessage('error', error.message || 'Could not save profile.');
+                } finally {
+                    save.disabled = false;
+                }
+            });
+            details.append(summary, form);
+            return details;
+        }));
+    } catch (error) {
+        editor.innerHTML = '<p class="loading">Could not load the flock.</p>';
+    }
+}
+
+document.getElementById('add-chicken-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    try {
+        const response = await fetch('/api/chickens', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                name: formData.get('name'),
+                egg_color: formData.get('egg_color') || (formData.get('is_rooster') ? 'N/A' : 'pending'),
+                is_rooster: formData.get('is_rooster') === 'on'
+            })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error);
+        showMessage('success', `${formData.get('name')} added to the flock!`);
+        event.target.reset();
+        loadFlockEditor();
+        populateChickenSelects();
+    } catch (error) {
+        showMessage('error', error.message || 'Could not add chicken.');
+    }
+});
+
+populateChickenSelects();
+loadRecentNotes();
+setupMeterCard();

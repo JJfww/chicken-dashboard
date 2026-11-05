@@ -1,8 +1,9 @@
 // One-time script to backfill missing weather_logs from Open-Meteo archive API
-// Usage: node scripts/backfill-weather.js > backfill.sql
+// Usage: node scripts/backfill-weather.js [START_DATE END_DATE] > backfill.sql
+// Existing dates are left alone (INSERT OR IGNORE), so overlapping ranges are safe.
 
-const START_DATE = '2025-12-22';
-const END_DATE = '2026-03-02';
+const START_DATE = process.argv[2] || '2025-12-22';
+const END_DATE = process.argv[3] || '2026-03-02';
 const LAT = 38.97;
 const LON = -95.24;
 
@@ -72,8 +73,11 @@ async function main() {
   const data = await res.json();
   const d = data.daily;
 
+  let generated = 0;
   for (let i = 0; i < d.time.length; i++) {
     const date = d.time[i];
+    // The archive lags a few days behind; skip days it hasn't filled in yet.
+    if (d.temperature_2m_max[i] == null) continue;
     const tempHigh = d.temperature_2m_max[i];
     const tempLow = d.temperature_2m_min[i];
     const precip = d.precipitation_sum[i] ?? 0;
@@ -102,11 +106,12 @@ async function main() {
     ];
 
     console.log(
-      `INSERT INTO weather_logs (date, temp_high_f, temp_low_f, humidity, wind_max_mph, precipitation_inches, pressure_inhg, conditions, daylight_hours) VALUES (${vals.join(', ')});`
+      `INSERT OR IGNORE INTO weather_logs (date, temp_high_f, temp_low_f, humidity, wind_max_mph, precipitation_inches, pressure_inhg, conditions, daylight_hours) VALUES (${vals.join(', ')});`
     );
+    generated++;
   }
 
-  console.error(`Generated ${d.time.length} INSERT statements.`);
+  console.error(`Generated ${generated} INSERT statements.`);
 }
 
 main();

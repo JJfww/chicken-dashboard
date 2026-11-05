@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hensington Palace - Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=12">
     <style>
         .auth-loading {
             display: flex;
@@ -92,12 +92,25 @@
             <button class="tab" data-tab="blog">Blog</button>
             <button class="tab" data-tab="chat">AI Chat</button>
             <button class="tab" data-tab="history">History</button>
+            <button class="tab" data-tab="flock">Flock</button>
         </nav>
 
         <!-- Tab Content -->
         <main class="content">
             <!-- Log Tab -->
             <div id="log-tab" class="tab-content active">
+                <section class="card quick-entry-card">
+                    <h2>Quick Log</h2>
+                    <p class="quick-entry-intro">Describe what happened in your own words. Review the details before anything is saved.</p>
+                    <form id="quick-entry-form">
+                        <label class="sr-only" for="quick-entry-input">Describe a flock update</label>
+                        <textarea id="quick-entry-input" rows="3" maxlength="1000" placeholder="Mamma Mia laid an egg around 8 this morning&#10;We gave them mealworms as a treat&#10;They free-ranged from 4:15 to 6"></textarea>
+                        <button type="submit" class="btn btn-primary">Review Entry</button>
+                    </form>
+                    <p class="quick-entry-hint">On your phone, you can use the keyboard microphone to dictate.</p>
+                    <div id="quick-entry-result" class="quick-entry-result" aria-live="polite"></div>
+                </section>
+
                 <!-- Egg Logging -->
                 <section class="card">
                     <h2>Log Eggs</h2>
@@ -119,6 +132,11 @@
                         <div class="form-group">
                             <label for="egg-notes">Notes (optional)</label>
                             <input type="text" id="egg-notes" name="notes" placeholder="e.g., double yolk, soft shell">
+                        </div>
+                        <div class="form-group">
+                            <label for="egg-weight">Weight in grams (optional)</label>
+                            <input type="number" id="egg-weight" name="weight_g" min="1" max="200" step="0.1" inputmode="decimal" placeholder="e.g., 54">
+                            <small class="form-hint">Applies to each selected hen. Weigh one hen's egg at a time for per-hen averages.</small>
                         </div>
                         <div class="form-group">
                             <label for="egg-time">Time (optional)</label>
@@ -249,12 +267,8 @@
                     <form id="health-form">
                         <div class="form-group">
                             <label>Which chicken? (optional - leave blank for general)</label>
-                            <select id="health-chicken-id" name="chicken_id">
+                            <select id="health-chicken-id" name="chicken_id" data-chicken-select>
                                 <option value="">General/All chickens</option>
-                                <option value="1">Mamma Mia</option>
-                                <option value="2">Brown Betty</option>
-                                <option value="3">Madame Pompadour</option>
-                                <option value="5">Vinnie</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -311,43 +325,6 @@
                     </form>
                 </section>
 
-                <section class="card rudy-card">
-                    <h2>Chick Milestone Meter</h2>
-                    <p class="rudy-intro">Track how boldly the chicks are branching out from mom and settling into flock life.</p>
-                    <form id="chick-milestone-form">
-                        <div class="rudy-meter-shell">
-                            <div class="rudy-meter-readout">
-                                <span id="chick-milestone-score-value" class="rudy-score-value">1</span>
-                                <div>
-                                    <div id="chick-milestone-score-label" class="rudy-score-label">Following Mama</div>
-                                    <div id="chick-milestone-score-description" class="rudy-score-description">Shadowing mom closely and learning the basics.</div>
-                                </div>
-                            </div>
-                            <input
-                                type="range"
-                                id="chick-milestone-score"
-                                name="score"
-                                min="0"
-                                max="5"
-                                step="1"
-                                value="1"
-                                aria-describedby="chick-milestone-score-label chick-milestone-score-description"
-                            >
-                            <div class="rudy-scale-labels" aria-hidden="true">
-                                <span>Hatched</span>
-                                <span>Independent</span>
-                            </div>
-                            <div id="chick-milestone-quick-picks" class="rudy-quick-picks"></div>
-                        </div>
-                        <div class="form-group">
-                            <label for="chick-milestone-notes">Notes (optional)</label>
-                            <textarea id="chick-milestone-notes" name="notes" rows="3" placeholder="Examples: stayed tucked under mom, explored the yard edge, followed Vinnie around."></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Save Chick Milestone</button>
-                    </form>
-                    <p id="chick-milestone-last-saved" class="rudy-last-saved">Loading today's chick milestone...</p>
-                </section>
-
                 <!-- General Notes -->
                 <section class="card">
                     <h2>Add Note</h2>
@@ -356,7 +333,30 @@
                             <label for="note-content">Note</label>
                             <textarea id="note-content" name="content" rows="3" placeholder="Any general observations, reminders, or notes about the day..." required></textarea>
                         </div>
+                        <label class="checkbox-row">
+                            <input type="checkbox" id="note-headline" name="is_headline">
+                            📰 Front-page headline (shows as a banner on the public site for 10 days)
+                        </label>
                         <button type="submit" class="btn btn-primary">Add Note</button>
+                    </form>
+                    <details class="recent-notes">
+                        <summary>Recent notes &amp; headlines</summary>
+                        <div id="recent-notes-list"><p class="loading">Loading…</p></div>
+                    </details>
+                </section>
+
+                <section class="card" id="meter-card" hidden>
+                    <h2 id="meter-title">Meter</h2>
+                    <form id="meter-form">
+                        <div class="form-group">
+                            <label for="meter-score">Today's reading</label>
+                            <select id="meter-score" name="score" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="meter-notes">Notes (optional)</label>
+                            <input type="text" id="meter-notes" name="notes">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Log Reading</button>
                     </form>
                 </section>
             </div>
@@ -375,12 +375,21 @@
                             <label for="photo-caption">Caption (optional)</label>
                             <textarea id="photo-caption" name="caption" rows="2" placeholder="What's happening in this photo or video?"></textarea>
                         </div>
+                        <div class="form-group">
+                            <label>Who's in it? (tap to tag)</label>
+                            <div id="photo-tag-picker" class="tag-picker"></div>
+                        </div>
                         <button type="submit" class="btn btn-primary">Upload</button>
                     </form>
                 </section>
 
                 <section class="card">
                     <h2>Recent Photos & Videos</h2>
+                    <div class="chip-row" role="group" aria-label="Filter photos">
+                        <button type="button" class="chip chip--active" data-gallery-filter="all" aria-pressed="true">All</button>
+                        <button type="button" class="chip" data-gallery-filter="untagged" aria-pressed="false">Untagged</button>
+                    </div>
+                    <p class="form-hint">Tags marked “auto” were guessed from the caption. Tap chickens to fix them, then Save.</p>
                     <div id="photos-gallery" class="photos-gallery">
                         <p class="loading">Loading media...</p>
                     </div>
@@ -478,6 +487,29 @@
                     </div>
                 </section>
             </div>
+            <!-- Flock Tab -->
+            <div id="flock-tab" class="tab-content">
+                <section class="card">
+                    <h2>Flock Profiles</h2>
+                    <p class="form-hint">These details power the public site: names, roles, bios, avatars, and who counts as current vs former flock.</p>
+                    <div id="flock-editor"><p class="loading">Loading flock…</p></div>
+                </section>
+                <section class="card">
+                    <h2>Add a Chicken</h2>
+                    <form id="add-chicken-form">
+                        <div class="form-group">
+                            <label for="new-chicken-name">Name</label>
+                            <input type="text" id="new-chicken-name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-chicken-egg">Egg color</label>
+                            <input type="text" id="new-chicken-egg" name="egg_color" placeholder="pending, or e.g. blue">
+                        </div>
+                        <label class="checkbox-row"><input type="checkbox" name="is_rooster"> Rooster</label>
+                        <button type="submit" class="btn btn-primary">Add Chicken</button>
+                    </form>
+                </section>
+            </div>
         </main>
 
         <!-- Floating Action Button -->
@@ -556,12 +588,8 @@
                     </div>
                     <div class="form-group">
                         <label for="med-chicken">For Which Chicken?</label>
-                        <select id="med-chicken" name="chicken_id">
+                        <select id="med-chicken" name="chicken_id" data-chicken-select>
                             <option value="">General/All chickens</option>
-                            <option value="1">Mamma Mia</option>
-                            <option value="2">Brown Betty</option>
-                            <option value="3">Madame Pompadour</option>
-                            <option value="5">Vinnie</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -626,6 +654,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/lib/marked.umd.min.js"></script>
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=8"></script>
 </body>
 </html>

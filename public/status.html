@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hensington Palace - Current Status</title>
-    <link rel="stylesheet" href="style.css?v=5">
+    <link rel="stylesheet" href="style.css?v=8">
     <style>
         .status-container {
             max-width: 1200px;
@@ -42,9 +42,14 @@
         }
 
         .former-flock-grid {
-            display: flex;
-            justify-content: center;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
             margin-bottom: 2rem;
+        }
+
+        .former-flock-grid--featured {
+            grid-template-columns: 1fr;
         }
 
         .feature-flock-row {
@@ -327,6 +332,10 @@
         }
 
         @media (max-width: 768px) {
+            .former-flock-grid {
+                grid-template-columns: 1fr;
+            }
+
             .feature-flock-row .chicken-card {
                 width: 100%;
             }
@@ -342,13 +351,11 @@
 
         <section class="status-section">
             <h2 class="section-heading">Current Flock</h2>
-            <p class="section-subheading">Madame Pompadour appears to be running the coop at the moment.</p>
+            <p class="section-subheading">Vinnie is taking his role as flock protector and leader seriously.</p>
             <div id="boss-hen-row" class="feature-flock-row">
                 <p style="text-align: center; opacity: 0.7;">Loading chicken status...</p>
             </div>
             <div id="active-flock-grid" class="hens-grid">
-            </div>
-            <div id="chicks-row" class="feature-flock-row">
             </div>
         </section>
         <section class="status-section remember-when-section">
@@ -357,9 +364,9 @@
             <div id="remember-when-row" class="former-flock-grid"></div>
         </section>
         <section class="status-section">
-            <h2 class="section-heading">Rudy</h2>
-            <p class="section-subheading">Rooster, father of the current chicks, and former flock member.</p>
-            <div id="former-flock-grid" class="former-flock-grid"></div>
+            <h2 class="section-heading">Former Flock Members</h2>
+            <p class="section-subheading">Rudy and Gomez, both off to their next chapters.</p>
+            <div id="former-flock-grid" class="former-flock-grid former-flock-grid--featured"></div>
         </section>
 
         <div class="nav-links">
@@ -375,10 +382,9 @@
             'Mamma Mia': '/images/mamma-mia.png',
             'Brown Betty': '/images/brown-betty.png',
             'Madame Pompadour': '/images/MadamePompadour26.png',
-            'Velma': '/images/Velma.png',
-            'The Chicks': '/images/3Chicks.png',
-            'Girl #1': '/images/girl-1.png',
-            'Girl #2': '/images/girl-2.png',
+            'Velma': '/images/Vinnie.png',
+            'Peppercorn': '/images/girl-1.png',
+            'Salty': '/images/girl-2.png',
             'Gomez': '/images/gomez.png',
             'Rudy': '/images/rudy.png'
         };
@@ -387,7 +393,8 @@
             const eggs = {
                 'Mamma Mia': '/images/egg_mamma_mia.png',
                 'Brown Betty': '/images/egg_brown_betty.png',
-                'Madame Pompadour': '/images/egg_madame_pompadour.png'
+                'Madame Pompadour': '/images/egg_madame_pompadour.png',
+                'Peppercorn': '/images/egg_peppercorn.png'
             };
             return eggs[name] || null;
         }
@@ -408,8 +415,13 @@
             const isRooster = chicken.is_rooster || chicken.name === 'Velma' || chicken.display_name === 'Vinnie';
             const displayName = chicken.display_name || (chicken.name === 'Velma' ? 'Vinnie' : chicken.name);
             const subtitle = isRooster
-                ? 'Young rooster finding his way'
-                : `${eggImage ? `<img src="${eggImage}" alt="${chicken.egg_color} egg" class="egg-icon">` : '🥚'} ${chicken.egg_color} eggs`;
+                ? 'Young cockerel and flock protector'
+                : chicken.is_pullet
+                    ? chicken.profile_detail
+                : `${eggImage ? `<img src="${eggImage}" alt="${chicken.egg_color} egg" class="egg-icon">` : '🥚'} ${chicken.egg_color} eggs${chicken.profile_detail ? `<br>${chicken.profile_detail}` : ''}`;
+            const firstEggNote = chicken.first_egg_date
+                ? `<p class="chicken-meta">${chicken.first_egg_presumed ? 'Presumed first egg' : 'First confirmed egg'}: ${formatShortDate(chicken.first_egg_date)}${chicken.first_egg_notes ? `. ${chicken.first_egg_notes.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}` : ''}</p>`
+                : '';
             const statusItems = isRooster
                 ? `
                     <div class="status-item growing">
@@ -420,7 +432,9 @@
                         </div>
                     </div>
                 `
-                : `
+                : chicken.is_pullet
+                    ? ''
+                    : `
                     <div class="status-item ${laidToday ? 'laid-today' : 'not-yet'}">
                         <div class="status-icon">${laidToday ? (eggImage ? `<img src="${eggImage}" alt="${chicken.egg_color} egg" class="egg-icon">` : '🥚') : '⏱️'}</div>
                         <div class="status-text">
@@ -447,6 +461,7 @@
                     ${chicken.role_label ? `<span class="role-badge">${chicken.role_label}</span>` : ''}
                     <p class="egg-color">${subtitle}</p>
                     ${statusItems}
+                    ${firstEggNote}
 
                     ${chicken.health_concern ? `
                         <div class="status-item health-warning">
@@ -454,61 +469,6 @@
                             <div class="status-text">
                                 <p class="status-label">${chicken.health_concern.observation_type}</p>
                                 <p class="status-value">${chicken.health_concern.description}</p>
-                            </div>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-
-        function renderChickGroupCard(chickGroup) {
-            const avatarImage = chickenAvatars[chickGroup.name] || '/images/default.png';
-            const milestone = chickGroup.milestone;
-            const chickProfiles = (chickGroup.chicks || []).map((chick) => {
-                const chickAvatar = chickenAvatars[chick.avatar || chick.name] || '/images/default.png';
-                return `
-                    <article class="chick-profile">
-                        <img src="${chickAvatar}" alt="${chick.name}">
-                        <div>
-                            <h4>${chick.name}</h4>
-                            <p class="chick-profile-label">${chick.label}</p>
-                            <p>${chick.detail}</p>
-                        </div>
-                    </article>
-                `;
-            }).join('');
-
-            return `
-                <div class="chicken-card group-card chick-group-card">
-                    <div class="chicken-avatar">
-                        <img src="${avatarImage}" alt="${chickGroup.name}">
-                    </div>
-                    <h2 class="chicken-name">${chickGroup.name}</h2>
-                    <p class="chick-hatch-dates">${chickGroup.hatch_summary}</p>
-                    <div class="status-item">
-                        <div class="status-icon">🐥</div>
-                        <div class="status-text">
-                            <p class="status-label">Milestone</p>
-                            <p class="status-value">${milestone ? milestone.label : 'No milestone logged yet'}</p>
-                        </div>
-                    </div>
-                    <div class="status-item">
-                        <div class="status-icon">🪺</div>
-                        <div class="status-text">
-                            <p class="status-label">Today</p>
-                            <p class="status-value">${milestone ? milestone.description : chickGroup.summary}</p>
-                        </div>
-                    </div>
-                    ${chickProfiles ? `<div class="chick-profiles" aria-label="Individual chick profiles">${chickProfiles}</div>` : ''}
-                    ${chickGroup.lineage_note ? `
-                        <p class="lineage-note">${chickGroup.lineage_note}</p>
-                    ` : ''}
-                    ${milestone?.notes ? `
-                        <div class="status-item">
-                            <div class="status-icon">📝</div>
-                            <div class="status-text">
-                                <p class="status-label">Notes</p>
-                                <p class="status-value">${milestone.notes}</p>
                             </div>
                         </div>
                     ` : ''}
@@ -525,7 +485,7 @@
                         <img src="${avatarImage}" alt="${chicken.name}">
                     </div>
                     <h2 class="chicken-name">${chicken.name}</h2>
-                    <p class="egg-color">Rooster and chick dad</p>
+                    <p class="egg-color">${chicken.eyebrow || 'Former flock member'}</p>
                     <p class="former-flock-caption">${chicken.caption}</p>
                 </div>
             `;
@@ -540,7 +500,7 @@
                     <div class="memorial-copy">
                         <p class="card-eyebrow">The early days</p>
                         <h2 class="chicken-name">The three together</h2>
-                        <p class="former-flock-caption">Peppercorn, Salty, and Gomez—back when they could all fit under Mamma Mia’s wings.</p>
+                        <p class="former-flock-caption">Peppercorn, Salty, and Gomez—back when they could all fit under Mamma Mia’s wings. Madame Pompadour is their biological mom: she laid the eggs, and Mamma Mia did the work of hatching and raising them.</p>
                     </div>
                 </div>
             `;
@@ -549,7 +509,6 @@
         async function loadChickenStatus() {
             const bossHenRow = document.getElementById('boss-hen-row');
             const activeFlockGrid = document.getElementById('active-flock-grid');
-            const chicksRow = document.getElementById('chicks-row');
             const rememberWhenRow = document.getElementById('remember-when-row');
             const formerFlockGrid = document.getElementById('former-flock-grid');
 
@@ -558,21 +517,19 @@
                 if (!response.ok) throw new Error('Failed to load status');
 
                 const data = await response.json();
-                const bossHen = data.activeFlock.find(chicken => chicken.name === 'Madame Pompadour');
-                const trioOrder = ['Brown Betty', 'Mamma Mia', 'Velma'];
-                const remainingFlock = trioOrder
+                const flockLead = data.activeFlock.find(chicken => chicken.display_name === 'Vinnie') || data.activeFlock[0];
+                const flockOrder = ['Madame Pompadour', 'Mamma Mia', 'Brown Betty', 'Peppercorn', 'Salty'];
+                const remainingFlock = flockOrder
                     .map(name => data.activeFlock.find(chicken => chicken.name === name))
                     .filter(Boolean);
 
-                bossHenRow.innerHTML = bossHen ? renderFlockCard(bossHen) : '';
+                bossHenRow.innerHTML = flockLead ? renderFlockCard(flockLead) : '';
                 activeFlockGrid.innerHTML = remainingFlock.map(renderFlockCard).join('');
-                chicksRow.innerHTML = renderChickGroupCard(data.chickGroup);
                 rememberWhenRow.innerHTML = renderRememberWhenCard();
                 formerFlockGrid.innerHTML = data.formerFlock.map(renderFormerFlockCard).join('');
             } catch (error) {
                 bossHenRow.innerHTML = '<p style="text-align: center; color: red;">Failed to load status. Please try again.</p>';
                 activeFlockGrid.innerHTML = '<p style="text-align: center; color: red; grid-column: 1 / -1;">Failed to load status. Please try again.</p>';
-                chicksRow.innerHTML = '';
                 rememberWhenRow.innerHTML = '';
                 formerFlockGrid.innerHTML = '';
             }

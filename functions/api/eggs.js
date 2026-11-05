@@ -24,7 +24,8 @@ export async function onRequestPost(context) {
         const requestBody = await context.request.json();
         console.log('[EGGS POST] Request body:', JSON.stringify(requestBody));
 
-        const { chicken_id, date, notes, time } = requestBody;
+        const { chicken_id, date, notes, time, weight_g } = requestBody;
+        const weight = Number(weight_g) > 0 ? Number(weight_g) : null;
 
         // Validate required fields
         if (!chicken_id || !date) {
@@ -43,8 +44,8 @@ export async function onRequestPost(context) {
 
         // Insert egg record
         const result = await context.env.DB.prepare(
-            'INSERT INTO eggs (chicken_id, date, notes, time) VALUES (?, ?, ?, ?)'
-        ).bind(chicken_id, date, notes, time || null).run();
+            'INSERT INTO eggs (chicken_id, date, notes, time, weight_g) VALUES (?, ?, ?, ?, ?)'
+        ).bind(chicken_id, date, notes ?? null, time || null, weight).run();
 
         console.log('[EGGS POST] Insert successful - row_id:', result.meta.last_row_id);
 
@@ -79,6 +80,7 @@ export async function onRequestGet(context) {
                 e.date,
                 e.time,
                 e.count,
+                e.weight_g,
                 e.notes,
                 c.name as chicken_name,
                 c.egg_color

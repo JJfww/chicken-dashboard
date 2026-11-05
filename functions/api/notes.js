@@ -19,7 +19,17 @@ export async function onRequestPost(context) {
     if (authError) return authError;
 
     try {
-        const { date, content } = await context.request.json();
+        const { id, date, content, is_headline } = await context.request.json();
+
+        // { id, is_headline } toggles the front-page headline flag on an existing note
+        if (id && typeof is_headline !== 'undefined') {
+            await context.env.DB.prepare('UPDATE notes SET is_headline = ? WHERE id = ?')
+                .bind(is_headline ? 1 : 0, id).run();
+            return new Response(JSON.stringify({ success: true, id }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
 
         // Validate required fields
         if (!date || !content) {
@@ -35,8 +45,8 @@ export async function onRequestPost(context) {
 
         // Insert note record
         const result = await context.env.DB.prepare(
-            'INSERT INTO notes (date, content) VALUES (?, ?)'
-        ).bind(date, content).run();
+            'INSERT INTO notes (date, content, is_headline) VALUES (?, ?, ?)'
+        ).bind(date, content, is_headline ? 1 : 0).run();
 
         return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
             status: 200,
@@ -62,8 +72,9 @@ export async function onRequestGet(context) {
     try {
         // Get recent notes
         const { results } = await context.env.DB.prepare(`
-            SELECT id, date, content, created_at
+            SELECT id, date, content, is_headline, created_at
             FROM notes
+            WHERE content NOT LIKE 'RUDY_METER::%' AND content NOT LIKE 'CHICK_MILESTONE::%'
             ORDER BY date DESC, created_at DESC
             LIMIT 50
         `).all();

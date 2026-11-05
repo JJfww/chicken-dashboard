@@ -185,7 +185,7 @@ export const TOOL_DEFINITIONS = [
         type: "function",
         function: {
             name: "get_chicken_info",
-            description: "Get information about the chickens (names, egg colors, whether they're a rooster). No parameters needed.",
+            description: "Get information about the chickens (names, display names, egg colors, rooster flag, active vs former status, role, bio). Velma's display name is Vinnie. No parameters needed.",
             parameters: {
                 type: "object",
                 properties: {},
@@ -542,10 +542,11 @@ async function queryWeather(db, params) {
 // Query: Chicken info
 async function queryChickenInfo(db) {
     const result = await db.prepare(`
-        SELECT id, name, egg_color,
-            CASE WHEN name = 'Rudy' THEN 1 ELSE 0 END as is_rooster
+        SELECT id, name, COALESCE(display_name, name) AS display_name, egg_color,
+            COALESCE(is_rooster, 0) AS is_rooster, COALESCE(status, 'active') AS status,
+            role_label, bio, departed_date
         FROM chickens
-        ORDER BY id
+        ORDER BY COALESCE(status, 'active'), sort_order, id
     `).all();
 
     return result.results;

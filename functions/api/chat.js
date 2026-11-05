@@ -54,8 +54,11 @@ The flock at Hensington Palace:
 - Mamma Mia (hen, lays brown-olive eggs)
 - Brown Betty (hen, lays green eggs)
 - Madame Pompadour (hen, lays eggshell-colored eggs)
+- Peppercorn (young hen, first confirmed egg October 13, 2026: small and orangish; identified because Jen found her in the nesting box that morning)
+- Salty (young hen; no confirmed egg recorded yet). Future eggs may be difficult to distinguish from Peppercorn's. Do not assign an uncertain egg to either hen based on color alone.
 - Vinnie (young rooster finding his way; seems bonded with Madame Pompadour, though she sometimes chases him after he tries to mount her)
 - Three chicks hatched on May 24, 25, and 26 of 2026
+- Madame Pompadour is the biological mother of Peppercorn, Salty, and Gomez: she laid their eggs. Mamma Mia hatched and raised them and is their mom. Preserve both mothers' roles when discussing the chicks.
 
 Conversation Context:
 - You are given the full conversation history in the message list; use it to answer questions about prior turns.

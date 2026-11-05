@@ -1,4 +1,5 @@
 import { requireSession } from '../_auth.js';
+import { METERS, describeMeterEntry } from '../_meters.js';
 
 export async function onRequestOptions() {
     return new Response(null, {
@@ -76,6 +77,7 @@ Voice and style:
   - Mamma Mia: ![egg](/images/egg_mamma_mia.png)
   - Brown Betty: ![egg](/images/egg_brown_betty.png)
   - Madame Pompadour: ![egg](/images/egg_madame_pompadour.png)
+  - Peppercorn: ![egg](/images/egg_peppercorn.png). Preserve logged size and identification notes when relevant.
   - Example: "Mamma Mia gifted us a lovely ![egg](/images/egg_mamma_mia.png) this morning"
 - Use the logged times provided in the data - don't make up times of day
 - End with: "Reporting live from Hensington Palace, this is Clucky for The Clucking Times."
@@ -85,6 +87,8 @@ Voice and style:
 - Avoid sounding like an AI summary or neutral report; this should read like an actual Clucking Times dispatch
 
 Chick rules:
+- Peppercorn is now a confirmed egg layer. Her first confirmed egg was October 13, 2026, small and orangish, identified when Jen found her in the nesting box that morning. Mention this milestone only when it belongs to the requested day's activity data. Salty's laying is not yet confirmed; do not assign uncertain eggs to either hen by color alone.
+- Madame Pompadour is the biological mother of Peppercorn, Salty, and Gomez: she laid their eggs. Mamma Mia hatched and raised them and is their mom. Preserve both mothers' roles when discussing the chicks; this family background is not a new activity for the day.
 - If Chick Milestone data is present, mention the chicks in a way that reflects that logged score/label/tagline/notes
 - NEVER invent chick milestone details when a Chick Milestone entry exists; use the logged details instead
 - NEVER make up activities for the hens
@@ -137,7 +141,7 @@ Write a delightful dispatch about this day!`;
             throw new Error('OpenRouter returned an empty blog response');
         }
 
-        // Auto-generate a title from the first sentence or use a default
+        // Generate a headline from the dispatch topics and date.
         const title = generateTitle(blogContent, date);
 
         // Include photo/video in content if one was taken that day
@@ -182,15 +186,6 @@ async function gatherDailyActivity(db, date) {
         summary: [],
         weeklySummary: null
     };
-    const chickMilestonePrefix = 'CHICK_MILESTONE::';
-    const chickMilestoneLevels = {
-        0: { label: 'Hatchling Bubble', tagline: 'Freshly hatched and mostly tucked in close.' },
-        1: { label: 'Following Mama', tagline: 'Shadowing mom closely and learning the basics.' },
-        2: { label: 'Backyard Peeking', tagline: 'Starting to notice the wider world in short bursts.' },
-        3: { label: 'Short Solo Missions', tagline: 'Taking quick little detours before circling back.' },
-        4: { label: 'Confident Explorers', tagline: 'Covering more ground and acting noticeably bolder.' },
-        5: { label: 'Little Coop Citizens', tagline: 'Fully engaged in flock life with plenty of independence.' }
-    };
 
     // Check if it's Sunday - if so, gather weekly recap
     const dateObj = new Date(date + 'T12:00:00');
@@ -200,7 +195,7 @@ async function gatherDailyActivity(db, date) {
 
     // Get eggs for this date (include time and egg color)
     const eggs = await db.prepare(`
-        SELECT c.name, c.egg_color, e.notes, e.time
+        SELECT COALESCE(c.display_name, c.name) AS name, c.egg_color, e.notes, e.time, e.weight_g
         FROM eggs e
         JOIN chickens c ON e.chicken_id = c.id
         WHERE e.date = ?
@@ -212,7 +207,7 @@ async function gatherDailyActivity(db, date) {
         activity.eggLayers = []; // Track which chickens laid eggs
         eggs.results.forEach(egg => {
             const timeInfo = egg.time ? ` at ${egg.time}` : '';
-            activity.summary.push(`- ${egg.name} (${egg.egg_color} egg)${timeInfo}${egg.notes ? ' - ' + egg.notes : ''}`);
+            activity.summary.push(`- ${egg.name} (${egg.egg_color} egg)${timeInfo}${egg.weight_g ? `, weighed ${egg.weight_g} g` : ''}${egg.notes ? ' - ' + egg.notes : ''}`);
             if (!activity.eggLayers.includes(egg.name)) {
                 activity.eggLayers.push(egg.name);
             }
@@ -273,9 +268,12 @@ async function gatherDailyActivity(db, date) {
 
     // Get photos/videos for this date
     const photos = await db.prepare(`
-        SELECT id, caption, media_type
-        FROM photos
-        WHERE date = ?
+        SELECT p.id, p.caption, p.media_type,
+            (SELECT GROUP_CONCAT(COALESCE(c.display_name, c.name), ', ')
+             FROM photo_chickens pc JOIN chickens c ON c.id = pc.chicken_id
+             WHERE pc.photo_id = p.id) AS featuring
+        FROM photos p
+        WHERE p.date = ?
     `).bind(date).all();
 
     if (photos.results.length > 0) {
@@ -288,11 +286,8 @@ async function gatherDailyActivity(db, date) {
         activity.summary.push(`\nMedia: ${mediaParts.join(' and ')} captured`);
         photos.results.forEach(photo => {
             const typeLabel = photo.media_type === 'video' ? '[video]' : '[photo]';
-            if (photo.caption) {
-                activity.summary.push(`- ${typeLabel} ${photo.caption}`);
-            } else {
-                activity.summary.push(`- ${typeLabel}`);
-            }
+            const featuring = photo.featuring ? ` (featuring ${photo.featuring})` : '';
+            activity.summary.push(`- ${typeLabel}${photo.caption ? ` ${photo.caption}` : ''}${featuring}`);
         });
         // Pick a random photo/video to include in the blog post
         const randomIndex = Math.floor(Math.random() * photos.results.length);
@@ -300,48 +295,38 @@ async function gatherDailyActivity(db, date) {
         activity.photoMediaType = photos.results[randomIndex].media_type;
     }
 
-    // Get notes for this date
-    const notes = await db.prepare(`
-        SELECT content
-        FROM notes
+    // Get meter entries (e.g. chick milestones) for this date
+    const meterEntries = await db.prepare(`
+        SELECT id, meter, date, score, notes, created_at
+        FROM meter_entries
         WHERE date = ?
     `).bind(date).all();
 
-    if (notes.results.length > 0) {
-        const generalNotes = [];
-
-        notes.results.forEach(note => {
-            if (note.content.startsWith(chickMilestonePrefix)) {
-                try {
-                    const payload = JSON.parse(note.content.slice(chickMilestonePrefix.length));
-                    const score = Number(payload.score);
-                    const level = chickMilestoneLevels[score];
-
-                    if (level) {
-                        activity.hasActivity = true;
-                        activity.summary.push('\nChick Milestone:');
-                        activity.summary.push(`- ${score}/5 - ${level.label}`);
-                        activity.summary.push(`- Tagline: ${level.tagline}`);
-                        if (payload.notes) {
-                            activity.summary.push(`- Notes: ${payload.notes}`);
-                        }
-                        return;
-                    }
-                } catch {
-                    // Fall through and treat malformed chick milestone entries as normal notes.
-                }
-            }
-
-            generalNotes.push(note.content);
-        });
-
-        if (generalNotes.length > 0) {
-            activity.hasActivity = true;
-            activity.summary.push('\nNotes:');
-            generalNotes.forEach(note => {
-                activity.summary.push(`- ${note}`);
-            });
+    meterEntries.results.forEach(row => {
+        const entry = describeMeterEntry(row.meter, row);
+        if (!entry) return;
+        activity.hasActivity = true;
+        activity.summary.push(`\n${METERS[row.meter].title}:`);
+        activity.summary.push(`- ${entry.score}/5 - ${entry.label}`);
+        activity.summary.push(`- Tagline: ${entry.description}`);
+        if (entry.notes) {
+            activity.summary.push(`- Notes: ${entry.notes}`);
         }
+    });
+
+    // Get notes for this date (meter entries used to be stored as prefixed notes)
+    const notes = await db.prepare(`
+        SELECT content
+        FROM notes
+        WHERE date = ? AND content NOT LIKE 'RUDY_METER::%' AND content NOT LIKE 'CHICK_MILESTONE::%'
+    `).bind(date).all();
+
+    if (notes.results.length > 0) {
+        activity.hasActivity = true;
+        activity.summary.push('\nNotes:');
+        notes.results.forEach(note => {
+            activity.summary.push(`- ${note.content}`);
+        });
     }
 
     // Get weather for this date
@@ -441,19 +426,11 @@ async function gatherWeeklySummary(db, sundayDate) {
 }
 
 function generateTitle(content, date) {
-    // Strip common newspaper intros before extracting title
+    // Strip common newspaper intros before matching headline topics.
     const cleanContent = content
         .replace(/^Extra[!,]*\s*Extra[!,]*\s*/i, '')
         .replace(/^Extra[!,]*\s*/i, '')
         .trim();
-
-    // Try to extract a catchy first sentence or phrase
-    const firstSentence = cleanContent.split(/[.!?]/)[0].trim();
-
-    // Skip if it's too short/generic or still starts with "Extra"
-    if (firstSentence.length >= 18 && firstSentence.length <= 72 && !firstSentence.toLowerCase().startsWith('extra')) {
-        return firstSentence;
-    }
 
     const normalized = cleanContent.toLowerCase();
     const dateObj = new Date(date + 'T00:00:00');
