@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Clucking Times</title>
     <meta name="description" content="Daily dispatches, eggs, and photos from Hensington Palace, a backyard flock in Lawrence, Kansas.">
-    <link rel="stylesheet" href="style.css?v=13">
+    <link rel="stylesheet" href="style.css?v=14">
     <link rel="alternate" type="application/rss+xml" title="The Clucking Times" href="/api/blog/rss">
 </head>
 <body>
@@ -59,6 +59,11 @@
                         <div class="stat-tile skeleton-card"><span class="skeleton-line skeleton-line-short"></span><span class="skeleton-line"></span></div>
                         <div class="stat-tile skeleton-card"><span class="skeleton-line skeleton-line-short"></span><span class="skeleton-line"></span></div>
                     </div>
+                </section>
+
+                <section class="status-section card" aria-labelledby="carton-heading">
+                    <h2 id="carton-heading" class="section-heading section-heading--left">The current carton</h2>
+                    <div id="egg-carton"></div>
                 </section>
 
                 <section class="status-section" aria-labelledby="coop-photos-heading">
@@ -118,9 +123,22 @@
                 </section>
 
                 <section class="status-section card">
+                    <h2 class="section-heading section-heading--left">Camera favorites</h2>
+                    <p class="section-subheading section-subheading--left">Who shows up in the most photos and videos.</p>
+                    <div id="camera-favorites"></div>
+                </section>
+
+                <section class="status-section card">
                     <h2 class="section-heading section-heading--left">Eggs and daylight</h2>
                     <p class="section-subheading section-subheading--left">Hens lay less as the days get shorter. Weekly eggs (top) and average daylight hours (bottom), last six months.</p>
                     <div id="daylight-chart" class="daylight-chart"></div>
+                </section>
+
+                <section class="status-section card">
+                    <h2 class="section-heading section-heading--left">Time outside and the weather</h2>
+                    <p class="section-subheading section-subheading--left">Free-range time each day (top) and that day’s high temperature (bottom), last six months.</p>
+                    <div id="outdoors-summary"></div>
+                    <div id="outdoors-chart" class="daylight-chart"></div>
                 </section>
 
                 <details class="status-section flock-history">
@@ -171,6 +189,6 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/lib/marked.umd.min.js"></script>
-    <script src="status-page-v12.js"></script>
+    <script src="status-page-v13.js"></script>
 </body>
 </html>

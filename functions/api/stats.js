@@ -4,6 +4,7 @@ const HEATMAP_DAYS = 182;
 const TREND_WEEKS = 26;
 const HEADLINE_DAYS = 10;
 const LATITUDE = 38.9717; // Lawrence, KS
+const CARTON_SIZE = 12;
 
 // Sunrise-to-sunset hours from latitude and date (includes the standard -0.83° refraction correction).
 function daylightHours(dateString) {
@@ -30,7 +31,7 @@ export async function onRequestGet(context) {
 
         const [
             chickens, totals, perChicken, recentEggDates, daily, bestDay,
-            expenses, freeRangeWeek, headline
+            expenses, freeRangeWeek, headline, cartonRows, outdoorRows, weatherRows, photoCounts
         ] = await Promise.all([
             loadChickens(db, { status: 'active' }),
             db.prepare(`
@@ -75,7 +76,26 @@ export async function onRequestGet(context) {
                 SELECT id, date, content FROM notes
                 WHERE is_headline = 1 AND date >= ?
                 ORDER BY date DESC, created_at DESC LIMIT 1
-            `).bind(shiftDate(today, -HEADLINE_DAYS)).first()
+            `).bind(shiftDate(today, -HEADLINE_DAYS)).first(),
+            // Most recent egg rows, newest first; enough to fill the current carton.
+            db.prepare(`
+                SELECT e.date, e.count, COALESCE(c.display_name, c.name) AS name, c.egg_image_url
+                FROM eggs e LEFT JOIN chickens c ON c.id = e.chicken_id
+                WHERE 1 = 1 ${chickenFilter.replace('chicken_id', 'e.chicken_id')}
+                ORDER BY e.date DESC, e.id DESC LIMIT ?
+            `).bind(...(chickenId ? [chickenId, CARTON_SIZE] : [CARTON_SIZE])).all(),
+            db.prepare(`
+                SELECT date, SUM(duration_minutes) AS minutes FROM free_range
+                WHERE date >= ? AND duration_minutes IS NOT NULL GROUP BY date
+            `).bind(heatmapStart).all(),
+            db.prepare(`
+                SELECT date, temp_high_f, precipitation_inches, conditions FROM weather_logs WHERE date >= ?
+            `).bind(heatmapStart).all(),
+            db.prepare(`
+                SELECT c.id, COALESCE(c.display_name, c.name) AS name, c.avatar_url, c.status, COUNT(*) AS photos
+                FROM photo_chickens p JOIN chickens c ON c.id = p.chicken_id
+                GROUP BY c.id ORDER BY photos DESC, c.sort_order
+            `).all()
         ]);
 
         const datesByChicken = new Map();
@@ -121,6 +141,38 @@ export async function onRequestGet(context) {
             weekly.push({ week_end: end, eggs, avg_daylight_hours: Math.round((light / 7) * 10) / 10 });
         }
 
+        // Carton #N holds eggs (N-1)*12+1 .. N*12; a just-completed carton shows full.
+        const filled = totals.all_time % CARTON_SIZE || (totals.all_time ? CARTON_SIZE : 0);
+        const cartonEggs = [];
+        for (const row of cartonRows.results) {
+            for (let i = 0; i < row.count && cartonEggs.length < filled; i += 1) {
+                cartonEggs.push({ date: row.date, name: row.name, egg_image_url: row.egg_image_url });
+            }
+        }
+        const carton = {
+            number: Math.max(1, Math.ceil(totals.all_time / CARTON_SIZE)),
+            filled,
+            size: CARTON_SIZE,
+            eggs: cartonEggs.reverse()
+        };
+
+        // One entry per day, so days spent inside still show their weather.
+        const outdoorMinutes = new Map(outdoorRows.results.map(row => [row.date, row.minutes]));
+        const weatherByDate = new Map(weatherRows.results.map(row => [row.date, row]));
+        const outdoors = [];
+        if (!chickenId) {
+            for (let date = heatmapStart; date <= today; date = shiftDate(date, 1)) {
+                const weather = weatherByDate.get(date) || {};
+                outdoors.push({
+                    date,
+                    minutes: outdoorMinutes.get(date) || 0,
+                    temp_high_f: weather.temp_high_f ?? null,
+                    precipitation_inches: weather.precipitation_inches ?? null,
+                    conditions: weather.conditions ?? null
+                });
+            }
+        }
+
         const allTimeFlockEggs = chickenId ? null : totals.all_time;
         return jsonResponse({
             today,
@@ -143,7 +195,10 @@ export async function onRequestGet(context) {
                 ? { total_spent: Math.round(expenses.total * 100) / 100, per_egg: Math.round((expenses.total / allTimeFlockEggs) * 100) / 100 }
                 : null,
             free_range_minutes_this_week: freeRangeWeek.minutes,
-            headline: headline || null
+            headline: headline || null,
+            carton,
+            outdoors,
+            photo_counts: chickenId ? [] : photoCounts.results
         }, 200, { 'Cache-Control': 'public, max-age=60' });
     } catch (error) {
         return jsonResponse({ error: error.message }, 500);

@@ -87,7 +87,7 @@ All API endpoints follow Cloudflare Pages Functions conventions:
 - `/api/photos/[id]` - GET retrieves the photo/video from R2; POST `{ chicken_ids, caption }` (protected) updates tags/caption
 - `/api/notes` - POST to log general notes (`is_headline` optional; `{ id, is_headline }` toggles an existing note), GET to retrieve recent 50 notes
 - `/api/chickens` - GET chicken profiles (`?status=active|former`), POST to update a profile (`{ id, ...fields }`) or add a chicken (no id)
-- `/api/stats` - GET egg totals (today, 7-day, prior 7-day, all-time), per-hen streaks/30-day counts/weights, 6-month daily heatmap, 26 weekly egg totals with computed daylight hours, cost per egg, current headline. `?chicken=ID` scopes to one hen.
+- `/api/stats` - GET egg totals (today, 7-day, prior 7-day, all-time), per-hen streaks/30-day counts/weights, 6-month daily heatmap, 26 weekly egg totals with computed daylight hours, cost per egg, current headline, the current egg carton (eggs since the last full dozen), daily free-range minutes with that day's weather (`outdoors`), and photo counts per chicken. `?chicken=ID` scopes to one hen.
 - `/api/meters` - GET meter definitions, `?meter=key` for entries; POST `{ meter, date, score, notes }` (protected). `/api/rudy-meter` and `/api/chick-milestone` are legacy wrappers.
 
 #### Expenses Tracking
@@ -208,7 +208,7 @@ Frontend uses tab switching without page reloads and Marked.js (v11.1.1) for mar
   - Auto-refreshes every 60 seconds
   - CSS uses `word-spacing: 100vw` on chicken names to force two-line display for alignment across cards
 - **`/blog.html`**: The main public site (`/` redirects here), loaded via `status-page-vN.js` → `blog.js` cache-busting redirects in `_redirects`
-  - Hash-routed tabs: `#today` (headline banner, latest dispatch, stat tiles, photo strip, flock cards, egg calendar), `#blog` (dispatches), `#photos` (gallery with per-chicken filter + lightbox), `#flock` (profiles, egg leaderboard, cost per egg, eggs-vs-daylight chart, flock history), `#history`, `#poetry`
+  - Hash-routed tabs: `#today` (headline banner, latest dispatch, stat tiles, egg carton, photo strip, flock cards, egg calendar), `#blog` (dispatches), `#photos` (gallery with per-chicken filter + lightbox), `#flock` (profiles, egg leaderboard, cost per egg, camera favorites, eggs-vs-daylight chart, time-outside-vs-weather chart with weekends highlighted, flock history), `#history`, `#poetry`
   - `#hen/<id>` opens a chicken profile: bio, stats, personal egg calendar, tagged photos
   - Old `#status` links land on `#today`
 
@@ -263,7 +263,7 @@ The public blog is branded as "The Clucking Times" - the official publication co
 - Converts free range minutes to hours when > 60 minutes
 - **CRITICAL: Only writes about activities actually in the data - never invents hen activities**
 - **Uses logged times** from the data - does not make up times of day
-- **Uses hen-specific egg images inline** with markdown syntax (e.g., `![egg](/images/egg_brown_betty.png)`) - these render text-sized in the blog and show the egg color visually
+- **Uses hen-specific egg images inline** with markdown syntax (e.g., `![egg](/images/egg_brown_betty.png)`) - these render text-sized in the blog and show the egg color visually. The list of images comes from `chickens.egg_image_url` for active chickens, so a new layer only needs her image set in the Flock tab
 - **Does NOT mention egg color in text** - the hen-specific egg image conveys the color (e.g., "Brown Betty gifted us a lovely ![egg](/images/egg_brown_betty.png)")
 - Post length scales with data volume (75-150 words for light days, 150-250 for busy days)
 - Ends with: "Reporting live from Hensington Palace, this is Clucky for The Clucking Times."

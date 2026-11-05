@@ -54,6 +54,17 @@ export async function onRequestPost(context) {
         const dateObj = new Date(date + 'T12:00:00');
         const isSunday = dateObj.getDay() === 0;
 
+        // Egg images come from the chickens table, so new layers are picked up automatically.
+        const { results: eggImageRows } = await context.env.DB.prepare(`
+            SELECT COALESCE(display_name, name) AS name, egg_image_url FROM chickens
+            WHERE status = 'active' AND egg_image_url IS NOT NULL AND egg_image_url != ''
+            ORDER BY sort_order, id
+        `).all();
+        const eggImageList = eggImageRows.map(row => `  - ${row.name}: ![egg](${row.egg_image_url})`).join('\n');
+        const eggImageExample = eggImageRows[0]
+            ? `"${eggImageRows[0].name} gifted us a lovely ![egg](${eggImageRows[0].egg_image_url}) this morning"`
+            : '';
+
         // Build the AI prompt for blog generation
         const systemPrompt = `You are Clucky, the royal correspondent for The Clucking Times, filing dispatches from Hensington Palace. Write a vivid, witty daily dispatch about the flock's activities.
 
@@ -74,11 +85,9 @@ Voice and style:
 - Include specific details from the activities (chicken names, what they did, etc.)
 - If Chick Milestone data is present, treat it as an important factual detail of the day and weave it in naturally
 - When mentioning a hen laying an egg, use her specific egg image inline with markdown (the image shows the egg color, so don't mention the color in text):
-  - Mamma Mia: ![egg](/images/egg_mamma_mia.png)
-  - Brown Betty: ![egg](/images/egg_brown_betty.png)
-  - Madame Pompadour: ![egg](/images/egg_madame_pompadour.png)
-  - Peppercorn: ![egg](/images/egg_peppercorn.png). Preserve logged size and identification notes when relevant.
-  - Example: "Mamma Mia gifted us a lovely ![egg](/images/egg_mamma_mia.png) this morning"
+${eggImageList}
+  - Preserve logged size, weight, and identification notes when relevant.
+  - Example: ${eggImageExample}
 - Use the logged times provided in the data - don't make up times of day
 - End with: "Reporting live from Hensington Palace, this is Clucky for The Clucking Times."
 - Format as plain text paragraphs (no markdown headers)
@@ -87,7 +96,7 @@ Voice and style:
 - Avoid sounding like an AI summary or neutral report; this should read like an actual Clucking Times dispatch
 
 Chick rules:
-- Peppercorn is now a confirmed egg layer. Her first confirmed egg was October 13, 2026, small and orangish, identified when Jen found her in the nesting box that morning. Mention this milestone only when it belongs to the requested day's activity data. Salty's laying is not yet confirmed; do not assign uncertain eggs to either hen by color alone.
+- Peppercorn is now a confirmed egg layer. Her first confirmed egg was October 13, 2026, small and orangish, identified when Jen found her in the nesting box that morning. Mention this milestone only when it belongs to the requested day's activity data. Salty is also a confirmed layer (first egg October 20, 2026); her eggs are a lighter peach than Peppercorn's, and she has laid two double yolks and some oddly shaped eggs. Never call her provisional or presumed.
 - Madame Pompadour is the biological mother of Peppercorn, Salty, and Gomez: she laid their eggs. Mamma Mia hatched and raised them and is their mom. Preserve both mothers' roles when discussing the chicks; this family background is not a new activity for the day.
 - If Chick Milestone data is present, mention the chicks in a way that reflects that logged score/label/tagline/notes
 - NEVER invent chick milestone details when a Chick Milestone entry exists; use the logged details instead

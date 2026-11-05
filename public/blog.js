@@ -288,6 +288,37 @@ function renderEggCalendar(container, heatmap) {
     scroller.scrollLeft = scroller.scrollWidth;
 }
 
+// A dozen-egg carton filled with the eggs laid since the last full carton, oldest first.
+function renderCarton() {
+    const { carton } = store.stats;
+    const container = document.getElementById('egg-carton');
+    const cups = Array.from({ length: carton.size }, (_, index) => {
+        const egg = carton.eggs[index];
+        if (!egg) return '<span class="carton-cup" aria-hidden="true"></span>';
+        const label = `${egg.name || 'Unknown hen'}, ${formatShortDate(egg.date)}`;
+        return `
+            <span class="carton-cup carton-cup--filled" title="${escapeHtml(label)}">
+                ${egg.egg_image_url ? `<img src="${escapeHtml(egg.egg_image_url)}" alt="">` : '<span class="carton-egg-emoji">🥚</span>'}
+            </span>
+        `;
+    }).join('');
+
+    const tally = new Map();
+    carton.eggs.forEach(egg => tally.set(egg.name, (tally.get(egg.name) || 0) + 1));
+    const remaining = carton.size - carton.filled;
+
+    container.innerHTML = `
+        <div class="carton" role="img" aria-label="Carton number ${carton.number}: ${carton.filled} of ${carton.size} eggs">
+            <div class="carton-cups">${cups}</div>
+        </div>
+        <p class="carton-caption">
+            <strong>Carton #${carton.number}</strong> · ${carton.filled} of ${carton.size}
+            ${remaining ? `· ${plural(remaining, 'egg')} to go` : '· full! A new carton starts with the next egg.'}
+        </p>
+        ${tally.size ? `<p class="carton-tally">${[...tally].map(([name, count]) => `${escapeHtml(name || 'Unknown')} ${count}`).join(' · ')}</p>` : ''}
+    `;
+}
+
 function renderPhotoThumb(photo, { size = 'grid' } = {}) {
     const isVideo = photo.media_type === 'video';
     const caption = photo.caption || (isVideo ? 'Video from the coop' : 'Photo from the coop');
@@ -323,6 +354,7 @@ async function loadToday({ force = false } = {}) {
         const { status, stats } = store;
         renderHeadline(stats.headline);
         renderStatTiles();
+        renderCarton();
         document.getElementById('flock-today').innerHTML = status.activeFlock.map(renderFlockCard).join('');
         renderEggCalendar(document.getElementById('egg-calendar'), stats.heatmap);
     } catch (error) {
@@ -450,6 +482,163 @@ function renderDaylightChart() {
     });
 }
 
+function renderCameraFavorites() {
+    const chickens = store.stats.photo_counts;
+    const container = document.getElementById('camera-favorites');
+    if (!chickens.length) {
+        container.innerHTML = '<p class="loading">No tagged photos yet.</p>';
+        return;
+    }
+    const max = Math.max(...chickens.map(chicken => chicken.photos));
+    container.innerHTML = `
+        <table class="leaderboard camera-favorites">
+            <thead><tr><th scope="col">Chicken</th><th scope="col">Photos &amp; videos</th></tr></thead>
+            <tbody>
+                ${chickens.map(chicken => `
+                    <tr class="${chicken.status === 'former' ? 'is-former' : ''}">
+                        <th scope="row">
+                            <a href="#hen/${chicken.id}">
+                                <img src="${escapeHtml(chicken.avatar_url)}" alt="" class="camera-avatar">
+                                ${escapeHtml(chicken.name)}${chicken.status === 'former' ? ' <span class="former-label">former</span>' : ''}
+                            </a>
+                        </th>
+                        <td>
+                            <div class="bar-cell">
+                                <span class="bar" style="width: ${(chicken.photos / max) * 100}%"></span>
+                                <span class="bar-value">${chicken.photos}</span>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+const isWeekend = date => [0, 6].includes(new Date(`${date}T12:00:00`).getDay());
+
+function formatMinutes(minutes) {
+    return `${Math.floor(minutes / 60)}:${String(Math.round(minutes % 60)).padStart(2, '0')}`;
+}
+
+// Two panels sharing one day axis: free-range bars (weekends in a second color on a shaded band)
+// and the daily high temperature line.
+function renderOutdoorsChart() {
+    const container = document.getElementById('outdoors-chart');
+    const days = store.stats.outdoors;
+    const width = Math.max(300, Math.min(container.clientWidth || 640, 720));
+    const pad = { left: 36, right: 12 };
+    const timePanel = { top: 24, height: 120 };
+    const tempPanel = { top: 194, height: 64 };
+    const height = tempPanel.top + tempPanel.height + 24;
+    const step = (width - pad.left - pad.right) / days.length;
+    const maxHours = Math.max(1, Math.ceil(Math.max(...days.map(day => day.minutes)) / 60));
+    const temps = days.map(day => day.temp_high_f).filter(value => value !== null);
+    const minTemp = Math.floor(Math.min(...temps, 40) / 10) * 10;
+    const maxTemp = Math.ceil(Math.max(...temps, 80) / 10) * 10;
+    const x = index => pad.left + index * step + step / 2;
+    const yTime = minutes => timePanel.top + timePanel.height - (minutes / 60 / maxHours) * timePanel.height;
+    const yTemp = value => tempPanel.top + tempPanel.height - ((value - minTemp) / (maxTemp - minTemp)) * tempPanel.height;
+    const barWidth = Math.max(1, step * 0.7);
+    const baseline = timePanel.top + timePanel.height;
+
+    const weekendBands = days.map((day, index) => (isWeekend(day.date)
+        ? `<rect class="chart-weekend-band" x="${pad.left + index * step}" y="${timePanel.top}" width="${step}" height="${timePanel.height}"></rect>`
+        : '')).join('');
+
+    const bars = days.map((day, index) => {
+        if (!day.minutes) return '';
+        const top = yTime(day.minutes);
+        return `<rect class="${isWeekend(day.date) ? 'chart-bar-weekend' : 'chart-bar-weekday'}" x="${x(index) - barWidth / 2}" y="${top}" width="${barWidth}" height="${baseline - top}" rx="${Math.min(2, barWidth / 2)}"></rect>`;
+    }).join('');
+
+    // Break the temperature line where weather is missing rather than drawing across the gap.
+    const segments = [];
+    let current = [];
+    days.forEach((day, index) => {
+        if (day.temp_high_f === null) {
+            if (current.length) segments.push(current);
+            current = [];
+        } else {
+            current.push(`${x(index)},${yTemp(day.temp_high_f)}`);
+        }
+    });
+    if (current.length) segments.push(current);
+
+    const monthTicks = days.map((day, index) => (day.date.endsWith('-01')
+        ? `<text class="chart-axis" x="${x(index)}" y="${height - 6}" text-anchor="middle">${new Date(`${day.date}T12:00:00`).toLocaleDateString('en-US', { month: 'short' })}</text>`
+        : '')).join('');
+
+    const hitAreas = days.map((day, index) => `
+        <rect class="chart-hit" x="${pad.left + index * step}" y="0" width="${step}" height="${height - 20}" data-index="${index}"></rect>
+    `).join('');
+
+    const describe = day => {
+        const weekday = new Date(`${day.date}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short' });
+        const outside = day.minutes ? `${formatMinutes(day.minutes)} outside` : 'no logged time outside';
+        const weather = day.temp_high_f !== null
+            ? ` · high ${day.temp_high_f}°F${day.conditions ? `, ${day.conditions.toLowerCase()}` : ''}${day.precipitation_inches > 0 ? `, ${day.precipitation_inches}" rain` : ''}`
+            : '';
+        return `${weekday}, ${formatShortDate(day.date)}: ${outside}${weather}`;
+    };
+
+    container.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" class="chart-svg" role="img" aria-label="Daily free-range time and high temperature for the last six months">
+            ${weekendBands}
+            <text class="chart-axis" x="${pad.left - 6}" y="${timePanel.top + 4}" text-anchor="end">${maxHours}h</text>
+            <text class="chart-axis" x="${pad.left - 6}" y="${baseline}" text-anchor="end">0</text>
+            <line class="chart-baseline" x1="${pad.left}" x2="${width - pad.right}" y1="${baseline}" y2="${baseline}"></line>
+            <text class="chart-panel-title" x="${pad.left}" y="${timePanel.top - 10}">Hours outside</text>
+            ${bars}
+            <text class="chart-axis" x="${pad.left - 6}" y="${tempPanel.top + 4}" text-anchor="end">${maxTemp}°</text>
+            <text class="chart-axis" x="${pad.left - 6}" y="${tempPanel.top + tempPanel.height}" text-anchor="end">${minTemp}°</text>
+            <line class="chart-grid" x1="${pad.left}" x2="${width - pad.right}" y1="${tempPanel.top + tempPanel.height}" y2="${tempPanel.top + tempPanel.height}"></line>
+            ${segments.filter(points => points.length > 1).map(points => `<polyline class="chart-line chart-line--temp" points="${points.join(' ')}"></polyline>`).join('')}
+            <text class="chart-panel-title" x="${pad.left}" y="${tempPanel.top - 8}">High temperature</text>
+            <line class="chart-crosshair" x1="0" x2="0" y1="0" y2="${height - 20}" visibility="hidden"></line>
+            ${monthTicks}
+            ${hitAreas}
+        </svg>
+        <div class="chart-legend">
+            <span><span class="legend-swatch legend-swatch--weekday"></span>Weekday</span>
+            <span><span class="legend-swatch legend-swatch--weekend"></span>Weekend (shaded)</span>
+        </div>
+        <p class="chart-readout" aria-live="polite">Hover or tap a day for details.</p>
+        <details class="chart-table">
+            <summary>Show as a table</summary>
+            <table>
+                <thead><tr><th scope="col">Date</th><th scope="col">Day</th><th scope="col" class="num">Outside</th><th scope="col" class="num">High</th></tr></thead>
+                <tbody>${[...days].reverse().filter(day => day.minutes).map(day => `<tr><td>${formatShortDate(day.date)}</td><td>${new Date(`${day.date}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short' })}</td><td class="num">${formatMinutes(day.minutes)}</td><td class="num">${day.temp_high_f ?? '—'}${day.temp_high_f !== null ? '°F' : ''}</td></tr>`).join('')}</tbody>
+            </table>
+        </details>
+    `;
+
+    const readout = container.querySelector('.chart-readout');
+    const crosshair = container.querySelector('.chart-crosshair');
+    container.querySelectorAll('.chart-hit').forEach(area => {
+        const show = () => {
+            const index = Number(area.dataset.index);
+            crosshair.setAttribute('x1', x(index));
+            crosshair.setAttribute('x2', x(index));
+            crosshair.setAttribute('visibility', 'visible');
+            readout.textContent = describe(days[index]);
+        };
+        area.addEventListener('mouseenter', show);
+        area.addEventListener('click', show);
+    });
+
+    // Headline comparison: average time outside per weekend day vs weekday.
+    const average = list => (list.length ? list.reduce((sum, day) => sum + day.minutes, 0) / list.length : 0);
+    const weekendAverage = average(days.filter(day => isWeekend(day.date)));
+    const weekdayAverage = average(days.filter(day => !isWeekend(day.date)));
+    document.getElementById('outdoors-summary').innerHTML = `
+        <div class="outdoors-summary">
+            <p><span class="legend-swatch legend-swatch--weekend"></span><strong>${formatMinutes(weekendAverage)}</strong> a day on weekends</p>
+            <p><span class="legend-swatch legend-swatch--weekday"></span><strong>${formatMinutes(weekdayAverage)}</strong> a day on weekdays</p>
+        </div>
+    `;
+}
+
 function renderRememberWhenCard() {
     return `
         <article class="chicken-card chicken-card--memorial remember-when-card">
@@ -497,7 +686,9 @@ async function loadFlockTab() {
         await loadFlockData();
         document.getElementById('flock-profiles').innerHTML = store.status.activeFlock.map(renderProfileCard).join('');
         renderLeaderboard();
+        renderCameraFavorites();
         renderDaylightChart();
+        renderOutdoorsChart();
         document.getElementById('flock-history').innerHTML = renderRememberWhenCard()
             + store.status.formerFlock.map(renderFormerFlockCard).join('');
     } catch (error) {
