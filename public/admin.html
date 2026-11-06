@@ -345,6 +345,54 @@
                     </details>
                 </section>
 
+                <section class="card">
+                    <h2>🚨 Palace Blotter</h2>
+                    <p class="form-hint">Minor incidents (predators, escapes, egg thefts) for the public blotter and the Palace Security Report. Clucky covers them in that day's dispatch.</p>
+                    <form id="blotter-form">
+                        <div class="form-group">
+                            <label for="blotter-date">Date</label>
+                            <input type="date" id="blotter-date" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="blotter-time">Time (optional)</label>
+                            <input type="time" id="blotter-time" name="time">
+                        </div>
+                        <div class="form-group">
+                            <label for="blotter-suspect">Suspect (optional)</label>
+                            <input type="text" id="blotter-suspect" name="suspect" list="blotter-suspects" placeholder="Raccoon, dog, hawk…">
+                            <datalist id="blotter-suspects">
+                                <option value="Raccoon"></option>
+                                <option value="Dog"></option>
+                                <option value="Squirrel"></option>
+                                <option value="Hawk"></option>
+                                <option value="Opossum"></option>
+                                <option value="Fox"></option>
+                                <option value="Unknown"></option>
+                            </datalist>
+                        </div>
+                        <div class="form-group">
+                            <label for="blotter-description">What happened</label>
+                            <textarea id="blotter-description" name="description" rows="2" placeholder="Eggs destroyed in the coop." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="blotter-outcome">Outcome (optional)</label>
+                            <select id="blotter-outcome" name="outcome">
+                                <option value="">—</option>
+                                <option>Fled the scene</option>
+                                <option>Still at large</option>
+                                <option>Apprehended</option>
+                                <option>Warning issued</option>
+                                <option>Case closed</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">File Report</button>
+                    </form>
+                    <details class="recent-notes">
+                        <summary>Recent incidents</summary>
+                        <div id="blotter-admin-list"><p class="loading">Loading…</p></div>
+                    </details>
+                </section>
+
                 <section class="card" id="meter-card" hidden>
                     <h2 id="meter-title">Meter</h2>
                     <form id="meter-form">
@@ -661,6 +709,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/lib/marked.umd.min.js"></script>
-    <script src="app.js?v=10"></script>
+    <script src="app.js?v=11"></script>
 </body>
 </html>

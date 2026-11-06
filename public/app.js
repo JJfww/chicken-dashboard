@@ -1644,3 +1644,76 @@ document.getElementById('swap-recipe-btn')?.addEventListener('click', async (eve
         button.textContent = 'Swap for another recipe';
     }
 });
+
+// Palace Blotter
+async function loadBlotterAdmin() {
+    const list = document.getElementById('blotter-admin-list');
+    if (!list) return;
+    try {
+        const response = await fetch('/api/blotter?limit=20', { credentials: 'include' });
+        if (!response.ok) throw new Error();
+        const { entries } = await response.json();
+        if (!entries.length) {
+            list.innerHTML = '<p class="form-hint">No incidents yet.</p>';
+            return;
+        }
+        list.replaceChildren(...entries.map(entry => {
+            const row = document.createElement('div');
+            row.className = 'note-row';
+            const text = document.createElement('p');
+            text.className = 'note-row-text';
+            text.textContent = `${formatDate(entry.date)}${entry.time ? ` ${entry.time}` : ''}: ${entry.suspect ? `${entry.suspect}. ` : ''}${entry.description}${entry.outcome ? ` (${entry.outcome})` : ''}`;
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'chip';
+            remove.textContent = 'Delete';
+            remove.addEventListener('click', async () => {
+                if (!confirm('Delete this blotter entry?')) return;
+                const result = await fetch('/api/blotter', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ id: entry.id, delete: true })
+                });
+                if (result.ok) loadBlotterAdmin();
+                else showMessage('error', 'Could not delete that entry.');
+            });
+            row.append(text, remove);
+            return row;
+        }));
+    } catch {
+        list.innerHTML = '<p class="form-hint">Could not load incidents.</p>';
+    }
+}
+
+const blotterForm = document.getElementById('blotter-form');
+if (blotterForm) {
+    document.getElementById('blotter-date').value = getCurrentDateCST();
+    loadBlotterAdmin();
+    blotterForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(e.target));
+        try {
+            const response = await fetch('/api/blotter', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error((await response.json()).error);
+            showMessage('success', 'Incident filed with the Palace Blotter.');
+            e.target.reset();
+            document.getElementById('blotter-date').value = getCurrentDateCST();
+            loadBlotterAdmin();
+        } catch (error) {
+            showMessage('error', `Could not file the report: ${error.message || 'network error'}`);
+        }
+    });
+}
+
+// The site owner's own visits are not counted on the public site (see countVisit in blog.js).
+try {
+    localStorage.setItem('ct-owner', '1');
+} catch {
+    // Storage blocked; the visit counter falls back to the logged-in session check
+}

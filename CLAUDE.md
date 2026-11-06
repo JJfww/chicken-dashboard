@@ -61,6 +61,8 @@ The D1 database contains these tables:
 - `blog_posts`: Blog entries with `is_auto_generated` flag to distinguish manual vs AI-generated posts
 - `notes`: General daily notes (date, content, `is_headline` — a headline note shows as a front-page banner for 2 days: its date and the day after)
 - `photo_chickens`: Photo tags (photo_id, chicken_id, source 'manual' or 'caption' for tags auto-suggested from captions)
+- `blotter`: The Palace Blotter, short incident reports (date, optional time, suspect, description, outcome such as 'Fled the scene' or 'Apprehended'); filed from the admin Log tab and included in that day's dispatch
+- `page_visits`: Raw daily visit counts for the public site (date, visits); no visitor details are stored
 - `recipes`: Weekly egg recipe for "Clucky's Kitchen" (one row per `week_start`, Monday, Central time; `ingredients`/`steps` are JSON arrays)
 - `meter_entries`: Generic daily meters (meter key, date, score 0-5, notes). Meter definitions live in `functions/api/_meters.js` (Rudy meter and chick milestones are retired; set `active: true` on a new meter to show its form in admin). Older meter entries were stored as `RUDY_METER::`/`CHICK_MILESTONE::` prefixed notes; those rows remain but are filtered out of notes everywhere.
 
@@ -92,6 +94,9 @@ All API endpoints follow Cloudflare Pages Functions conventions:
 - `/api/meters` - GET meter definitions, `?meter=key` for entries; POST `{ meter, date, score, notes }` (protected). `/api/rudy-meter` and `/api/chick-milestone` are legacy wrappers.
 
 - `/api/recipe` - GET this week's recipe (written by AI on the first request of the week from last week's egg count, the season, and past titles to avoid repeats), `?week=YYYY-MM-DD` for a past week, `?archive=1` for the list; POST (protected) swaps this week's recipe for a new one (admin Blog tab)
+
+- `/api/blotter` - GET `{ entries, report }` (report = this year's incidents, arrests, and active flock as "unconcerned residents"); POST (protected) adds an entry, `{ id, delete: true }` removes one
+- `/api/visits` - GET `{ total, today, since }`; POST counts a visit (skipped for logged-in admin sessions). The public page posts at most once per browser per day and never from a browser that has opened admin or visited `/blog.html?notme`
 
 #### Expenses Tracking
 - `/api/feed-purchases` - POST to log feed purchases, GET to retrieve recent 50 records
@@ -211,7 +216,7 @@ Frontend uses tab switching without page reloads and Marked.js (v11.1.1) for mar
   - Auto-refreshes every 60 seconds
   - CSS uses `word-spacing: 100vw` on chicken names to force two-line display for alignment across cards
 - **`/blog.html`**: The main public site (`/` redirects here), loaded via `status-page-vN.js` → `blog.js` cache-busting redirects in `_redirects`
-  - Hash-routed tabs: `#today` (headline banner, latest dispatch, stat tiles, egg carton, recipe teaser, photo strip, flock cards, egg calendar), `#blog` (dispatches), `#photos` (gallery with per-chicken filter + lightbox), `#recipes` (this week's recipe and archive; `#recipes/<week_start>` for a past one), `#flock` (profiles, egg leaderboard, cost per egg, camera favorites, eggs-vs-daylight chart, time-outside-vs-weather chart with weekends highlighted, flock history), `#history`, `#poetry`
+  - Hash-routed tabs: `#today` (headline banner, latest dispatch, stat tiles, egg carton, recipe teaser, Palace Security Report, photo strip, flock cards, egg calendar), `#blog` (Palace Blotter, then dispatches), `#photos` (gallery with per-chicken filter + lightbox), `#recipes` (this week's recipe and archive; `#recipes/<week_start>` for a past one), `#flock` (profiles, egg leaderboard, cost per egg, camera favorites, eggs-vs-daylight chart, time-outside-vs-weather chart with weekends highlighted, flock history), `#history`, `#poetry`
   - `#hen/<id>` opens a chicken profile: bio, stats, personal egg calendar, tagged photos
   - Old `#status` links land on `#today`
 

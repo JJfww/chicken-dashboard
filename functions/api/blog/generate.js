@@ -83,6 +83,7 @@ Voice and style:
 - Use chicken puns sparingly - one or two is enough
 - Be conversational and entertaining while staying factual to the data
 - Include specific details from the activities (chicken names, what they did, etc.)
+- If Palace Blotter incidents are present, report them with mock police-blotter gravity (suspect, scene, outcome), using only the logged details
 - If Chick Milestone data is present, treat it as an important factual detail of the day and weave it in naturally
 - When mentioning a hen laying an egg, use her specific egg image inline with markdown (the image shows the egg color, so don't mention the color in text):
 ${eggImageList}
@@ -335,6 +336,19 @@ async function gatherDailyActivity(db, date) {
         activity.summary.push('\nNotes:');
         notes.results.forEach(note => {
             activity.summary.push(`- ${note.content}`);
+        });
+    }
+
+    // Palace Blotter incidents (predators, escapes, egg thefts)
+    const blotter = await db.prepare(`
+        SELECT time, suspect, description, outcome FROM blotter WHERE date = ? ORDER BY time, id
+    `).bind(date).all();
+
+    if (blotter.results.length > 0) {
+        activity.hasActivity = true;
+        activity.summary.push('\nPalace Blotter (security incidents):');
+        blotter.results.forEach(entry => {
+            activity.summary.push(`- ${entry.time ? `${entry.time}: ` : ''}${entry.suspect ? `Suspect: ${entry.suspect}. ` : ''}${entry.description}${entry.outcome ? ` (${entry.outcome})` : ''}`);
         });
     }
 

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Clucking Times</title>
     <meta name="description" content="Daily dispatches, eggs, and photos from Hensington Palace, a backyard flock in Lawrence, Kansas.">
-    <link rel="stylesheet" href="style.css?v=15">
+    <link rel="stylesheet" href="style.css?v=16">
     <link rel="alternate" type="application/rss+xml" title="The Clucking Times" href="/api/blog/rss">
 </head>
 <body>
@@ -69,6 +69,14 @@
 
                 <a id="recipe-teaser" class="recipe-teaser" href="#recipes" hidden></a>
 
+                <section class="status-section card blotter-card" aria-labelledby="security-heading">
+                    <div class="section-row">
+                        <h2 id="security-heading" class="section-heading section-heading--left">🚨 Palace Security Report</h2>
+                        <a href="#blog" class="section-link">Full blotter →</a>
+                    </div>
+                    <div id="security-report"></div>
+                </section>
+
                 <section class="status-section" aria-labelledby="coop-photos-heading">
                     <div class="section-row">
                         <h2 id="coop-photos-heading" class="section-heading section-heading--left">From the coop</h2>
@@ -94,6 +102,11 @@
 
             <!-- Dispatches -->
             <section id="blog-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-blog" hidden>
+                <section class="card blotter-card">
+                    <h2>🚨 The Palace Blotter</h2>
+                    <p class="blotter-tagline">All the news that’s fit to squawk. And several things that aren’t.</p>
+                    <div id="blotter-full"></div>
+                </section>
                 <section class="card">
                     <h2>Dispatches</h2>
                     <div id="blog-feed" class="activity-feed">
@@ -191,6 +204,7 @@
         <footer class="site-footer">
             <p>The Clucking Times · Hensington Palace, Lawrence, Kansas</p>
             <p><a href="/api/blog/rss">RSS</a> · <a href="https://www.instagram.com/thecluckingtimes" target="_blank" rel="noopener noreferrer">Instagram</a> · <a href="/admin.html">Admin</a></p>
+            <p id="visit-count" class="visit-count"></p>
         </footer>
     </div>
 
@@ -201,6 +215,6 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/lib/marked.umd.min.js"></script>
-    <script src="status-page-v14.js"></script>
+    <script src="status-page-v15.js"></script>
 </body>
 </html>

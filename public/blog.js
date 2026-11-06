@@ -929,9 +929,11 @@ const RouterManager = {
                 loadLatestDispatch();
                 loadPhotoStrip();
                 loadRecipeTeaser();
+                loadSecurityReport();
                 this.refreshInterval = setInterval(() => loadToday({ force: true }), 60000);
                 break;
             case 'blog':
+                loadBlotter();
                 loadBlogPosts();
                 break;
             case 'photos':
@@ -959,6 +961,110 @@ const RouterManager = {
         }
     }
 };
+
+// ---------- Palace Blotter ----------
+
+let blotterPromise = null;
+
+function fetchBlotter() {
+    blotterPromise ||= fetchJson('/api/blotter').catch(error => {
+        blotterPromise = null;
+        throw error;
+    });
+    return blotterPromise;
+}
+
+function formatClockTime(time) {
+    const [hours, minutes] = time.split(':').map(Number);
+    if (!Number.isFinite(hours)) return time;
+    return new Date(2000, 0, 1, hours, minutes || 0).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function renderBlotterEntry(entry) {
+    const when = `${new Date(`${entry.date}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${entry.time ? ` · ${formatClockTime(entry.time)}` : ''}`;
+    return `
+        <li class="blotter-entry">
+            <p class="blotter-when">${escapeHtml(when)}</p>
+            <p class="blotter-text">${entry.suspect ? `<strong>Suspect: ${escapeHtml(entry.suspect)}.</strong> ` : ''}${escapeHtml(entry.description)}</p>
+            ${entry.outcome ? `<span class="blotter-outcome">${escapeHtml(entry.outcome)}</span>` : ''}
+        </li>
+    `;
+}
+
+async function loadSecurityReport() {
+    const container = document.getElementById('security-report');
+    try {
+        const { entries, report } = await fetchBlotter();
+        container.innerHTML = `
+            <div class="security-stats">
+                <div><p class="security-value">${report.incidents}</p><p class="security-label">Incidents in ${escapeHtml(report.year)}</p></div>
+                <div><p class="security-value">${report.arrests}</p><p class="security-label">Arrests</p></div>
+                <div><p class="security-value">${report.unconcerned_residents}</p><p class="security-label">Unconcerned residents</p></div>
+            </div>
+            ${entries.length
+                ? `<ul class="blotter-list">${entries.slice(0, 3).map(renderBlotterEntry).join('')}</ul>`
+                : '<p class="blotter-quiet">All quiet at the palace.</p>'}
+        `;
+    } catch {
+        container.innerHTML = renderSectionError('Report unavailable', 'The security report could not be loaded right now.');
+    }
+}
+
+async function loadBlotter() {
+    const container = document.getElementById('blotter-full');
+    try {
+        const { entries } = await fetchBlotter();
+        if (!entries.length) {
+            container.innerHTML = '<p class="blotter-quiet">All quiet at the palace. No incidents on file.</p>';
+            return;
+        }
+        container.innerHTML = `
+            <ul class="blotter-list">${entries.slice(0, 5).map(renderBlotterEntry).join('')}</ul>
+            ${entries.length > 5 ? `
+                <details class="blotter-older">
+                    <summary>Older incidents (${entries.length - 5})</summary>
+                    <ul class="blotter-list">${entries.slice(5).map(renderBlotterEntry).join('')}</ul>
+                </details>
+            ` : ''}
+        `;
+    } catch {
+        container.innerHTML = renderSectionError('Blotter unavailable', 'The blotter could not be loaded right now.');
+    }
+}
+
+// ---------- Visit counter ----------
+// Counts each browser once per day. Browsers that have opened admin (or visited with ?notme)
+// are never counted, so the site owner's own visits stay out of the total.
+
+function safeStorage(action) {
+    try {
+        return action(window.localStorage);
+    } catch {
+        return null;
+    }
+}
+
+async function countVisit() {
+    if (new URLSearchParams(window.location.search).has('notme')) {
+        safeStorage(storage => storage.setItem('ct-owner', '1'));
+    }
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+    const isOwner = safeStorage(storage => storage.getItem('ct-owner')) === '1';
+    const countedToday = safeStorage(storage => storage.getItem('ct-last-visit')) === today;
+
+    try {
+        const counts = isOwner || countedToday
+            ? await fetchJson('/api/visits')
+            : await fetch('/api/visits', { method: 'POST' }).then(response => response.json());
+        if (!isOwner && !countedToday) safeStorage(storage => storage.setItem('ct-last-visit', today));
+        if (!counts.total) return;
+        const since = new Date(`${counts.since}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        document.getElementById('visit-count').textContent =
+            `👀 ${counts.total.toLocaleString()} ${counts.total === 1 ? 'visit' : 'visits'} since ${since} · ${counts.today.toLocaleString()} today${isOwner ? ' (not counting you)' : ''}`;
+    } catch {
+        // The counter is decoration; leave the footer line empty if it fails
+    }
+}
 
 // ---------- Recipes ----------
 
@@ -1271,6 +1377,7 @@ async function loadWeather() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    countVisit();
     document.getElementById('masthead-date').textContent = new Date().toLocaleDateString('en-US', {
         weekday: 'long',
         month: 'long',
