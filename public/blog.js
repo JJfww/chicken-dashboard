@@ -1,7 +1,7 @@
 // Public site for The Clucking Times. Chicken profiles, avatars, and egg images
 // come from /api/status and /api/chickens, so flock changes need no code edits.
 
-const TABS = ['today', 'blog', 'photos', 'flock', 'history', 'poetry'];
+const TABS = ['today', 'blog', 'photos', 'flock', 'recipes', 'history', 'poetry'];
 const PHOTO_PAGE_SIZE = 24;
 
 const store = {
@@ -879,6 +879,14 @@ const RouterManager = {
             window.scrollTo({ top: 0 });
             return;
         }
+        const recipeMatch = hash.match(/^recipes\/(\d{4}-\d{2}-\d{2})$/);
+        if (recipeMatch) {
+            this.stopRefresh();
+            this.show('recipes', 'recipes');
+            loadRecipesTab(recipeMatch[1]);
+            window.scrollTo({ top: 0 });
+            return;
+        }
         document.title = 'The Clucking Times';
         // Old links used #status for the front page
         this.setTab(hash === 'status' ? 'today' : hash);
@@ -920,6 +928,7 @@ const RouterManager = {
                 loadToday();
                 loadLatestDispatch();
                 loadPhotoStrip();
+                loadRecipeTeaser();
                 this.refreshInterval = setInterval(() => loadToday({ force: true }), 60000);
                 break;
             case 'blog':
@@ -930,6 +939,9 @@ const RouterManager = {
                 break;
             case 'flock':
                 loadFlockTab();
+                break;
+            case 'recipes':
+                loadRecipesTab();
                 break;
             case 'history':
                 loadActivity();
@@ -947,6 +959,90 @@ const RouterManager = {
         }
     }
 };
+
+// ---------- Recipes ----------
+
+const recipeCache = new Map();
+
+function fetchRecipe(week) {
+    const key = week || 'current';
+    if (!recipeCache.has(key)) {
+        recipeCache.set(key, fetchJson(week ? `/api/recipe?week=${week}` : '/api/recipe').catch(error => {
+            recipeCache.delete(key);
+            throw error;
+        }));
+    }
+    return recipeCache.get(key);
+}
+
+const formatWeekOf = weekStart => `Week of ${new Date(`${weekStart}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+
+function renderRecipe(recipe, isCurrent) {
+    const meta = [
+        recipe.servings && `Serves ${recipe.servings}`,
+        recipe.total_time,
+        recipe.eggs_used && `Uses ${plural(recipe.eggs_used, 'egg')}`
+    ].filter(Boolean);
+    return `
+        <p class="card-eyebrow">🍳 Clucky’s Kitchen · ${isCurrent ? 'This week' : escapeHtml(formatWeekOf(recipe.week_start))}</p>
+        <h2 class="recipe-title">${escapeHtml(recipe.title)}</h2>
+        ${recipe.intro ? `<p class="recipe-intro">${escapeHtml(recipe.intro)}</p>` : ''}
+        ${meta.length ? `<p class="recipe-meta">${meta.map(escapeHtml).join(' · ')}</p>` : ''}
+        <div class="recipe-body">
+            <section>
+                <h3>Ingredients</h3>
+                <ul class="recipe-ingredients">${recipe.ingredients.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>
+            </section>
+            <section>
+                <h3>Method</h3>
+                <ol class="recipe-steps">${recipe.steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>
+            </section>
+        </div>
+        ${recipe.tip ? `<p class="recipe-tip"><strong>Clucky’s tip:</strong> ${escapeHtml(recipe.tip)}</p>` : ''}
+        ${isCurrent ? '' : '<p><a href="#recipes" class="section-link">← This week’s recipe</a></p>'}
+    `;
+}
+
+async function loadRecipesTab(week) {
+    const display = document.getElementById('recipe-display');
+    display.innerHTML = '<p class="loading">Cracking open this week’s recipe…</p>';
+    try {
+        const recipe = await fetchRecipe(week);
+        const current = await fetchRecipe().catch(() => null);
+        display.innerHTML = renderRecipe(recipe, !week || recipe.week_start === current?.week_start);
+    } catch (error) {
+        display.innerHTML = renderSectionError('Kitchen closed', 'The recipe could not be loaded right now. Please try again soon.');
+    }
+
+    try {
+        const archive = await fetchJson('/api/recipe?archive=1');
+        document.getElementById('recipe-archive-list').innerHTML = archive.length
+            ? archive.map(item => `
+                <li><a href="#recipes/${item.week_start}">${escapeHtml(item.title)}</a> <span class="recipe-archive-date">${escapeHtml(formatWeekOf(item.week_start))}</span></li>
+            `).join('')
+            : '<li>This is the first one!</li>';
+    } catch {
+        document.getElementById('recipe-archive-list').innerHTML = '';
+    }
+}
+
+async function loadRecipeTeaser() {
+    const teaser = document.getElementById('recipe-teaser');
+    try {
+        const recipe = await fetchRecipe();
+        teaser.innerHTML = `
+            <span class="recipe-teaser-icon" aria-hidden="true">🍳</span>
+            <span>
+                <span class="recipe-teaser-kicker">This week in Clucky’s Kitchen</span>
+                <span class="recipe-teaser-title">${escapeHtml(recipe.title)}</span>
+            </span>
+            <span class="recipe-teaser-arrow" aria-hidden="true">→</span>
+        `;
+        teaser.hidden = false;
+    } catch {
+        teaser.hidden = true;
+    }
+}
 
 // ---------- Poetry, dispatches, history, weather ----------
 

@@ -3278,3 +3278,127 @@ button.heat-cell:focus-visible {
     font-size: 1.25rem;
     font-variant-numeric: tabular-nums;
 }
+
+/* Clucky's Kitchen (weekly recipe) */
+.recipe-teaser {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 14px;
+    background: var(--headline-bg);
+    border: 1px solid var(--headline-border);
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.recipe-teaser[hidden] {
+    display: none;
+}
+
+.recipe-teaser-icon {
+    font-size: 1.6rem;
+}
+
+.recipe-teaser-kicker {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--badge-text);
+    font-weight: 600;
+}
+
+.recipe-teaser-title {
+    display: block;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.recipe-teaser-arrow {
+    margin-left: auto;
+    color: var(--text-secondary);
+}
+
+.recipe-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.6rem;
+    line-height: 1.2;
+    margin: 0.25rem 0 0.5rem;
+}
+
+.recipe-intro {
+    font-size: 1.02rem;
+    line-height: 1.55;
+}
+
+.recipe-meta {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.recipe-body {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: 1.5rem;
+    margin-top: 1.25rem;
+}
+
+.recipe-body h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.recipe-ingredients,
+.recipe-steps {
+    padding-left: 1.2rem;
+    line-height: 1.5;
+}
+
+.recipe-ingredients li,
+.recipe-steps li {
+    margin-bottom: 0.4rem;
+}
+
+.recipe-tip {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-left: 3px solid var(--headline-border);
+    background: var(--headline-bg);
+    border-radius: 0 10px 10px 0;
+    line-height: 1.5;
+}
+
+.recipe-archive summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.recipe-archive-list {
+    list-style: none;
+    margin-top: 0.75rem;
+    padding: 0;
+}
+
+.recipe-archive-list li {
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.recipe-archive-date {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 640px) {
+    .recipe-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

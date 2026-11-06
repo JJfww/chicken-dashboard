@@ -335,7 +335,7 @@
                         </div>
                         <label class="checkbox-row">
                             <input type="checkbox" id="note-headline" name="is_headline">
-                            📰 Front-page headline (shows as a banner on the public site for 10 days)
+                            📰 Front-page headline (shows as a banner on the public site for 2 days)
                         </label>
                         <button type="submit" class="btn btn-primary">Add Note</button>
                     </form>
@@ -446,6 +446,13 @@
                             <button type="button" id="auto-generate-btn" class="btn btn-primary" style="flex: 1;">Auto-Generate</button>
                         </div>
                     </form>
+                </section>
+
+                <section class="card">
+                    <h2>🍳 This Week's Recipe</h2>
+                    <p class="form-hint">Clucky's Kitchen writes a new egg recipe every Monday for the public Recipes tab. Swap it if this one doesn't appeal.</p>
+                    <div id="admin-recipe"><p class="loading">Loading recipe...</p></div>
+                    <button type="button" id="swap-recipe-btn" class="btn btn-small">Swap for another recipe</button>
                 </section>
 
                 <section class="card">
@@ -654,6 +661,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/lib/marked.umd.min.js"></script>
-    <script src="app.js?v=9"></script>
+    <script src="app.js?v=10"></script>
 </body>
 </html>

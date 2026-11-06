@@ -1290,6 +1290,7 @@ document.querySelectorAll('.tab').forEach(tab => {
             loadExpenses();
         } else if (tabName === 'blog') {
             loadBlogPosts();
+            loadAdminRecipe();
             // Set default date to today
             document.getElementById('blog-date').value = getCurrentDateCST();
         }
@@ -1598,3 +1599,48 @@ document.getElementById('add-chicken-form').addEventListener('submit', async (ev
 populateChickenSelects();
 loadRecentNotes();
 setupMeterCard();
+
+// Weekly recipe (Clucky's Kitchen)
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = String(text ?? '');
+    return div.innerHTML;
+}
+
+function renderAdminRecipe(recipe) {
+    document.getElementById('admin-recipe').innerHTML = `
+        <p><strong>${escapeHtml(recipe.title)}</strong></p>
+        <p class="form-hint">${escapeHtml(recipe.intro || '')}</p>
+        <p><a href="/blog.html#recipes" target="_blank" rel="noopener">View on the site →</a></p>
+    `;
+}
+
+async function loadAdminRecipe() {
+    try {
+        const response = await fetch('/api/recipe', { credentials: 'include' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.details || data.error);
+        renderAdminRecipe(data);
+    } catch (error) {
+        document.getElementById('admin-recipe').innerHTML = `<p class="loading">Recipe unavailable: ${escapeHtml(error.message)}</p>`;
+    }
+}
+
+document.getElementById('swap-recipe-btn')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    if (!confirm("Replace this week's recipe with a new one?")) return;
+    button.disabled = true;
+    button.textContent = 'Cooking up another...';
+    try {
+        const response = await fetch('/api/recipe', { method: 'POST', credentials: 'include' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+        renderAdminRecipe(data);
+        showMessage('success', `New recipe: ${data.title}`);
+    } catch (error) {
+        showMessage('error', `Could not swap the recipe: ${error.message}`);
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Swap for another recipe';
+    }
+});

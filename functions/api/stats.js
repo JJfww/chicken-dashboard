@@ -2,7 +2,7 @@ import { computeStreak, getTodayCST, isLayer, jsonResponse, loadChickens, shiftD
 
 const HEATMAP_DAYS = 182;
 const TREND_WEEKS = 26;
-const HEADLINE_DAYS = 10;
+const HEADLINE_DAYS = 2; // the note's date and the day after
 const LATITUDE = 38.9717; // Lawrence, KS
 const CARTON_SIZE = 12;
 
@@ -76,7 +76,7 @@ export async function onRequestGet(context) {
                 SELECT id, date, content FROM notes
                 WHERE is_headline = 1 AND date >= ?
                 ORDER BY date DESC, created_at DESC LIMIT 1
-            `).bind(shiftDate(today, -HEADLINE_DAYS)).first(),
+            `).bind(shiftDate(today, -(HEADLINE_DAYS - 1))).first(),
             // Most recent egg rows, newest first; enough to fill the current carton.
             db.prepare(`
                 SELECT e.date, e.count, COALESCE(c.display_name, c.name) AS name, c.egg_image_url
