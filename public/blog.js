@@ -1,7 +1,7 @@
 // Public site for The Clucking Times. Chicken profiles, avatars, and egg images
 // come from /api/status and /api/chickens, so flock changes need no code edits.
 
-const TABS = ['today', 'blog', 'photos', 'flock', 'recipes', 'history', 'poetry'];
+const TABS = ['today', 'blog', 'photos', 'flock', 'eggconomy', 'recipes', 'history', 'poetry'];
 const PHOTO_PAGE_SIZE = 24;
 
 const store = {
@@ -942,6 +942,9 @@ const RouterManager = {
             case 'flock':
                 loadFlockTab();
                 break;
+            case 'eggconomy':
+                loadEggconomy();
+                break;
             case 'recipes':
                 loadRecipesTab();
                 break;
@@ -1063,6 +1066,145 @@ async function countVisit() {
             `👀 ${counts.total.toLocaleString()} ${counts.total === 1 ? 'visit' : 'visits'} since ${since} · ${counts.today.toLocaleString()} today${isOwner ? ' (not counting you)' : ''}`;
     } catch {
         // The counter is decoration; leave the footer line empty if it fails
+    }
+}
+
+// ---------- Eggconomy ----------
+
+const RATING_NOTES = {
+    'BUY': 'Output up on the prior week',
+    'HOLD': 'Output unchanged',
+    'WATCH': 'Output down on the prior week',
+    'NEW LISTING': 'First egg in the last 3 weeks',
+    'TRADING HALTED': 'Temporarily suspended',
+    'UNDER INVESTIGATION': 'No eggs this week after laying last week',
+    'DORMANT': 'No eggs in two weeks'
+};
+
+function formatChange(change) {
+    if (change > 0) return `<span class="change change--up">▲ ${change}</span>`;
+    if (change < 0) return `<span class="change change--down">▼ ${Math.abs(change)}</span>`;
+    return '<span class="change">–</span>';
+}
+
+// The report filed on a Monday covers the full week before it.
+function formatShortRange(weekStart) {
+    const day = offset => {
+        const date = new Date(`${weekStart}T12:00:00`);
+        date.setDate(date.getDate() + offset);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+    return `${day(-7)} – ${day(-1)}`;
+}
+
+function renderMarketReport(report) {
+    const container = document.getElementById('market-report');
+    if (!report) {
+        container.innerHTML = '<p class="loading">The Financial Desk has not filed this week’s report yet.</p>';
+        return;
+    }
+    container.innerHTML = `
+        <p class="card-eyebrow">The Clucking Times · Financial Desk · Weekly report, ${escapeHtml(formatShortRange(report.week_start))}</p>
+        <h2 class="market-headline">${escapeHtml(report.headline)}</h2>
+        ${report.body.split(/\n\s*\n/).map(paragraph => `<p class="market-body">${escapeHtml(paragraph.trim())}</p>`).join('')}
+    `;
+}
+
+async function loadEggconomy() {
+    const indicatorsEl = document.getElementById('eggconomy-indicators');
+    try {
+        const data = await fetchJson('/api/eggconomy');
+        const { indicators, exchange, unlisted } = data;
+
+        const sentimentIcon = { Bullish: '▲', Bearish: '▼', Steady: '◆' }[indicators.sentiment];
+        const sentiment = document.getElementById('market-sentiment');
+        sentiment.textContent = `${sentimentIcon} ${indicators.sentiment}`;
+        sentiment.dataset.sentiment = indicators.sentiment.toLowerCase();
+
+        const eggflation = indicators.eggflation === null ? '—' : `${indicators.eggflation > 0 ? '+' : ''}${indicators.eggflation}%`;
+        indicatorsEl.innerHTML = `
+            <article class="stat-tile">
+                <p class="stat-label">Gross Domestic Product</p>
+                <p class="stat-value">${indicators.gdp}</p>
+                <p class="stat-detail">Eggs in 7 days (prior: ${indicators.gdp_previous})</p>
+            </article>
+            <article class="stat-tile">
+                <p class="stat-label">Eggflation</p>
+                <p class="stat-value">${eggflation}</p>
+                <p class="stat-detail">Output vs the prior 7 days</p>
+            </article>
+            <article class="stat-tile">
+                <p class="stat-label">Eggployment rate</p>
+                <p class="stat-value">${indicators.eggployment.rate}%</p>
+                <p class="stat-detail">${indicators.eggployment.employed} of ${plural(indicators.eggployment.workforce, 'hen')} laying</p>
+            </article>
+            <article class="stat-tile">
+                <p class="stat-label">Productivity index</p>
+                <p class="stat-value">${indicators.productivity}</p>
+                <p class="stat-detail">Eggs per hen this week · volatility ${escapeHtml(indicators.volatility.toLowerCase())}</p>
+            </article>
+        `;
+
+        const reserves = indicators.reserves;
+        document.getElementById('eggconomy-trade').innerHTML = `
+            <article class="stat-tile">
+                <p class="stat-label">National reserves</p>
+                <p class="stat-value">${reserves ? reserves.on_hand : '—'}</p>
+                <p class="stat-detail">${reserves ? `Eggs on hand (counted ${escapeHtml(formatShortDate(reserves.counted_on))}, updated since)` : 'Awaiting the first stock count'}</p>
+            </article>
+            <article class="stat-tile">
+                <p class="stat-label">Domestic consumption</p>
+                <p class="stat-value">${indicators.consumption}</p>
+                <p class="stat-detail">Eaten at the palace, 7 days</p>
+            </article>
+            <article class="stat-tile">
+                <p class="stat-label">Exports</p>
+                <p class="stat-value">${indicators.exports}</p>
+                <p class="stat-detail">Given away, 7 days</p>
+            </article>
+            <article class="stat-tile">
+                <p class="stat-label">Write-offs</p>
+                <p class="stat-value">${indicators.write_offs}</p>
+                <p class="stat-detail">Lost to the dogs, 7 days</p>
+            </article>
+        `;
+        const deficit = indicators.trade_deficit;
+        const outTotal = indicators.consumption + indicators.exports + indicators.write_offs;
+        document.getElementById('trade-balance').textContent = deficit > 0
+            ? `Trade deficit: ${plural(deficit, 'egg')} this week (${indicators.gdp} laid, ${outTotal} out). Reserves are being drawn down.`
+            : deficit < 0
+                ? `Trade surplus: ${plural(-deficit, 'egg')} this week (${indicators.gdp} laid, ${outTotal} out). Reserves are growing.`
+                : `Trade balanced: ${indicators.gdp} laid, ${outTotal} out this week.`;
+
+        document.getElementById('egg-exchange').innerHTML = `
+            <table class="leaderboard egg-exchange">
+                <thead>
+                    <tr><th scope="col">Company</th><th scope="col" class="num">7-day</th><th scope="col" class="num">Change</th></tr>
+                </thead>
+                <tbody>
+                    ${exchange.map(row => `
+                        <tr>
+                            <th scope="row">
+                                <span class="ticker">${escapeHtml(row.ticker)}</span>
+                                <a href="#hen/${row.id}">${row.egg_image_url ? `<img src="${escapeHtml(row.egg_image_url)}" alt="" class="egg-icon">` : ''} ${escapeHtml(row.name)}</a>
+                                <span class="rating-row">
+                                    <span class="rating-chip" title="${escapeHtml(RATING_NOTES[row.rating] || '')}">${escapeHtml(row.rating)}</span>
+                                    ${row.halted_reason ? `<span class="rating-reason">${escapeHtml(row.halted_reason)}</span>` : ''}
+                                </span>
+                            </th>
+                            <td class="num">${row.current}</td>
+                            <td class="num">${formatChange(row.change)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            ${unlisted.length ? `<p class="exchange-footnote">${unlisted.map(escapeHtml).join(' and ')} ${unlisted.length === 1 ? 'is' : 'are'} not publicly traded. ${unlisted.length === 1 ? 'His company remains' : 'Their companies remain'} privately held and ${unlisted.length === 1 ? 'has' : 'have'} never turned a profit.</p>` : ''}
+            <p class="exchange-key">BUY: up on the prior week · HOLD: unchanged · WATCH: down · NEW LISTING: first egg in the last 3 weeks · TRADING HALTED: molting</p>
+        `;
+
+        renderMarketReport(data.report);
+    } catch {
+        indicatorsEl.innerHTML = renderSectionError('Markets closed', 'The Eggconomy could not be loaded right now.');
     }
 }
 

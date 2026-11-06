@@ -1,13 +1,6 @@
 import { requireSession } from './_auth.js';
-import { getTodayCST, jsonResponse, shiftDate } from './_flock.js';
-
-const RECIPE_MODEL = 'google/gemini-2.5-flash';
-
-// Weeks start on Monday (Central time).
-function weekStartFor(date) {
-    const dayOfWeek = new Date(`${date}T12:00:00Z`).getUTCDay();
-    return shiftDate(date, -((dayOfWeek + 6) % 7));
-}
+import { generateJson } from './_ai.js';
+import { getTodayCST, jsonResponse, shiftDate, weekStartFor } from './_flock.js';
 
 function presentRecipe(row) {
     return {
@@ -18,8 +11,6 @@ function presentRecipe(row) {
 }
 
 async function generateRecipe(env, weekStart) {
-    if (!env.OPENROUTER_API_KEY) throw new Error('OPENROUTER_API_KEY is not set');
-
     const db = env.DB;
     const [eggs, pastTitles, layers] = await Promise.all([
         db.prepare('SELECT COALESCE(SUM(count), 0) AS total FROM eggs WHERE date >= ? AND date < ?')
@@ -48,30 +39,11 @@ Write one egg-centric recipe that a home cook can make with fresh backyard eggs.
 Respond with only a JSON object, no markdown:
 {"title": string, "intro": string, "servings": string, "total_time": string, "eggs_used": number, "ingredients": [string], "steps": [string], "tip": string}`;
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://chicken-dashboard.pages.dev',
-            'X-Title': 'Hensington Palace - Recipes'
-        },
-        body: JSON.stringify({
-            model: RECIPE_MODEL,
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: "Write this week's recipe." }
-            ],
-            response_format: { type: 'json_object' },
-            temperature: 0.9,
-            max_tokens: 1500
-        })
+    const recipe = await generateJson(env, {
+        title: 'Hensington Palace - Recipes',
+        system: systemPrompt,
+        user: "Write this week's recipe."
     });
-    if (!response.ok) throw new Error(`OpenRouter API error (${response.status}): ${await response.text()}`);
-
-    const data = await response.json();
-    const content = (data?.choices?.[0]?.message?.content || '').replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
-    const recipe = JSON.parse(content);
     if (!recipe.title || !Array.isArray(recipe.ingredients) || !Array.isArray(recipe.steps)) {
         throw new Error('Recipe response was missing a title, ingredients, or steps');
     }

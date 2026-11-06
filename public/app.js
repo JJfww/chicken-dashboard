@@ -1467,6 +1467,7 @@ const FLOCK_FIELDS = [
     { name: 'avatar_url', label: 'Avatar image path', hint: 'e.g. /images/Vinnie.png' },
     { name: 'egg_image_url', label: 'Egg image path', hint: 'e.g. /images/egg_peppercorn.png' },
     { name: 'hatch_date', label: 'Hatch date', type: 'date' },
+    { name: 'ticker', label: 'Stock ticker', hint: 'For the Eggconomy page, e.g. PEPR (leave blank for non-layers)' },
     { name: 'sort_order', label: 'Display order', type: 'number' },
     { name: 'status', label: 'Status', type: 'select', options: [['active', 'Current flock'], ['former', 'Former flock']] },
     { name: 'departed_date', label: 'Departed on', type: 'date' },
@@ -1716,4 +1717,87 @@ try {
     localStorage.setItem('ct-owner', '1');
 } catch {
     // Storage blocked; the visit counter falls back to the logged-in session check
+}
+
+// Eggs out and stock counts (Eggconomy reserves and trade)
+async function postOutflow(data) {
+    const response = await fetch('/api/egg-outflows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error((await response.json()).error || 'Request failed');
+}
+
+async function loadOutflows() {
+    const list = document.getElementById('outflow-list');
+    if (!list) return;
+    try {
+        const response = await fetch('/api/egg-outflows', { credentials: 'include' });
+        if (!response.ok) throw new Error();
+        const entries = await response.json();
+        if (!entries.length) {
+            list.innerHTML = '<p class="form-hint">Nothing logged yet.</p>';
+            return;
+        }
+        list.replaceChildren(...entries.map(entry => {
+            const row = document.createElement('div');
+            row.className = 'note-row';
+            const text = document.createElement('p');
+            text.className = 'note-row-text';
+            text.textContent = entry.kind === 'stock'
+                ? `${formatDate(entry.date)}: counted ${entry.count} on hand`
+                : `${formatDate(entry.date)}: ${entry.count} ${entry.kind_label.toLowerCase()}${entry.notes ? ` (${entry.notes})` : ''}`;
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'chip';
+            remove.textContent = 'Delete';
+            remove.addEventListener('click', async () => {
+                if (!confirm('Delete this entry?')) return;
+                try {
+                    await postOutflow({ id: entry.id, delete: true });
+                    loadOutflows();
+                } catch {
+                    showMessage('error', 'Could not delete that entry.');
+                }
+            });
+            row.append(text, remove);
+            return row;
+        }));
+    } catch {
+        list.innerHTML = '<p class="form-hint">Could not load entries.</p>';
+    }
+}
+
+const outflowForm = document.getElementById('outflow-form');
+if (outflowForm) {
+    document.getElementById('outflow-date').value = getCurrentDateCST();
+    loadOutflows();
+    outflowForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(e.target));
+        try {
+            await postOutflow(data);
+            showMessage('success', data.kind === 'dogs' ? 'Write-off recorded. The dogs thank you.' : 'Eggs out logged.');
+            e.target.reset();
+            document.getElementById('outflow-date').value = getCurrentDateCST();
+            loadOutflows();
+        } catch (error) {
+            showMessage('error', `Could not log that: ${error.message}`);
+        }
+    });
+
+    document.getElementById('stock-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const count = document.getElementById('stock-count').value;
+        try {
+            await postOutflow({ date: getCurrentDateCST(), kind: 'stock', count });
+            showMessage('success', `Stock count saved: ${count} eggs on hand.`);
+            e.target.reset();
+            loadOutflows();
+        } catch (error) {
+            showMessage('error', `Could not save the count: ${error.message}`);
+        }
+    });
 }

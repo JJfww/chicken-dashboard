@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hensington Palace - Dashboard</title>
-    <link rel="stylesheet" href="style.css?v=12">
+    <link rel="stylesheet" href="style.css?v=18">
     <style>
         .auth-loading {
             display: flex;
@@ -175,6 +175,46 @@
                         </div>
                         <button type="submit" class="btn btn-primary">Log Egg</button>
                     </form>
+                </section>
+
+                <!-- Eggs out (for the Eggconomy's reserves and trade figures) -->
+                <section class="card">
+                    <h2>🧺 Eggs Out</h2>
+                    <form id="outflow-form">
+                        <div class="form-group">
+                            <label for="outflow-date">Date</label>
+                            <input type="date" id="outflow-date" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="outflow-kind">Where they went</label>
+                            <select id="outflow-kind" name="kind" required>
+                                <option value="eaten">Eaten</option>
+                                <option value="given">Given away</option>
+                                <option value="dogs">Lost to the dogs</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="outflow-count">How many</label>
+                            <input type="number" id="outflow-count" name="count" min="1" step="1" inputmode="numeric" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="outflow-notes">Notes (optional)</label>
+                            <input type="text" id="outflow-notes" name="notes" placeholder="e.g. to the neighbors">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Log Eggs Out</button>
+                    </form>
+                    <form id="stock-form" class="stock-form">
+                        <label for="stock-count">Stock count: eggs on hand right now</label>
+                        <span class="form-hint">Sets National Reserves; after that it updates itself from eggs laid and eggs out. Count at the end of the day, after logging today's eggs.</span>
+                        <div class="form-group stock-row">
+                            <input type="number" id="stock-count" name="count" min="0" step="1" inputmode="numeric" required>
+                            <button type="submit" class="btn btn-small">Save count</button>
+                        </div>
+                    </form>
+                    <details class="recent-notes">
+                        <summary>Recent eggs out &amp; counts</summary>
+                        <div id="outflow-list"><p class="loading">Loading…</p></div>
+                    </details>
                 </section>
 
                 <!-- Feeding -->
@@ -709,6 +749,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/lib/marked.umd.min.js"></script>
-    <script src="app.js?v=11"></script>
+    <script src="app.js?v=12"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 export const CHICKEN_PROFILE_FIELDS = [
     'display_name', 'role_label', 'bio', 'tagline', 'status', 'departed_date', 'departure_note',
-    'avatar_url', 'egg_image_url', 'hatch_date', 'sort_order', 'is_rooster', 'egg_color'
+    'avatar_url', 'egg_image_url', 'hatch_date', 'sort_order', 'is_rooster', 'egg_color', 'ticker'
 ];
 
 export function getTodayCST() {
@@ -11,6 +11,12 @@ export function shiftDate(dateString, days) {
     const date = new Date(`${dateString}T12:00:00Z`);
     date.setUTCDate(date.getUTCDate() + days);
     return date.toISOString().slice(0, 10);
+}
+
+// Weeks start on Monday (Central time).
+export function weekStartFor(date) {
+    const dayOfWeek = new Date(`${date}T12:00:00Z`).getUTCDay();
+    return shiftDate(date, -((dayOfWeek + 6) % 7));
 }
 
 // 'cream (provisional)' -> { color: 'cream', provisional: true }
@@ -46,7 +52,8 @@ export function presentChicken(row) {
         egg_image_url: row.egg_image_url || null,
         hatch_date: row.hatch_date || null,
         sort_order: row.sort_order ?? 100,
-        is_rooster: Boolean(row.is_rooster)
+        is_rooster: Boolean(row.is_rooster),
+        ticker: row.ticker || null
     };
 }
 

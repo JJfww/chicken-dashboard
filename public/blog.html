@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Clucking Times</title>
     <meta name="description" content="Daily dispatches, eggs, and photos from Hensington Palace, a backyard flock in Lawrence, Kansas.">
-    <link rel="stylesheet" href="style.css?v=16">
+    <link rel="stylesheet" href="style.css?v=18">
     <link rel="alternate" type="application/rss+xml" title="The Clucking Times" href="/api/blog/rss">
 </head>
 <body>
@@ -33,6 +33,7 @@
                 <button class="tab" role="tab" aria-selected="false" aria-controls="blog-tab" id="tab-blog" tabindex="-1" data-tab="blog">Dispatches</button>
                 <button class="tab" role="tab" aria-selected="false" aria-controls="photos-tab" id="tab-photos" tabindex="-1" data-tab="photos">Photos</button>
                 <button class="tab" role="tab" aria-selected="false" aria-controls="flock-tab" id="tab-flock" tabindex="-1" data-tab="flock">Flock</button>
+                <button class="tab" role="tab" aria-selected="false" aria-controls="eggconomy-tab" id="tab-eggconomy" tabindex="-1" data-tab="eggconomy">Eggconomy</button>
                 <button class="tab" role="tab" aria-selected="false" aria-controls="recipes-tab" id="tab-recipes" tabindex="-1" data-tab="recipes">Recipes</button>
                 <button class="tab" role="tab" aria-selected="false" aria-controls="history-tab" id="tab-history" tabindex="-1" data-tab="history">History</button>
                 <button class="tab" role="tab" aria-selected="false" aria-controls="poetry-tab" id="tab-poetry" tabindex="-1" data-tab="poetry">Poetry</button>
@@ -168,6 +169,33 @@
                 <div id="hen-profile"></div>
             </section>
 
+            <!-- Eggconomy -->
+            <section id="eggconomy-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-eggconomy" hidden>
+                <section class="card eggconomy-header">
+                    <div class="section-row">
+                        <div>
+                            <p class="card-eyebrow">Hensington Palace Reserve</p>
+                            <h2 class="eggconomy-title">The Eggconomy</h2>
+                        </div>
+                        <span id="market-sentiment" class="market-sentiment"></span>
+                    </div>
+                    <p class="eggconomy-tagline">A shell-based economy with no fiscal oversight.</p>
+                    <p class="eggconomy-fineprint">Real egg counts from the last 7 days, under satirical economic labels. Past performance is no guarantee of future eggs.</p>
+                    <div id="eggconomy-indicators" class="stat-tiles"></div>
+                    <h3 class="eggconomy-subhead">Trade &amp; reserves</h3>
+                    <div id="eggconomy-trade" class="stat-tiles"></div>
+                    <p id="trade-balance" class="trade-balance"></p>
+                </section>
+
+                <section class="card">
+                    <h2 class="section-heading section-heading--left">Hensington Stock Eggchange (HSE)</h2>
+                    <p class="section-subheading section-subheading--left">Eggs laid in the last 7 days, compared with the 7 days before.</p>
+                    <div id="egg-exchange"></div>
+                </section>
+
+                <article id="market-report" class="card market-report" aria-live="polite"></article>
+            </section>
+
             <!-- Recipes -->
             <section id="recipes-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-recipes" hidden>
                 <article id="recipe-display" class="card recipe-card" aria-live="polite"></article>
@@ -215,6 +243,6 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/lib/marked.umd.min.js"></script>
-    <script src="status-page-v15.js"></script>
+    <script src="status-page-v17.js"></script>
 </body>
 </html>

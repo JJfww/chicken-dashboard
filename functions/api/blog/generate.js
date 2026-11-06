@@ -352,6 +352,19 @@ async function gatherDailyActivity(db, date) {
         });
     }
 
+    // Eggs that left the palace (eaten, given away, lost to the dogs)
+    const outflows = await db.prepare(`
+        SELECT kind, count, notes FROM egg_outflows WHERE date = ? AND kind != 'stock'
+    `).bind(date).all();
+
+    if (outflows.results.length > 0) {
+        const labels = { eaten: 'eaten at the palace', given: 'given away', dogs: 'lost to the dogs' };
+        activity.summary.push('\nEggs out:');
+        outflows.results.forEach(entry => {
+            activity.summary.push(`- ${entry.count} ${labels[entry.kind] || entry.kind}${entry.notes ? ` (${entry.notes})` : ''}`);
+        });
+    }
+
     // Get weather for this date
     const weather = await db.prepare(`
         SELECT temp_high_f, temp_low_f, conditions, precipitation_inches

@@ -3490,3 +3490,155 @@ button.heat-cell:focus-visible {
     color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
 }
+
+/* The Eggconomy */
+.eggconomy-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.75rem;
+    margin: 0.1rem 0 0;
+}
+
+.eggconomy-tagline {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    margin-top: 0.35rem;
+}
+
+.eggconomy-fineprint {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0.25rem 0 1rem;
+}
+
+.eggconomy-header .stat-tiles {
+    margin-bottom: 0;
+}
+
+.market-sentiment {
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    background: var(--badge-bg);
+    color: var(--badge-text);
+    white-space: nowrap;
+}
+
+.market-sentiment[data-sentiment="bullish"] {
+    background: rgba(63, 143, 79, 0.16);
+    color: #2F6B3B;
+}
+
+.market-sentiment[data-sentiment="bearish"] {
+    background: rgba(180, 60, 50, 0.14);
+    color: #9A3329;
+}
+
+@media (prefers-color-scheme: dark) {
+    .market-sentiment[data-sentiment="bullish"] { color: #8FCB99; }
+    .market-sentiment[data-sentiment="bearish"] { color: #F0A097; }
+}
+
+.egg-exchange .ticker {
+    display: block;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+}
+
+.rating-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.3rem;
+}
+
+.change {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.change--up { color: #2F6B3B; }
+.change--down { color: #9A3329; }
+
+.rating-chip {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.rating-reason {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.exchange-footnote {
+    margin-top: 0.75rem;
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+.exchange-key {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.market-headline {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.4rem;
+    line-height: 1.25;
+    margin: 0.25rem 0 0.75rem;
+}
+
+.market-body {
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+}
+
+
+
+@media (prefers-color-scheme: dark) {
+    .change--up { color: #8FCB99; }
+    .change--down { color: #F0A097; }
+}
+
+.eggconomy-subhead {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin: 1.25rem 0 0.5rem;
+}
+
+.trade-balance {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.stock-form {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.stock-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0 0;
+}
+
+.stock-row input {
+    flex: 1;
+}

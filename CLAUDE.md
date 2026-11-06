@@ -63,6 +63,8 @@ The D1 database contains these tables:
 - `photo_chickens`: Photo tags (photo_id, chicken_id, source 'manual' or 'caption' for tags auto-suggested from captions)
 - `blotter`: The Palace Blotter, short incident reports (date, optional time, suspect, description, outcome such as 'Fled the scene' or 'Apprehended'); filed from the admin Log tab and included in that day's dispatch
 - `page_visits`: Raw daily visit counts for the public site (date, visits); no visitor details are stored
+- `egg_outflows`: Where eggs went (date, kind `eaten`/`given`/`dogs`, count, notes), plus `stock` rows that record eggs on hand. National Reserves = latest stock count + eggs laid after that day − eggs out logged after the count. Logged from the admin Log tab (Eggs Out card)
+- `market_reports`: Weekly Eggconomy market report (one row per `week_start`; covers the full week before it). Hens' stock symbols live in `chickens.ticker`
 - `recipes`: Weekly egg recipe for "Clucky's Kitchen" (one row per `week_start`, Monday, Central time; `ingredients`/`steps` are JSON arrays)
 - `meter_entries`: Generic daily meters (meter key, date, score 0-5, notes). Meter definitions live in `functions/api/_meters.js` (Rudy meter and chick milestones are retired; set `active: true` on a new meter to show its form in admin). Older meter entries were stored as `RUDY_METER::`/`CHICK_MILESTONE::` prefixed notes; those rows remain but are filtered out of notes everywhere.
 
@@ -97,6 +99,9 @@ All API endpoints follow Cloudflare Pages Functions conventions:
 
 - `/api/blotter` - GET `{ entries, report }` (report = this year's incidents, arrests, and active flock as "unconcerned residents"); POST (protected) adds an entry, `{ id, delete: true }` removes one
 - `/api/visits` - GET `{ total, today, since }`; POST counts a visit (skipped for logged-in admin sessions). The public page posts at most once per browser per day and never from a browser that has opened admin or visited `/blog.html?notme`
+
+- `/api/egg-outflows` - GET recent eggs-out entries and stock counts; POST (protected) `{ date, kind, count, notes }` adds one, `{ id, delete: true }` removes one
+- `/api/eggconomy` - GET satirical economic indicators from real egg counts (GDP = eggs in the last 7 days, eggflation = % change vs the prior 7 days, eggployment = share of layers who laid, productivity = eggs per hen, volatility, national reserves, domestic consumption/exports/write-offs from `egg_outflows`, trade deficit), the Hensington Stock Eggchange (per-hen 7-day output and change, ratings BUY/HOLD/WATCH/NEW LISTING/TRADING HALTED for molting/UNDER INVESTIGATION/DORMANT), and the weekly AI market report (written on the first request of the week)
 
 #### Expenses Tracking
 - `/api/feed-purchases` - POST to log feed purchases, GET to retrieve recent 50 records
@@ -216,7 +221,7 @@ Frontend uses tab switching without page reloads and Marked.js (v11.1.1) for mar
   - Auto-refreshes every 60 seconds
   - CSS uses `word-spacing: 100vw` on chicken names to force two-line display for alignment across cards
 - **`/blog.html`**: The main public site (`/` redirects here), loaded via `status-page-vN.js` → `blog.js` cache-busting redirects in `_redirects`
-  - Hash-routed tabs: `#today` (headline banner, latest dispatch, stat tiles, egg carton, recipe teaser, Palace Security Report, photo strip, flock cards, egg calendar), `#blog` (Palace Blotter, then dispatches), `#photos` (gallery with per-chicken filter + lightbox), `#recipes` (this week's recipe and archive; `#recipes/<week_start>` for a past one), `#flock` (profiles, egg leaderboard, cost per egg, camera favorites, eggs-vs-daylight chart, time-outside-vs-weather chart with weekends highlighted, flock history), `#history`, `#poetry`
+  - Hash-routed tabs: `#today` (headline banner, latest dispatch, stat tiles, egg carton, recipe teaser, Palace Security Report, photo strip, flock cards, egg calendar), `#blog` (Palace Blotter, then dispatches), `#photos` (gallery with per-chicken filter + lightbox), `#eggconomy` (indicators, stock exchange, weekly market report), `#recipes` (this week's recipe and archive; `#recipes/<week_start>` for a past one), `#flock` (profiles, egg leaderboard, cost per egg, camera favorites, eggs-vs-daylight chart, time-outside-vs-weather chart with weekends highlighted, flock history), `#history`, `#poetry`
   - `#hen/<id>` opens a chicken profile: bio, stats, personal egg calendar, tagged photos
   - Old `#status` links land on `#today`
 
