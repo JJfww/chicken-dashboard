@@ -64,7 +64,7 @@ The D1 database contains these tables:
 - `blotter`: The Palace Blotter, short incident reports (date, optional time, suspect, description, outcome such as 'Fled the scene' or 'Apprehended'); filed from the admin Log tab and included in that day's dispatch
 - `page_visits`: Raw daily visit counts for the public site (date, visits); no visitor details are stored
 - `egg_outflows`: Where eggs went (date, kind `eaten`/`given`/`dogs`, count, notes), plus `stock` rows that record eggs on hand. National Reserves = latest stock count + eggs laid after that day − eggs out logged after the count. Logged from the admin Log tab (Eggs Out card)
-- `market_reports`: Weekly Eggconomy market report (one row per `week_start`; covers the full week before it). Hens' stock symbols live in `chickens.ticker`
+- `market_reports`: Weekly Eggconomy market report (one row per `week_start`, which holds the Friday it was published; covers the seven days before it, Friday-Thursday). Hens' stock symbols live in `chickens.ticker`
 - `recipes`: Weekly egg recipe for "Clucky's Kitchen" (one row per `week_start`, Monday, Central time; `ingredients`/`steps` are JSON arrays)
 - `meter_entries`: Generic daily meters (meter key, date, score 0-5, notes). Meter definitions live in `functions/api/_meters.js` (Rudy meter and chick milestones are retired; set `active: true` on a new meter to show its form in admin). Older meter entries were stored as `RUDY_METER::`/`CHICK_MILESTONE::` prefixed notes; those rows remain but are filtered out of notes everywhere.
 
@@ -101,7 +101,7 @@ All API endpoints follow Cloudflare Pages Functions conventions:
 - `/api/visits` - GET `{ total, today, since }`; POST counts a visit (skipped for logged-in admin sessions). The public page posts at most once per browser per day and never from a browser that has opened admin or visited `/blog.html?notme`
 
 - `/api/egg-outflows` - GET recent eggs-out entries and stock counts; POST (protected) `{ date, kind, count, notes }` adds one, `{ id, delete: true }` removes one
-- `/api/eggconomy` - GET satirical economic indicators from real egg counts (GDP = eggs in the last 7 days, eggflation = % change vs the prior 7 days, eggployment = share of layers who laid, productivity = eggs per hen, volatility, national reserves, domestic consumption/exports/write-offs from `egg_outflows`, trade deficit), the Hensington Stock Eggchange (per-hen 7-day output and change, ratings BUY/HOLD/WATCH/NEW LISTING/TRADING HALTED for molting/UNDER INVESTIGATION/DORMANT), and the weekly AI market report (written on the first request of the week)
+- `/api/eggconomy` - GET satirical economic indicators from real egg counts (GDP = eggs in the last 7 days, eggflation = % change vs the prior 7 days, eggployment = share of layers who laid, productivity = eggs per hen, volatility, national reserves, domestic consumption/exports/write-offs from `egg_outflows`, trade deficit), the Hensington Stock Eggchange (per-hen 7-day output and change, ratings BUY/HOLD/WATCH/NEW LISTING/TRADING HALTED for molting/UNDER INVESTIGATION/DORMANT), and the weekly AI market report (written on the first request on or after Friday)
 
 #### Expenses Tracking
 - `/api/feed-purchases` - POST to log feed purchases, GET to retrieve recent 50 records
@@ -117,6 +117,8 @@ All API endpoints follow Cloudflare Pages Functions conventions:
   - Uses OpenRouter API with Google Gemini 3 Flash Preview model
   - Returns error if no activity found for specified date
   - Sets `is_auto_generated` flag to 1
+- `/api/blog/scheduled` - POST `?date=YYYY-MM-DD` (Bearer `WEATHER_LOG_TOKEN`) publishes an automatic edition: Wednesday = midweek edition (Monday-Wednesday), Sunday = Sunday edition (Thursday-Sunday plus a Week in Review of Monday-Sunday). Skips dates that already have a post. Called by `.github/workflows/scheduled-updates.yml`
+- `/api/blog` POST `{ id, delete: true }` removes a post (Delete button in the admin Blog tab)
 - `/api/blog/rss` - GET returns RSS 2.0 XML feed of the 20 most recent blog posts
   - Public endpoint (no auth required)
   - Content-Type: `application/rss+xml`
@@ -304,6 +306,14 @@ The app automatically logs daily weather data via a GitHub Actions cron workflow
 9. **Backfill**: `scripts/backfill-weather.js` uses the Open-Meteo archive API to backfill historical gaps
 
 The `WEATHER_LOG_TOKEN` secret must be set in both Cloudflare (environment variable) and GitHub (repository secret).
+
+### Automatic Publishing Schedule
+`.github/workflows/scheduled-updates.yml` (times Central):
+- **Sunday ~9:30 PM**: Sunday edition of the blog (Thursday-Sunday + Week in Review)
+- **Monday ~6 AM**: requests `/api/recipe` so the week's recipe is written
+- **Wednesday ~9:30 PM**: midweek edition of the blog (Monday-Wednesday)
+- **Friday ~6 AM**: requests `/api/eggconomy` so the market report is written
+Daily logs (eggs, blotter, photos, notes) update the site live. The admin Auto-Generate button still drafts a single-day post for review. Run the workflow manually with a date to post a missed edition.
 
 ### Expenses Tracking System
 Three expense categories are tracked:

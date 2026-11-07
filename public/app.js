@@ -1247,7 +1247,9 @@ async function loadBlogPosts(append = false) {
                             ${isAuto ? '<span style="font-size: 0.8rem; opacity: 0.7;"> (AI-Generated)</span>' : ''}
                         </div>
                         <div class="activity-details blog-content">${marked.parse(post.content || '')}</div>
-                        <div class="activity-date">${formatDate(post.date)}</div>
+                        <div class="activity-date">${formatDate(post.date)}
+                            <button type="button" class="chip blog-delete" data-id="${post.id}">Delete</button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1276,6 +1278,26 @@ async function loadBlogPosts(append = false) {
         feed.innerHTML = '<p class="loading">Network error loading blog posts.</p>';
     }
 }
+
+document.getElementById('blog-feed').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.blog-delete');
+    if (!btn || !confirm('Delete this post from the public blog?')) return;
+    btn.disabled = true;
+    try {
+        const response = await fetch('/api/blog', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ id: Number(btn.dataset.id), delete: true })
+        });
+        if (!response.ok) throw new Error();
+        showMessage('success', 'Post deleted.');
+        loadBlogPosts();
+    } catch (error) {
+        btn.disabled = false;
+        showMessage('error', 'Could not delete the post.');
+    }
+});
 
 function loadMoreAdminBlogPosts() {
     loadBlogPosts(true);

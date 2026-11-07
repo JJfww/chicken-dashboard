@@ -1,11 +1,17 @@
 import { generateJson } from './_ai.js';
-import { computeStreak, getTodayCST, isLayer, jsonResponse, loadChickens, shiftDate, weekStartFor } from './_flock.js';
+import { computeStreak, getTodayCST, isLayer, jsonResponse, loadChickens, shiftDate } from './_flock.js';
 
 // Real egg counts under satirical economic labels. Indicators use rolling 7-day windows;
-// the market report covers the last full Monday-Sunday week and is written once per week.
+// the market report is written once a week on Friday and covers the seven days before it (Friday-Thursday).
 
 const MOLT_HALT_DAYS = 21;
 const NEW_LISTING_DAYS = 21;
+
+// Most recent Friday on or before the date (the report's publication day, stored as week_start).
+function reportDateFor(date) {
+    const dayOfWeek = new Date(`${date}T12:00:00Z`).getUTCDay();
+    return shiftDate(date, -((dayOfWeek + 2) % 7));
+}
 
 function sumBetween(rows, from, to) {
     return rows.filter(row => row.date >= from && row.date <= to).reduce((sum, row) => sum + row.count, 0);
@@ -192,8 +198,8 @@ export async function onRequestGet(context) {
             trade_deficit: flows.eaten + flows.given + flows.dogs - gdp
         };
 
-        // Weekly market report, written on the first request of the week.
-        const weekStart = weekStartFor(today);
+        // Weekly market report, written on the first request on or after Friday.
+        const weekStart = reportDateFor(today);
         let report = await db.prepare('SELECT week_start, headline, body FROM market_reports WHERE week_start = ?').bind(weekStart).first();
         if (!report) {
             try {

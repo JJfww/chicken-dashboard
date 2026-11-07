@@ -1,5 +1,6 @@
 import { requireSession } from '../_auth.js';
 import { METERS, describeMeterEntry } from '../_meters.js';
+import { shiftDate } from '../_flock.js';
 
 export async function onRequestOptions() {
     return new Response(null, {
@@ -14,6 +15,12 @@ export async function onRequestOptions() {
     });
 }
 
+const JSON_HEADERS = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+    'Access-Control-Allow-Credentials': 'true'
+};
+
 export async function onRequestPost(context) {
     // Require authentication
     const authError = await requireSession(context.request, context.env);
@@ -23,57 +30,75 @@ export async function onRequestPost(context) {
         const { date } = await context.request.json();
 
         if (!date) {
-            return new Response(JSON.stringify({ error: 'Date is required' }), {
-                status: 400,
-                headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
-                'Access-Control-Allow-Credentials': 'true'
-            }
-            });
+            return new Response(JSON.stringify({ error: 'Date is required' }), { status: 400, headers: JSON_HEADERS });
         }
 
-        // Gather all activity for the specified date
-        const activityData = await gatherDailyActivity(context.env.DB, date);
+        const dispatch = await generateDispatch(context.env, date);
 
-        if (!activityData.hasActivity) {
+        if (!dispatch) {
             return new Response(JSON.stringify({
                 error: 'No activity found for this date',
                 suggestion: 'Try selecting a different date with logged activities.'
-            }), {
-                status: 404,
-                headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
-                'Access-Control-Allow-Credentials': 'true'
-            }
-            });
+            }), { status: 404, headers: JSON_HEADERS });
         }
 
-        // Check if it's Sunday for weekly recap
-        const dateObj = new Date(date + 'T12:00:00');
-        const isSunday = dateObj.getDay() === 0;
+        return new Response(JSON.stringify({ ...dispatch, date, is_auto_generated: true }), { status: 200, headers: JSON_HEADERS });
+    } catch (error) {
+        console.error('Blog generation error:', error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: JSON_HEADERS });
+    }
+}
 
-        // Egg images come from the chickens table, so new layers are picked up automatically.
-        const { results: eggImageRows } = await context.env.DB.prepare(`
-            SELECT COALESCE(display_name, name) AS name, egg_image_url FROM chickens
-            WHERE status = 'active' AND egg_image_url IS NOT NULL AND egg_image_url != ''
-            ORDER BY sort_order, id
-        `).all();
-        const eggImageList = eggImageRows.map(row => `  - ${row.name}: ![egg](${row.egg_image_url})`).join('\n');
-        const eggImageExample = eggImageRows[0]
-            ? `"${eggImageRows[0].name} gifted us a lovely ![egg](${eggImageRows[0].egg_image_url}) this morning"`
-            : '';
+function formatDay(date, options) {
+    return new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', { timeZone: 'UTC', ...options });
+}
 
-        // Build the AI prompt for blog generation
-        const systemPrompt = `You are Clucky, the royal correspondent for The Clucking Times, filing dispatches from Hensington Palace. Write a vivid, witty daily dispatch about the flock's activities.
+// Writes a dispatch for one day, or for the days from `from` through `date` (the scheduled
+// Wednesday and Sunday editions). Returns { title, content }, or null when nothing was logged.
+export async function generateDispatch(env, date, { from = date } = {}) {
+    const days = [];
+    for (let day = from; day <= date; day = shiftDate(day, 1)) days.push(day);
+    const daily = await Promise.all(days.map(day => gatherDailyActivity(env.DB, day)));
+    const active = days.map((day, i) => ({ day, ...daily[i] })).filter(entry => entry.hasActivity);
+    if (!active.length) return null;
+
+    const isSunday = new Date(`${date}T12:00:00Z`).getUTCDay() === 0;
+    const mode = from === date ? 'day' : isSunday ? 'weekly' : 'midweek';
+    const weeklySummary = isSunday ? await gatherWeeklySummary(env.DB, date) : null;
+    const rangeLabel = `${formatDay(from, { weekday: 'long', month: 'long', day: 'numeric' })} through ${formatDay(date, { weekday: 'long', month: 'long', day: 'numeric' })}`;
+    const activitySummary = mode === 'day'
+        ? active[0].summary
+        : active.map(entry => `=== ${formatDay(entry.day, { weekday: 'long', month: 'long', day: 'numeric' })} ===\n${entry.summary}`).join('\n\n');
+
+    // Egg images come from the chickens table, so new layers are picked up automatically.
+    const { results: eggImageRows } = await env.DB.prepare(`
+        SELECT COALESCE(display_name, name) AS name, egg_image_url FROM chickens
+        WHERE status = 'active' AND egg_image_url IS NOT NULL AND egg_image_url != ''
+        ORDER BY sort_order, id
+    `).all();
+    const eggImageList = eggImageRows.map(row => `  - ${row.name}: ![egg](${row.egg_image_url})`).join('\n');
+    const eggImageExample = eggImageRows[0]
+        ? `"${eggImageRows[0].name} gifted us a lovely ![egg](${eggImageRows[0].egg_image_url}) this morning"`
+        : '';
+
+    const assignment = {
+        day: 'Write a vivid, witty daily dispatch about the flock\'s activities.',
+        midweek: `Write the Wednesday midweek edition: a vivid, witty dispatch covering the flock's week so far (${rangeLabel}).`,
+        weekly: `Write the Sunday edition: a vivid, witty dispatch covering the flock's days since the midweek edition (${rangeLabel}), followed by the Week in Review.`
+    }[mode];
+    const lengthRule = mode === 'day'
+        ? '- Match your post length to the amount of data: light data days = shorter posts (75-150 words), busy days = longer posts (150-250 words).'
+        : `- This edition covers several days. Lead with the biggest stories and refer to days by weekday name; do not march through every day, and skip quiet days. Aim for 200-350 words${mode === 'weekly' ? ' before the Week in Review' : ''}.`;
+
+    // Build the AI prompt for blog generation
+    const systemPrompt = `You are Clucky, the royal correspondent for The Clucking Times, filing dispatches from Hensington Palace. ${assignment}
 
 CRITICAL RULES:
 - ONLY write about activities that are explicitly listed in the data below. Do NOT invent or assume activities that aren't recorded.
 - If there's no free range time in the data, do NOT mention free range time.
 - In this app, "free range" means time outside the run. Time spent inside the run or inside the coop does NOT count as free range.
 - If there's no feeding data, do NOT mention treats or snacks.
-- Match your post length to the amount of data: light data days = shorter posts (75-150 words), busy days = longer posts (150-250 words).
+${lengthRule}
 
 Voice and style:
 - Write in first person as a reporter narrating the day at Hensington Palace
@@ -111,97 +136,71 @@ Structure guidance:
 ${isSunday ? `SUNDAY SPECIAL - Weekly Recap:
 Since it's Sunday, include a brief "Week in Review" section summarizing the week's egg production totals and any notable events from the weekly data provided below.
 
-Weekly summary:
-${activityData.weeklySummary || 'No weekly data available'}
+Weekly summary (Monday through Sunday):
+${weeklySummary || 'No weekly data available'}
 ` : ''}
-Activity data for ${date}:
-${activityData.summary}
+Activity data for ${mode === 'day' ? date : `${rangeLabel}, day by day`}:
+${activitySummary}
 
-Write a delightful dispatch about this day!`;
+Write a delightful dispatch!`;
 
-        // Call OpenRouter API
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${context.env.OPENROUTER_API_KEY}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://chicken-dashboard.pages.dev',
-                'X-Title': 'Chicken Dashboard'
-            },
-            body: JSON.stringify({
-                model: 'google/gemini-2.5-flash-lite',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: 'Write the blog post!' }
-                ],
-                temperature: 0.9, // Higher creativity for fun blog posts
-                max_tokens: 500
-            })
-        });
+    // Call OpenRouter API
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://chicken-dashboard.pages.dev',
+            'X-Title': 'Chicken Dashboard'
+        },
+        body: JSON.stringify({
+            // The multi-day editions use the stronger model; it follows the egg-image rule more reliably.
+            model: mode === 'day' ? 'google/gemini-2.5-flash-lite' : 'google/gemini-2.5-flash',
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: 'Write the blog post!' }
+            ],
+            temperature: 0.9, // Higher creativity for fun blog posts
+            max_tokens: mode === 'day' ? 500 : 1000
+        })
+    });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`OpenRouter API error (${response.status}): ${errorText}`);
-        }
-
-        const data = await response.json();
-        const blogContent = data?.choices?.[0]?.message?.content?.trim();
-
-        if (!blogContent) {
-            throw new Error('OpenRouter returned an empty blog response');
-        }
-
-        // Generate a headline from the dispatch topics and date.
-        const title = generateTitle(blogContent, date);
-
-        // Include photo/video in content if one was taken that day
-        let finalContent = blogContent;
-        if (activityData.photoId) {
-            if (activityData.photoMediaType === 'video') {
-                finalContent = `<video controls playsinline style="max-width:100%;border-radius:8px;margin-bottom:1rem;"><source src="/api/photos/${activityData.photoId}" type="video/mp4"></video>\n\n${blogContent}`;
-            } else {
-                finalContent = `![Photo from the day](/api/photos/${activityData.photoId})\n\n${blogContent}`;
-            }
-        }
-
-        return new Response(JSON.stringify({
-            title,
-            content: finalContent,
-            date,
-            is_auto_generated: true
-        }), {
-            status: 200,
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
-                'Access-Control-Allow-Credentials': 'true'
-            }
-        });
-    } catch (error) {
-        console.error('Blog generation error:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
-                'Access-Control-Allow-Credentials': 'true'
-            }
-        });
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OpenRouter API error (${response.status}): ${errorText}`);
     }
+
+    const data = await response.json();
+    const blogContent = data?.choices?.[0]?.message?.content?.trim();
+
+    if (!blogContent) {
+        throw new Error('OpenRouter returned an empty blog response');
+    }
+
+    const title = mode === 'weekly'
+        ? `The Sunday Edition: Week of ${formatDay(shiftDate(date, -6), { month: 'long', day: 'numeric' })}`
+        : mode === 'midweek'
+            ? `Midweek Dispatch: ${formatDay(from, { month: 'short', day: 'numeric' })}–${formatDay(date, from.slice(0, 7) === date.slice(0, 7) ? { day: 'numeric' } : { month: 'short', day: 'numeric' })}`
+            : generateTitle(blogContent, date);
+
+    // Lead with one photo/video from the covered days, if any were taken
+    const withMedia = active.filter(entry => entry.photoId);
+    const media = withMedia[Math.floor(Math.random() * withMedia.length)];
+    let content = blogContent;
+    if (media?.photoMediaType === 'video') {
+        content = `<video controls playsinline style="max-width:100%;border-radius:8px;margin-bottom:1rem;"><source src="/api/photos/${media.photoId}" type="video/mp4"></video>\n\n${blogContent}`;
+    } else if (media) {
+        content = `![Photo from the day](/api/photos/${media.photoId})\n\n${blogContent}`;
+    }
+
+    return { title, content };
 }
 
 async function gatherDailyActivity(db, date) {
     const activity = {
         hasActivity: false,
-        summary: [],
-        weeklySummary: null
+        summary: []
     };
-
-    // Check if it's Sunday - if so, gather weekly recap
-    const dateObj = new Date(date + 'T12:00:00');
-    if (dateObj.getDay() === 0) {
-        activity.weeklySummary = await gatherWeeklySummary(db, date);
-    }
 
     // Get eggs for this date (include time and egg color)
     const eggs = await db.prepare(`
@@ -382,7 +381,6 @@ async function gatherDailyActivity(db, date) {
         summary: activity.summary.join('\n'),
         photoId: activity.photoId || null,
         photoMediaType: activity.photoMediaType || null,
-        weeklySummary: activity.weeklySummary,
         eggLayers: activity.eggLayers || []
     };
 }
@@ -400,11 +398,11 @@ async function gatherWeeklySummary(db, sundayDate) {
 
     // Weekly egg totals by chicken
     const eggs = await db.prepare(`
-        SELECT c.name, COUNT(*) as count
+        SELECT COALESCE(c.display_name, c.name) AS name, SUM(e.count) as count
         FROM eggs e
         JOIN chickens c ON e.chicken_id = c.id
         WHERE e.date BETWEEN ? AND ?
-        GROUP BY c.name
+        GROUP BY c.id
         ORDER BY count DESC
     `).bind(startDate, endDate).all();
 
@@ -444,7 +442,7 @@ async function gatherWeeklySummary(db, sundayDate) {
 
     // Any health observations
     const health = await db.prepare(`
-        SELECT h.observation_type, h.description, c.name, h.date
+        SELECT h.observation_type, h.description, COALESCE(c.display_name, c.name) AS name, h.date
         FROM health_observations h
         LEFT JOIN chickens c ON h.chicken_id = c.id
         WHERE h.date BETWEEN ? AND ?

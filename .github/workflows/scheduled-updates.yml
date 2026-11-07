@@ -1,0 +1,58 @@
+name: Scheduled Updates
+
+on:
+  schedule:
+    # Sunday and Wednesday editions of the blog at 9:30 PM Central. Cron runs in UTC, so
+    # there's one entry for daylight time (02:30 UTC) and one for standard time (03:30 UTC);
+    # the job skips whichever doesn't match the current offset.
+    - cron: '30 2 * * 1,4'
+    - cron: '30 3 * * 1,4'
+    # Monday's recipe and Friday's market report are written on first request; this
+    # requests them each morning so they're ready before anyone visits.
+    # 12:00 UTC = 6 AM CST / 7 AM CDT.
+    - cron: '0 12 * * 1,5'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Post the edition for this date (YYYY-MM-DD, a Sunday or Wednesday)'
+        required: true
+
+jobs:
+  blog-edition:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 2 * * 1,4' || github.event.schedule == '30 3 * * 1,4'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the blog edition
+        run: |
+          # GitHub can delay scheduled runs by hours; six hours back still lands on Sunday/Wednesday.
+          post_date="${{ github.event.inputs.date }}"
+          schedule="${{ github.event.schedule }}"
+          offset=$(TZ=America/Chicago date +%z)
+          if { [ "$schedule" = '30 2 * * 1,4' ] && [ "$offset" != '-0500' ]; } || \
+             { [ "$schedule" = '30 3 * * 1,4' ] && [ "$offset" != '-0600' ]; }; then
+            echo "Not 9:30 PM Central under the current offset ($offset); skipping."
+            exit 0
+          fi
+          if [ -z "$post_date" ]; then
+            post_date=$(TZ=America/Chicago date -d '6 hours ago' +%F)
+          fi
+          body_file=$(mktemp)
+          http_status=$(curl -sS -o "$body_file" -w "%{http_code}" -X POST \
+            "https://chicken-dashboard.pages.dev/api/blog/scheduled?date=$post_date" \
+            -H "Authorization: Bearer ${{ secrets.WEATHER_LOG_TOKEN }}")
+          echo "HTTP $http_status: $(cat "$body_file")"
+          if [ "$http_status" -ge 400 ]; then
+            echo "::error::Blog edition failed with HTTP $http_status"
+            exit 1
+          fi
+
+  weekly-features:
+    if: github.event.schedule == '0 12 * * 1,5'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write this week's recipe and market report
+        run: |
+          for endpoint in recipe eggconomy; do
+            http_status=$(curl -sS -o /dev/null -w "%{http_code}" "https://chicken-dashboard.pages.dev/api/$endpoint")
+            echo "/api/$endpoint: HTTP $http_status"
+          done

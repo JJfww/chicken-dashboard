@@ -19,7 +19,20 @@ export async function onRequestPost(context) {
     if (authError) return authError;
 
     try {
-        const { date, title, content, is_auto_generated } = await context.request.json();
+        const { id, delete: remove, date, title, content, is_auto_generated } = await context.request.json();
+
+        // { id, delete: true } removes a post (e.g. an automatic edition that missed the mark)
+        if (id && remove) {
+            await context.env.DB.prepare('DELETE FROM blog_posts WHERE id = ?').bind(id).run();
+            return new Response(JSON.stringify({ success: true }), {
+                status: 200,
+                headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+                'Access-Control-Allow-Credentials': 'true'
+            }
+            });
+        }
 
         // Validate required fields
         if (!date || !content) {
