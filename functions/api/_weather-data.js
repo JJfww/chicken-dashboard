@@ -1,7 +1,7 @@
 // Weather data fetcher utility for the US National Weather Service
 // Aggregates daily observations for a given date
 
-const WEATHER_USER_AGENT = 'chicken-dashboard (contact: jennier.burnes@gmail.com)';
+const WEATHER_USER_AGENT = 'chicken-dashboard (contact: jennifer.burnes@gmail.com)';
 const LATITUDE = 38.97;
 const LONGITUDE = -95.24;
 const TIME_ZONE = 'America/Chicago';

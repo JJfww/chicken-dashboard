@@ -3,7 +3,7 @@ export async function onRequestGet(context) {
         // Lawrence, KS coordinates (66044)
         const latitude = 38.97;
         const longitude = -95.24;
-        const userAgent = 'chicken-dashboard (contact: jennier.burnes@gmail.com)';
+        const userAgent = 'chicken-dashboard (contact: jennifer.burnes@gmail.com)';
 
         // Fetch weather from the US National Weather Service (no API key needed)
         const pointsUrl = `https://api.weather.gov/points/${latitude},${longitude}`;

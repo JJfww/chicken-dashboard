@@ -17,10 +17,11 @@ A mobile-friendly app to track your backyard chickens!
 - **Mamma Mia** - Brown-olive eggs
 - **Brown Betty** - Green eggs
 - **Madame Pompadour** - Eggshell-colored eggs
-- **Velma** - Young pullet
+- **Vinnie** - Young cockerel, protector and leader of the flock (first thought to be a pullet named Velma)
 - **Peppercorn** - All-black pullet with a black puffball crest
 - **Salty** - White/yellow pullet with a white puffball crest, last to hatch
-- **Gomez** - Young black rooster
+
+Former flock members: **Rudy**, rooster and chick dad (until May 2026), and **Gomez**, rehomed to lead his own flock in July 2026.
 
 ## Tech Stack
 
