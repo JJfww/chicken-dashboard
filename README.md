@@ -12,13 +12,15 @@ A mobile-friendly app to track your backyard chickens!
 - Automatic weather data for Lawrence, KS (66044)
 - AI chat assistant powered by GPT-4
 
-## Your Flock
+## The Flock
 
 - **Mamma Mia** - Brown-olive eggs
 - **Brown Betty** - Green eggs
 - **Madame Pompadour** - Eggshell-colored eggs
-- **Velma** - Young pullet, likely to start laying in fall 2026
-- **The Chicks** - Three chicks hatched on May 24, 25, and 26, 2026
+- **Velma** - Young pullet
+- **Peppercorn** - All-black pullet with a black puffball crest
+- **Salty** - White/yellow pullet with a white puffball crest, last to hatch
+- **Gomez** - Young black rooster
 
 ## Tech Stack
 
@@ -35,7 +37,7 @@ A mobile-friendly app to track your backyard chickens!
 # Install dependencies
 npm install
 
-# Run locally
+# Run locally (put secrets in .dev.vars, which is git-ignored)
 npx wrangler pages dev public
 
 # Deploy
@@ -52,3 +54,15 @@ chicken-dashboard/
 ├── wrangler.toml    # Cloudflare configuration
 └── package.json     # Node dependencies
 ```
+
+## Secrets
+
+Set these with `npx wrangler pages secret put <NAME>` (or in `.dev.vars` for local development). Never commit them.
+
+- `ADMIN_PASSWORD` - dashboard login, also used to sign session cookies
+- `OPENROUTER_API_KEY` - AI chat, poetry, and blog features
+- `WEATHER_LOG_TOKEN` - bearer token for the daily weather-logging GitHub Action
+
+## License
+
+[MIT](LICENSE)
