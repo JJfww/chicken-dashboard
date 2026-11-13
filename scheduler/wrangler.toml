@@ -1,0 +1,20 @@
+# A tiny Worker whose only job is to call the site on schedule. Cloudflare cron triggers fire
+# on time; GitHub's scheduled workflows were starting 6-8 hours late.
+# Deploy from this folder: npx wrangler deploy
+name = "chicken-scheduler"
+main = "index.js"
+compatibility_date = "2024-12-16"
+workers_dev = false
+
+[vars]
+SITE_URL = "https://chicken-dashboard.pages.dev"
+
+# Cron runs in UTC, so each job has a daylight-time and a standard-time trigger; index.js
+# only acts on the one that lands at the intended Central time.
+[triggers]
+crons = [
+  "30 2 * * 1,4",  # 9:30 PM CDT Sunday/Wednesday
+  "30 3 * * 1,4",  # 9:30 PM CST Sunday/Wednesday
+  "0 11 * * 1,5",  # 6 AM CDT Monday/Friday
+  "0 12 * * 1,5"   # 6 AM CST Monday/Friday
+]

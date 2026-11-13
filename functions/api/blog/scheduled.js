@@ -1,8 +1,9 @@
 import { jsonResponse, shiftDate } from '../_flock.js';
 import { generateDispatch } from './generate.js';
 
-// POST /api/blog/scheduled?date=YYYY-MM-DD, called by the scheduled-updates workflow with the
-// WEATHER_LOG_TOKEN bearer token. Publishes the automatic editions:
+// POST /api/blog/scheduled?date=YYYY-MM-DD, called at 9:30 PM Central by the chicken-scheduler
+// Worker (scheduler/) with the SCHEDULER_TOKEN bearer token, or by hand through the
+// scheduled-updates workflow with WEATHER_LOG_TOKEN. Publishes the automatic editions:
 //   Wednesday: the midweek edition (Monday-Wednesday)
 //   Sunday: the Sunday edition (Thursday-Sunday, plus a Week in Review of Monday-Sunday)
 // Skips a date that already has a post, so reruns never double-post.
@@ -14,7 +15,8 @@ const EDITIONS = {
 export async function onRequestPost(context) {
     const { request, env } = context;
     const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/, '').trim();
-    if (!env.WEATHER_LOG_TOKEN || token !== env.WEATHER_LOG_TOKEN) {
+    const accepted = [env.SCHEDULER_TOKEN, env.WEATHER_LOG_TOKEN].filter(Boolean);
+    if (!token || !accepted.includes(token)) {
         return jsonResponse({ error: 'Unauthorized' }, 401);
     }
 

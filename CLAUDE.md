@@ -117,7 +117,7 @@ All API endpoints follow Cloudflare Pages Functions conventions:
   - Uses OpenRouter API with Google Gemini 3 Flash Preview model
   - Returns error if no activity found for specified date
   - Sets `is_auto_generated` flag to 1
-- `/api/blog/scheduled` - POST `?date=YYYY-MM-DD` (Bearer `WEATHER_LOG_TOKEN`) publishes an automatic edition: Wednesday = midweek edition (Monday-Wednesday), Sunday = Sunday edition (Thursday-Sunday plus a Week in Review of Monday-Sunday). Skips dates that already have a post. Called by `.github/workflows/scheduled-updates.yml`
+- `/api/blog/scheduled` - POST `?date=YYYY-MM-DD` (Bearer `SCHEDULER_TOKEN` or `WEATHER_LOG_TOKEN`) publishes an automatic edition: Wednesday = midweek edition (Monday-Wednesday), Sunday = Sunday edition (Thursday-Sunday plus a Week in Review of Monday-Sunday). Skips dates that already have a post. Called by the `chicken-scheduler` Worker
 - `/api/blog` POST `{ id, delete: true }` removes a post (Delete button in the admin Blog tab)
 - `/api/blog/rss` - GET returns RSS 2.0 XML feed of the 20 most recent blog posts
   - Public endpoint (no auth required)
@@ -308,12 +308,12 @@ The app automatically logs daily weather data via a GitHub Actions cron workflow
 The `WEATHER_LOG_TOKEN` secret must be set in both Cloudflare (environment variable) and GitHub (repository secret).
 
 ### Automatic Publishing Schedule
-`.github/workflows/scheduled-updates.yml` (times Central):
-- **Sunday ~9:30 PM**: Sunday edition of the blog (Thursday-Sunday + Week in Review)
-- **Monday ~6 AM**: requests `/api/recipe` so the week's recipe is written
-- **Wednesday ~9:30 PM**: midweek edition of the blog (Monday-Wednesday)
-- **Friday ~6 AM**: requests `/api/eggconomy` so the market report is written
-Daily logs (eggs, blotter, photos, notes) update the site live. The admin Auto-Generate button still drafts a single-day post for review. Run the workflow manually with a date to post a missed edition.
+The `chicken-scheduler` Cloudflare Worker (`scheduler/`, deploy with `npx wrangler deploy` from that folder) calls the site on cron triggers. GitHub scheduled workflows started 6-8 hours late, so they are not used for timing. Times Central (each job has a CDT and a CST trigger; the Worker acts only on the one that lands on the intended hour):
+- **Sunday 9:30 PM**: Sunday edition of the blog (Thursday-Sunday + Week in Review)
+- **Monday 6 AM**: requests `/api/recipe` so the week's recipe is written
+- **Wednesday 9:30 PM**: midweek edition of the blog (Monday-Wednesday)
+- **Friday 6 AM**: requests `/api/eggconomy` so the market report is written
+The Worker authenticates to `/api/blog/scheduled` with the `SCHEDULER_TOKEN` secret, set on both the Worker and the Pages project. Daily logs (eggs, blotter, photos, notes) update the site live. The admin Auto-Generate button still drafts a single-day post for review. To post a missed edition, run the `scheduled-updates.yml` workflow by hand with a date (it uses `WEATHER_LOG_TOKEN`).
 
 ### Expenses Tracking System
 Three expense categories are tracked:
