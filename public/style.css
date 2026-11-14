@@ -3391,6 +3391,17 @@ button.heat-cell:focus-visible {
     border-bottom: 1px solid var(--border-color);
 }
 
+.recipe-archive-list a {
+    color: var(--color-green);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.recipe-archive-list a:hover,
+.recipe-archive-list a[aria-current="page"] {
+    text-decoration: underline;
+}
+
 .recipe-archive-date {
     display: block;
     font-size: 0.8rem;

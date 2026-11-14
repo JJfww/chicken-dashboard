@@ -125,9 +125,20 @@ Respond with only a JSON object: {"headline": string, "body": string} with parag
 }
 
 // GET /api/eggconomy -> { indicators, exchange, unlisted, report }
+// GET /api/eggconomy?archive=1 -> list of market reports
+// GET /api/eggconomy?report=YYYY-MM-DD -> one past market report
 export async function onRequestGet(context) {
     try {
         const db = context.env.DB;
+        const params = new URL(context.request.url).searchParams;
+        if (params.get('archive')) {
+            const { results } = await db.prepare('SELECT week_start, headline FROM market_reports ORDER BY week_start DESC LIMIT 104').all();
+            return jsonResponse(results, 200, { 'Cache-Control': 'public, max-age=300' });
+        }
+        if (params.get('report')) {
+            const report = await db.prepare('SELECT week_start, headline, body FROM market_reports WHERE week_start = ?').bind(params.get('report')).first();
+            return report ? jsonResponse(report, 200, { 'Cache-Control': 'public, max-age=3600' }) : jsonResponse({ error: 'No report for that week' }, 404);
+        }
         const today = getTodayCST();
         const thisFrom = shiftDate(today, -6);
         const prevFrom = shiftDate(today, -13);

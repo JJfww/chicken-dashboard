@@ -879,6 +879,14 @@ const RouterManager = {
             window.scrollTo({ top: 0 });
             return;
         }
+        const reportMatch = hash.match(/^eggconomy\/(\d{4}-\d{2}-\d{2})$/);
+        if (reportMatch) {
+            this.stopRefresh();
+            this.show('eggconomy', 'eggconomy');
+            loadEggconomy(reportMatch[1]);
+            document.getElementById('market-report').scrollIntoView({ block: 'start' });
+            return;
+        }
         const recipeMatch = hash.match(/^recipes\/(\d{4}-\d{2}-\d{2})$/);
         if (recipeMatch) {
             this.stopRefresh();
@@ -1097,20 +1105,34 @@ function formatShortRange(weekStart) {
     return `${day(-7)} – ${day(-1)}`;
 }
 
-function renderMarketReport(report) {
+function renderMarketReport(report, { past = false } = {}) {
     const container = document.getElementById('market-report');
     if (!report) {
         container.innerHTML = '<p class="loading">The Financial Desk has not filed this week’s report yet.</p>';
         return;
     }
     container.innerHTML = `
+        ${past ? '<p><a href="#eggconomy" class="section-link">← This week’s report</a></p>' : ''}
         <p class="card-eyebrow">The Clucking Times · Financial Desk · Weekly report, ${escapeHtml(formatShortRange(report.week_start))}</p>
         <h2 class="market-headline">${escapeHtml(report.headline)}</h2>
         ${report.body.split(/\n\s*\n/).map(paragraph => `<p class="market-body">${escapeHtml(paragraph.trim())}</p>`).join('')}
     `;
 }
 
-async function loadEggconomy() {
+async function loadMarketArchive(selected) {
+    const list = document.getElementById('market-archive-list');
+    try {
+        const archive = await fetchJson('/api/eggconomy?archive=1');
+        list.innerHTML = archive.map(item => `
+            <li><a href="#eggconomy/${item.week_start}"${item.week_start === selected ? ' aria-current="page"' : ''}>${escapeHtml(item.headline)}</a> <span class="recipe-archive-date">${escapeHtml(formatShortRange(item.week_start))}</span></li>
+        `).join('');
+    } catch {
+        list.innerHTML = '';
+    }
+}
+
+// `week` shows a past market report in place of the current one; the indicators stay live.
+async function loadEggconomy(week) {
     const indicatorsEl = document.getElementById('eggconomy-indicators');
     try {
         const data = await fetchJson('/api/eggconomy');
@@ -1202,7 +1224,13 @@ async function loadEggconomy() {
             <p class="exchange-key">BUY: up on the prior week · HOLD: unchanged · WATCH: down · NEW LISTING: first egg in the last 3 weeks · TRADING HALTED: molting</p>
         `;
 
-        renderMarketReport(data.report);
+        if (week && week !== data.report?.week_start) {
+            const past = await fetchJson(`/api/eggconomy?report=${week}`).catch(() => null);
+            renderMarketReport(past, { past: true });
+        } else {
+            renderMarketReport(data.report);
+        }
+        loadMarketArchive(week || data.report?.week_start);
     } catch {
         indicatorsEl.innerHTML = renderSectionError('Markets closed', 'The Eggconomy could not be loaded right now.');
     }
