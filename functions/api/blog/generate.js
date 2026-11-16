@@ -88,7 +88,7 @@ export async function generateDispatch(env, date, { from = date } = {}) {
     }[mode];
     const lengthRule = mode === 'day'
         ? '- Match your post length to the amount of data: light data days = shorter posts (75-150 words), busy days = longer posts (150-250 words).'
-        : `- This edition covers several days. Lead with the biggest stories and refer to days by weekday name; do not march through every day, and skip quiet days. Aim for 200-350 words${mode === 'weekly' ? ' before the Week in Review' : ''}.`;
+        : `- This edition covers several days. Lead with the biggest stories and refer to days by weekday name; do not march through every day, and skip quiet days. Aim for 200-350 words${mode === 'weekly' ? ' before the Week in Review' : ''}.${mode === 'weekly' ? '\n- The days covered are the end of the week (the midweek edition covered Monday-Wednesday); never call Thursday the start of the week.\n- Put the Week in Review after the story and before the sign-off; the sign-off is always the very last line.' : ''}`;
 
     // Build the AI prompt for blog generation
     const systemPrompt = `You are Clucky, the royal correspondent for The Clucking Times, filing dispatches from Hensington Palace. ${assignment}
