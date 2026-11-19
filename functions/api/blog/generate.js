@@ -196,6 +196,14 @@ Write a delightful dispatch!`;
     return { title, content };
 }
 
+// '16:50' -> '4:50 PM'; anything else (e.g. free-text times) passes through unchanged
+function formatClock(time) {
+    const match = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(String(time || '').trim());
+    if (!match) return time;
+    const hours = Number(match[1]);
+    return `${hours % 12 || 12}:${match[2]} ${hours < 12 ? 'AM' : 'PM'}`;
+}
+
 async function gatherDailyActivity(db, date) {
     const activity = {
         hasActivity: false,
@@ -215,7 +223,7 @@ async function gatherDailyActivity(db, date) {
         activity.summary.push('Eggs laid:');
         activity.eggLayers = []; // Track which chickens laid eggs
         eggs.results.forEach(egg => {
-            const timeInfo = egg.time ? ` at ${egg.time}` : '';
+            const timeInfo = egg.time ? ` at ${formatClock(egg.time)}` : '';
             activity.summary.push(`- ${egg.name} (${egg.egg_color} egg)${timeInfo}${egg.weight_g ? `, weighed ${egg.weight_g} g` : ''}${egg.notes ? ' - ' + egg.notes : ''}`);
             if (!activity.eggLayers.includes(egg.name)) {
                 activity.eggLayers.push(egg.name);
@@ -234,7 +242,7 @@ async function gatherDailyActivity(db, date) {
         activity.hasActivity = true;
         activity.summary.push('\nFeeding:');
         feeding.results.forEach(feed => {
-            const timeInfo = feed.time ? ` at ${feed.time}` : '';
+            const timeInfo = feed.time ? ` at ${formatClock(feed.time)}` : '';
             activity.summary.push(`- ${feed.description} (${feed.feed_type})${timeInfo}${feed.notes ? ' - ' + feed.notes : ''}`);
         });
     }
@@ -254,7 +262,7 @@ async function gatherDailyActivity(db, date) {
             const hours = Math.floor(fr.duration_minutes / 60);
             const mins = fr.duration_minutes % 60;
             const durationFormatted = `${hours}:${mins.toString().padStart(2, '0')}`;
-            activity.summary.push(`- ${durationFormatted} (${fr.time_start} to ${fr.time_end})${fr.notes ? ' - ' + fr.notes : ''}`);
+            activity.summary.push(`- ${durationFormatted} (${formatClock(fr.time_start)} to ${formatClock(fr.time_end)})${fr.notes ? ' - ' + fr.notes : ''}`);
         });
     }
 
@@ -347,7 +355,7 @@ async function gatherDailyActivity(db, date) {
         activity.hasActivity = true;
         activity.summary.push('\nPalace Blotter (security incidents):');
         blotter.results.forEach(entry => {
-            activity.summary.push(`- ${entry.time ? `${entry.time}: ` : ''}${entry.suspect ? `Suspect: ${entry.suspect}. ` : ''}${entry.description}${entry.outcome ? ` (${entry.outcome})` : ''}`);
+            activity.summary.push(`- ${entry.time ? `${formatClock(entry.time)}: ` : ''}${entry.suspect ? `Suspect: ${entry.suspect}. ` : ''}${entry.description}${entry.outcome ? ` (${entry.outcome})` : ''}`);
         });
     }
 

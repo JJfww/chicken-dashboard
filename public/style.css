@@ -3656,3 +3656,8 @@ button.heat-cell:focus-visible {
 .stock-row input {
     flex: 1;
 }
+
+/* Clear the sticky tab bar when a dispatch is linked directly (#blog/post-<id>) */
+.blog-post {
+    scroll-margin-top: 5.5rem;
+}

@@ -149,7 +149,7 @@ async function loadLatestDispatch() {
         const words = stripMarkdown(post.content).split(' ');
         const excerpt = words.slice(0, 55).join(' ') + (words.length > 55 ? '…' : '');
         container.innerHTML = `
-            <a class="lead-story-link" href="#blog">
+            <a class="lead-story-link" href="#blog/post-${post.id}">
                 ${leadImage && !/<video/.test(post.content) ? `<img class="lead-story-image" src="/api/photos/${leadImage[1]}" alt="" loading="lazy">` : ''}
                 <div class="lead-story-body">
                     <p class="lead-story-kicker">Latest dispatch · ${escapeHtml(formatShortDate(post.date))}</p>
@@ -879,6 +879,15 @@ const RouterManager = {
             window.scrollTo({ top: 0 });
             return;
         }
+        const postMatch = hash.match(/^blog\/post-(\d+)$/);
+        if (postMatch) {
+            this.stopRefresh();
+            this.show('blog', 'blog');
+            loadBlotter();
+            // Jump past the Blotter to the linked dispatch once the feed has rendered
+            loadBlogPosts().then(() => document.getElementById(`post-${postMatch[1]}`)?.scrollIntoView({ block: 'start' }));
+            return;
+        }
         const reportMatch = hash.match(/^eggconomy\/(\d{4}-\d{2}-\d{2})$/);
         if (reportMatch) {
             this.stopRefresh();
@@ -1403,13 +1412,11 @@ async function loadBlogPosts(append = false) {
             }
 
             const postsHtml = posts.map((post) => {
-                const isAuto = post.is_auto_generated === 1;
                 const publication = getBlogPublicationDate(post.created_at);
                 return `
-                    <article class="activity-item blog-post">
+                    <article class="activity-item blog-post" id="post-${post.id}">
                         <h3 class="activity-type">
                             ${escapeHtml(post.title || 'Untitled Post')}
-                            ${isAuto ? '<span style="font-size: 0.8rem; opacity: 0.7;"> (AI-Generated)</span>' : ''}
                         </h3>
                         ${publication ? `<div class="activity-date">Posted <time datetime="${publication.timestamp}">${formatShortDate(publication.date)}</time></div>` : ''}
                         <div class="activity-details blog-content">${marked.parse(post.content || '')}</div>
