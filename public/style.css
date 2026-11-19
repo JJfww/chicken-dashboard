@@ -2340,10 +2340,13 @@ button:disabled {
     transform: translateY(-2px);
 }
 
+/* Show the whole photo (tall phone shots included), letterboxed rather than cropped */
 .lead-story-image {
     width: 100%;
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
+    height: auto;
+    max-height: 70vh;
+    object-fit: contain;
+    background: var(--bg-tertiary);
     display: block;
 }
 
@@ -2389,7 +2392,7 @@ button:disabled {
 
     .lead-story-link .lead-story-image {
         height: 100%;
-        aspect-ratio: auto;
+        max-height: 380px;
         min-height: 220px;
     }
 }
