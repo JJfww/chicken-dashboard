@@ -46,6 +46,21 @@ export async function onRequestPost(context) {
             });
         }
 
+        // { id, date, title, content } saves edits to an existing post
+        if (id) {
+            const result = await context.env.DB.prepare(
+                'UPDATE blog_posts SET date = ?, title = ?, content = ? WHERE id = ?'
+            ).bind(date, title || null, content, id).run();
+            return new Response(JSON.stringify({ success: result.meta.changes > 0, id }), {
+                status: result.meta.changes > 0 ? 200 : 404,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': 'https://chicken-dashboard.pages.dev',
+                    'Access-Control-Allow-Credentials': 'true'
+                }
+            });
+        }
+
         // Insert blog post record
         const result = await context.env.DB.prepare(
             'INSERT INTO blog_posts (date, title, content, is_auto_generated) VALUES (?, ?, ?, ?)'

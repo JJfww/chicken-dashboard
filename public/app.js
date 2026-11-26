@@ -1141,16 +1141,40 @@ async function loadExpenses() {
     }
 }
 
+// Blog post editing: the Edit button loads a post into the form above the list
+const adminBlogPosts = new Map(); // id -> post, for the Edit button
+let editingPostId = null;
+
+function setBlogEditing(post) {
+    editingPostId = post ? post.id : null;
+    document.getElementById('blog-form-heading').textContent = post ? 'Edit Blog Post' : 'Write a Blog Post';
+    document.getElementById('blog-submit-btn').textContent = post ? 'Save Changes' : 'Post Blog';
+    document.getElementById('auto-generate-btn').hidden = Boolean(post);
+    document.getElementById('blog-cancel-edit').hidden = !post;
+    if (post) {
+        document.getElementById('blog-date').value = post.date;
+        document.getElementById('blog-title').value = post.title || '';
+        document.getElementById('blog-content').value = post.content || '';
+        document.getElementById('blog-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        document.getElementById('blog-form').reset();
+        document.getElementById('blog-date').value = getCurrentDateCST();
+    }
+}
+
+document.getElementById('blog-cancel-edit').addEventListener('click', () => setBlogEditing(null));
+
 // Blog Form Submission
 document.getElementById('blog-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const formData = new FormData(e.target);
+    const editing = editingPostId;
     const data = {
         date: formData.get('date'),
         title: formData.get('title') || null,
         content: formData.get('content'),
-        is_auto_generated: false
+        ...(editing ? { id: editing } : { is_auto_generated: false })
     };
 
     try {
@@ -1162,11 +1186,11 @@ document.getElementById('blog-form').addEventListener('submit', async (e) => {
         });
 
         if (response.ok) {
-            showMessage('success', 'Blog post published successfully!');
-            e.target.reset();
+            showMessage('success', editing ? 'Changes saved.' : 'Blog post published successfully!');
+            setBlogEditing(null);
             loadBlogPosts();
         } else {
-            showMessage('error', 'Failed to publish blog post. Please try again.');
+            showMessage('error', editing ? 'Could not save your changes. Please try again.' : 'Failed to publish blog post. Please try again.');
         }
     } catch (error) {
         showMessage('error', 'Network error. Please check your connection.');
@@ -1239,6 +1263,7 @@ async function loadBlogPosts(append = false) {
             }
 
             const postsHtml = posts.map(post => {
+                adminBlogPosts.set(post.id, post);
                 return `
                     <div class="activity-item blog-post">
                         <div class="activity-type">
@@ -1246,6 +1271,7 @@ async function loadBlogPosts(append = false) {
                         </div>
                         <div class="activity-details blog-content">${marked.parse(post.content || '')}</div>
                         <div class="activity-date">${formatDate(post.date)}
+                            <button type="button" class="chip blog-edit" data-id="${post.id}">Edit</button>
                             <button type="button" class="chip blog-delete" data-id="${post.id}">Delete</button>
                         </div>
                     </div>
@@ -1278,6 +1304,12 @@ async function loadBlogPosts(append = false) {
 }
 
 document.getElementById('blog-feed').addEventListener('click', async (e) => {
+    const editBtn = e.target.closest('.blog-edit');
+    if (editBtn) {
+        const post = adminBlogPosts.get(Number(editBtn.dataset.id));
+        if (post) setBlogEditing(post);
+        return;
+    }
     const btn = e.target.closest('.blog-delete');
     if (!btn || !confirm('Delete this post from the public blog?')) return;
     btn.disabled = true;

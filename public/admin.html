@@ -515,7 +515,7 @@
             <!-- Blog Tab -->
             <div id="blog-tab" class="tab-content">
                 <section class="card">
-                    <h2>Write a Blog Post</h2>
+                    <h2 id="blog-form-heading">Write a Blog Post</h2>
                     <form id="blog-form">
                         <div class="form-group">
                             <label for="blog-date">Date</label>
@@ -530,8 +530,9 @@
                             <textarea id="blog-content" name="content" rows="8" placeholder="Write your blog post here..." required></textarea>
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
-                            <button type="submit" class="btn btn-primary" style="flex: 1;">Post Blog</button>
+                            <button type="submit" id="blog-submit-btn" class="btn btn-primary" style="flex: 1;">Post Blog</button>
                             <button type="button" id="auto-generate-btn" class="btn btn-primary" style="flex: 1;">Auto-Generate</button>
+                            <button type="button" id="blog-cancel-edit" class="btn" style="flex: 1;" hidden>Cancel</button>
                         </div>
                     </form>
                 </section>
@@ -545,7 +546,7 @@
 
                 <section class="card">
                     <h2>Blog Posts</h2>
-                    <p class="form-hint">Clucky posts on her own Wednesday night (Monday–Wednesday) and Sunday night (Thursday–Sunday, plus the Week in Review). Delete any post that misses the mark.</p>
+                    <p class="form-hint">Clucky posts on her own Wednesday night (Monday–Wednesday) and Sunday night (Thursday–Sunday, plus the Week in Review). Edit or delete any post that misses the mark.</p>
                     <div id="blog-feed" class="activity-feed">
                         <p class="loading">Loading blog posts...</p>
                     </div>
@@ -750,6 +751,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/lib/marked.umd.min.js"></script>
-    <script src="app.js?v=14"></script>
+    <script src="app.js?v=15"></script>
 </body>
 </html>
