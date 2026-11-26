@@ -1,5 +1,5 @@
 import { jsonResponse, shiftDate } from '../_flock.js';
-import { generateDispatch } from './generate.js';
+import { generateDispatch, editionStart } from './generate.js';
 
 // POST /api/blog/scheduled?date=YYYY-MM-DD, called at 9:30 PM Central by the chicken-scheduler
 // Worker (scheduler/) with the SCHEDULER_TOKEN bearer token, or by hand through the
@@ -7,11 +7,6 @@ import { generateDispatch } from './generate.js';
 //   Wednesday: the midweek edition (Monday-Wednesday)
 //   Sunday: the Sunday edition (Thursday-Sunday, plus a Week in Review of Monday-Sunday)
 // Skips a date that already has a post, so reruns never double-post.
-const EDITIONS = {
-    3: date => shiftDate(date, -2),
-    0: date => shiftDate(date, -3)
-};
-
 export async function onRequestPost(context) {
     const { request, env } = context;
     const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/, '').trim();
@@ -24,8 +19,8 @@ export async function onRequestPost(context) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) {
         return jsonResponse({ error: 'date=YYYY-MM-DD is required' }, 400);
     }
-    const editionFrom = EDITIONS[new Date(`${date}T12:00:00Z`).getUTCDay()];
-    if (!editionFrom) {
+    const from = editionStart(date);
+    if (!from) {
         return jsonResponse({ error: 'Automatic editions run on Wednesdays and Sundays only' }, 400);
     }
 
@@ -33,7 +28,7 @@ export async function onRequestPost(context) {
         const existing = await env.DB.prepare('SELECT id FROM blog_posts WHERE date = ? LIMIT 1').bind(date).first();
         if (existing) return jsonResponse({ status: 'skipped', reason: 'A post already exists for this date', id: existing.id });
 
-        const dispatch = await generateDispatch(env, date, { from: editionFrom(date) });
+        const dispatch = await generateDispatch(env, date, { from });
         if (!dispatch) return jsonResponse({ status: 'no_activity', date });
 
         const result = await env.DB.prepare(

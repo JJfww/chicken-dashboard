@@ -33,7 +33,8 @@ export async function onRequestPost(context) {
             return new Response(JSON.stringify({ error: 'Date is required' }), { status: 400, headers: JSON_HEADERS });
         }
 
-        const dispatch = await generateDispatch(context.env, date);
+        // On a Wednesday or Sunday this drafts that day's edition, matching what the scheduler publishes.
+        const dispatch = await generateDispatch(context.env, date, { from: editionStart(date) || date });
 
         if (!dispatch) {
             return new Response(JSON.stringify({
@@ -49,6 +50,15 @@ export async function onRequestPost(context) {
     }
 }
 
+// The automatic editions: Wednesday covers Monday-Wednesday, Sunday covers Thursday-Sunday.
+const EDITION_LENGTH = { 3: 2, 0: 3 };
+
+// First day an edition published on `date` covers, or null when `date` isn't an edition day.
+export function editionStart(date) {
+    const back = EDITION_LENGTH[new Date(`${date}T12:00:00Z`).getUTCDay()];
+    return back === undefined ? null : shiftDate(date, -back);
+}
+
 function formatDay(date, options) {
     return new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', { timeZone: 'UTC', ...options });
 }
@@ -58,9 +68,9 @@ function formatDay(date, options) {
 export async function generateDispatch(env, date, { from = date } = {}) {
     const days = [];
     for (let day = from; day <= date; day = shiftDate(day, 1)) days.push(day);
-    // Multi-day editions only hear about egg news (first eggs, comebacks, noted oddities), not every egg.
-    const notableEggsOnly = from !== date;
-    const daily = await Promise.all(days.map(day => gatherDailyActivity(env.DB, day, { notableEggsOnly })));
+    // Only egg news (first eggs, comebacks, noted oddities) is itemized; a single-day draft also
+    // gets a one-line count of the routine eggs.
+    const daily = await Promise.all(days.map(day => gatherDailyActivity(env.DB, day, { routineCount: from === date })));
     const active = days.map((day, i) => ({ day, ...daily[i] })).filter(entry => entry.hasActivity);
     if (!active.length) return null;
 
@@ -89,7 +99,7 @@ export async function generateDispatch(env, date, { from = date } = {}) {
         weekly: `Write the Sunday edition: a vivid, witty dispatch covering the flock's days since the midweek edition (${rangeLabel}), followed by the Week in Review.`
     }[mode];
     const lengthRule = mode === 'day'
-        ? '- Match your post length to the amount of data: light data days = shorter posts (75-150 words), busy days = longer posts (150-250 words).'
+        ? '- Match your post length to the amount of data: light data days = shorter posts (75-150 words), busy days = longer posts (150-250 words).\n- Routine laying is not news. Itemize only eggs listed under "Egg news" (a first egg, a hen laying again after a long break, or an egg with something unusual noted) and celebrate those properly. Mention the "Eggs collected" count in one sentence at most, with no times or weights. Build the post from the other tidbits in the data.'
         : `- This edition covers several days. It is NOT a day-by-day log. Build it from the tidbits in the data (notes, blotter incidents, health news, photo captions, treats, outings, notable egg news) and group them into a few stories; refer to days by weekday name only when it helps, and skip quiet days. Aim for 150-300 words${mode === 'weekly' ? ' before the Week in Review' : ''}.
 - Routine laying is not news and has been left out of the daily data on purpose. Do not recap who laid on which day. Only write about eggs listed under "Egg news" (a first egg, a hen laying again after a long break, or an egg with something unusual noted), and celebrate those properly.${mode === 'weekly' ? '\n- The Week in Review is where egg totals go: give the week\'s total and each hen\'s count as a short list, one hen per line with her egg image.' : ''}${mode === 'weekly' ? '\n- The days covered are the end of the week (the midweek edition covered Monday-Wednesday); never call Thursday the start of the week.\n- Put the Week in Review after the story and before the sign-off; the sign-off is always the very last line.' : ''}`;
 
@@ -158,7 +168,7 @@ Write a delightful dispatch!`;
         },
         body: JSON.stringify({
             // The multi-day editions use the stronger model; it follows the egg-image rule more reliably.
-            model: mode === 'day' ? 'google/gemini-2.5-flash-lite' : 'google/gemini-2.5-flash',
+            model: 'google/gemini-2.5-flash', // flash-lite ignored the egg-image rule
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: 'Write the blog post!' }
@@ -216,7 +226,7 @@ function daysBetween(a, b) {
     return Math.round((new Date(`${b}T12:00:00Z`) - new Date(`${a}T12:00:00Z`)) / 86400000);
 }
 
-async function gatherDailyActivity(db, date, { notableEggsOnly = false } = {}) {
+async function gatherDailyActivity(db, date, { routineCount = false } = {}) {
     const activity = {
         hasActivity: false,
         summary: []
@@ -231,7 +241,7 @@ async function gatherDailyActivity(db, date, { notableEggsOnly = false } = {}) {
         WHERE e.date = ?
     `).bind(date).all();
 
-    if (eggs.results.length > 0 && notableEggsOnly) {
+    if (eggs.results.length > 0) {
         activity.hasActivity = true;
         const news = [];
         const notedHens = new Map(); // note text -> hens it was logged on
@@ -249,17 +259,10 @@ async function gatherDailyActivity(db, date, { notableEggsOnly = false } = {}) {
         });
         notedHens.forEach((hens, note) => news.push(`- ${hens.join(', ')}: ${note}`));
         if (news.length) activity.summary.push('Egg news:', ...news);
-    } else if (eggs.results.length > 0) {
-        activity.hasActivity = true;
-        activity.summary.push('Eggs laid:');
-        activity.eggLayers = []; // Track which chickens laid eggs
-        eggs.results.forEach(egg => {
-            const timeInfo = egg.time ? ` at ${formatClock(egg.time)}` : '';
-            activity.summary.push(`- ${egg.name} (${egg.egg_color} egg)${timeInfo}${egg.weight_g ? `, weighed ${egg.weight_g} g` : ''}${egg.notes ? ' - ' + egg.notes : ''}`);
-            if (!activity.eggLayers.includes(egg.name)) {
-                activity.eggLayers.push(egg.name);
-            }
-        });
+        if (routineCount) {
+            const layers = [...new Set(eggs.results.map(egg => egg.name))];
+            activity.summary.push(`${news.length ? '\n' : ''}Eggs collected: ${eggs.results.length} in all (${layers.join(', ')})`);
+        }
     }
 
     // Get feeding for this date (include time)
@@ -419,8 +422,7 @@ async function gatherDailyActivity(db, date, { notableEggsOnly = false } = {}) {
         hasActivity: activity.hasActivity,
         summary: activity.summary.join('\n'),
         photoId: activity.photoId || null,
-        photoMediaType: activity.photoMediaType || null,
-        eggLayers: activity.eggLayers || []
+        photoMediaType: activity.photoMediaType || null
     };
 }
 
