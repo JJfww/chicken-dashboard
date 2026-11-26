@@ -58,7 +58,9 @@ function formatDay(date, options) {
 export async function generateDispatch(env, date, { from = date } = {}) {
     const days = [];
     for (let day = from; day <= date; day = shiftDate(day, 1)) days.push(day);
-    const daily = await Promise.all(days.map(day => gatherDailyActivity(env.DB, day)));
+    // Multi-day editions only hear about egg news (first eggs, comebacks, noted oddities), not every egg.
+    const notableEggsOnly = from !== date;
+    const daily = await Promise.all(days.map(day => gatherDailyActivity(env.DB, day, { notableEggsOnly })));
     const active = days.map((day, i) => ({ day, ...daily[i] })).filter(entry => entry.hasActivity);
     if (!active.length) return null;
 
@@ -88,7 +90,8 @@ export async function generateDispatch(env, date, { from = date } = {}) {
     }[mode];
     const lengthRule = mode === 'day'
         ? '- Match your post length to the amount of data: light data days = shorter posts (75-150 words), busy days = longer posts (150-250 words).'
-        : `- This edition covers several days. Lead with the biggest stories and refer to days by weekday name; do not march through every day, and skip quiet days. Aim for 200-350 words${mode === 'weekly' ? ' before the Week in Review' : ''}.${mode === 'weekly' ? '\n- The days covered are the end of the week (the midweek edition covered Monday-Wednesday); never call Thursday the start of the week.\n- Put the Week in Review after the story and before the sign-off; the sign-off is always the very last line.' : ''}`;
+        : `- This edition covers several days. It is NOT a day-by-day log. Build it from the tidbits in the data (notes, blotter incidents, health news, photo captions, treats, outings, notable egg news) and group them into a few stories; refer to days by weekday name only when it helps, and skip quiet days. Aim for 150-300 words${mode === 'weekly' ? ' before the Week in Review' : ''}.
+- Routine laying is not news and has been left out of the daily data on purpose. Do not recap who laid on which day. Only write about eggs listed under "Egg news" (a first egg, a hen laying again after a long break, or an egg with something unusual noted), and celebrate those properly.${mode === 'weekly' ? '\n- The Week in Review is where egg totals go: give the week\'s total and each hen\'s count as a short list, one hen per line with her egg image.' : ''}${mode === 'weekly' ? '\n- The days covered are the end of the week (the midweek edition covered Monday-Wednesday); never call Thursday the start of the week.\n- Put the Week in Review after the story and before the sign-off; the sign-off is always the very last line.' : ''}`;
 
     // Build the AI prompt for blog generation
     const systemPrompt = `You are Clucky, the royal correspondent for The Clucking Times, filing dispatches from Hensington Palace. ${assignment}
@@ -134,7 +137,7 @@ Structure guidance:
 - If the day includes a flock change or notable social shift, treat that as real news, not a passing aside
 
 ${isSunday ? `SUNDAY SPECIAL - Weekly Recap:
-Since it's Sunday, include a brief "Week in Review" section summarizing the week's egg production totals and any notable events from the weekly data provided below.
+Since it's Sunday, include a brief "Week in Review" section with the week's egg totals by hen and any other weekly figures from the data provided below. Put "Week in Review" on its own line as bold text.
 
 Weekly summary (Monday through Sunday):
 ${weeklySummary || 'No weekly data available'}
@@ -204,7 +207,16 @@ function formatClock(time) {
     return `${hours % 12 || 12}:${match[2]} ${hours < 12 ? 'AM' : 'PM'}`;
 }
 
-async function gatherDailyActivity(db, date) {
+// A hen laying again after this many days off is news.
+const COMEBACK_DAYS = 10;
+// Egg notes that only say when it was laid or collected aren't news.
+const ROUTINE_EGG_NOTE = /^(collected|laid (before|after|between|around|at)|still warm|sometime after)\b/i;
+
+function daysBetween(a, b) {
+    return Math.round((new Date(`${b}T12:00:00Z`) - new Date(`${a}T12:00:00Z`)) / 86400000);
+}
+
+async function gatherDailyActivity(db, date, { notableEggsOnly = false } = {}) {
     const activity = {
         hasActivity: false,
         summary: []
@@ -212,13 +224,32 @@ async function gatherDailyActivity(db, date) {
 
     // Get eggs for this date (include time and egg color)
     const eggs = await db.prepare(`
-        SELECT COALESCE(c.display_name, c.name) AS name, c.egg_color, e.notes, e.time, e.weight_g
+        SELECT COALESCE(c.display_name, c.name) AS name, c.egg_color, e.notes, e.time, e.weight_g,
+            (SELECT MAX(prev.date) FROM eggs prev WHERE prev.chicken_id = e.chicken_id AND prev.date < e.date) AS previous_date
         FROM eggs e
         JOIN chickens c ON e.chicken_id = c.id
         WHERE e.date = ?
     `).bind(date).all();
 
-    if (eggs.results.length > 0) {
+    if (eggs.results.length > 0 && notableEggsOnly) {
+        activity.hasActivity = true;
+        const news = [];
+        const notedHens = new Map(); // note text -> hens it was logged on
+        eggs.results.forEach(egg => {
+            const timeInfo = egg.time ? ` at ${formatClock(egg.time)}` : '';
+            if (!egg.previous_date) news.push(`- ${egg.name}${timeInfo}: her first egg ever`);
+            else if (daysBetween(egg.previous_date, date) >= COMEBACK_DAYS) {
+                news.push(`- ${egg.name}${timeInfo}: her first egg in ${daysBetween(egg.previous_date, date)} days (her last was ${formatDay(egg.previous_date, { month: 'long', day: 'numeric' })})`);
+            }
+            const note = (egg.notes || '').trim();
+            if (note && !ROUTINE_EGG_NOTE.test(note)) {
+                if (!notedHens.has(note)) notedHens.set(note, []);
+                if (!notedHens.get(note).includes(egg.name)) notedHens.get(note).push(egg.name);
+            }
+        });
+        notedHens.forEach((hens, note) => news.push(`- ${hens.join(', ')}: ${note}`));
+        if (news.length) activity.summary.push('Egg news:', ...news);
+    } else if (eggs.results.length > 0) {
         activity.hasActivity = true;
         activity.summary.push('Eggs laid:');
         activity.eggLayers = []; // Track which chickens laid eggs

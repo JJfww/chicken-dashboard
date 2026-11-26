@@ -1239,12 +1239,10 @@ async function loadBlogPosts(append = false) {
             }
 
             const postsHtml = posts.map(post => {
-                const isAuto = post.is_auto_generated === 1;
                 return `
                     <div class="activity-item blog-post">
                         <div class="activity-type">
                             ${post.title || 'Untitled Post'}
-                            ${isAuto ? '<span style="font-size: 0.8rem; opacity: 0.7;"> (AI-Generated)</span>' : ''}
                         </div>
                         <div class="activity-details blog-content">${marked.parse(post.content || '')}</div>
                         <div class="activity-date">${formatDate(post.date)}
