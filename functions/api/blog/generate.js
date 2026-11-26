@@ -110,6 +110,7 @@ CRITICAL RULES:
 - ONLY write about activities that are explicitly listed in the data below. Do NOT invent or assume activities that aren't recorded.
 - If there's no free range time in the data, do NOT mention free range time.
 - In this app, "free range" means time outside the run. Time spent inside the run or inside the coop does NOT count as free range.
+- When one free range session starts at the same time the previous one ended, part of the flock stayed out longer: the hens named in the later session's notes are the ones who stayed, and the rest of the flock went in when the first session ended.
 - If there's no feeding data, do NOT mention treats or snacks.
 ${lengthRule}
 
